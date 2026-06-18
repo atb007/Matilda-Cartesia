@@ -1,0 +1,30 @@
+# Evolving Euclidean C major — same intent as live_euclidean_c_major.py
+TITLE Euclidean C major ebb flow
+TEMPO 120
+KEY C major
+OCT 4
+GATE 0.92
+
+DEG 0 2 4 7 9 7 4 2
+PINGPONG
+MUTATE 32 0.78
+LOOP
+
+ER 5 16
+ER 7 16
+ER 4 16
+ER 9 16
+ER 6 16
+CONCAT
+LOOP
+
+HOLD 0.58
+
+DUR ALT 0.25 16 0.5 16
+LOOP
+
+VEL 88 74 82 70
+BROWN -10 10
+LOOP
+
+RUN

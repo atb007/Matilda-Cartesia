@@ -1,0 +1,13 @@
+# Basic arp — same intent as live_arp_garageband.py
+TITLE C minor arp
+TEMPO 120
+KEY C minor
+
+ARP 0 2 4
+PINGPONG
+LOOP
+
+VEL 90 70 60 70
+LOOP
+DUR 0.25
+RUN

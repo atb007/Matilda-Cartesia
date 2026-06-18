@@ -1,0 +1,52 @@
+{
+  "title": "Matilda default — layer 1",
+  "version": 2,
+  "root": "C",
+  "mode": "lydian",
+  "quantize": true,
+  "min_octave": 1,
+  "max_octave": 9,
+  "master_division": 0.0625,
+  "play_mode": "note",
+  "play_on_transport": false,
+  "selected_layer": 0,
+  "layers": [
+    {
+      "active": true,
+      "movement": "forward",
+      "random_skip_prob": 0.0,
+      "step_index": 0,
+      "step_dir": 1,
+      "cells": [
+        [
+          { "degree": 0, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 },
+          { "degree": 2, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 },
+          { "degree": 4, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 },
+          { "degree": 5, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 }
+        ],
+        [
+          { "degree": 2, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 },
+          { "degree": 4, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 },
+          { "degree": 5, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 },
+          { "degree": 7, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 }
+        ],
+        [
+          { "degree": 4, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 },
+          { "degree": 5, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 },
+          { "degree": 7, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 },
+          { "degree": 9, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 }
+        ],
+        [
+          { "degree": 5, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 },
+          { "degree": 7, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 },
+          { "degree": 9, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 },
+          { "degree": 11, "gate": true, "velocity": 90, "octave_offset": 0, "trigger_armed": false, "trigger_prob": 0.5, "jitter_armed": false, "jitter_amount": 0.5 }
+        ]
+      ]
+    },
+    { "active": false, "movement": "forward", "random_skip_prob": 0.0, "step_index": 0, "step_dir": 1 },
+    { "active": false, "movement": "forward", "random_skip_prob": 0.0, "step_index": 0, "step_dir": 1 },
+    { "active": false, "movement": "forward", "random_skip_prob": 0.0, "step_index": 0, "step_dir": 1 }
+  ],
+  "seed": null
+}

@@ -1,0 +1,35 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.sw?
+
+# Python
+__pycache__/
+*.py[cod]
+.pydeps/
+venv/
+.venv/
+
+# Node (cartesia-vst-ui)
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# JUCE / CMake build outputs
+**/build/
+**/Builds/
+**/cmake-build-*/
+**/JuceLibraryCode/
+*.xcodeproj/
+*.xcworkspace/
+
+# JUCE submodule (fetched via CMake FetchContent or local gridwalker copy)
+gridwalker/JUCE/
+
+# Large local media (not source)
+*.mov
+
+# Cursor / agent artifacts
+.cursor/

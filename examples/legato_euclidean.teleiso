@@ -1,0 +1,26 @@
+# Legato Euclidean @ half speed — same intent as live_legato_euclidean.py
+TITLE Legato Euclidean C major
+TEMPO 120
+KEY C major
+OCT 4
+LEGATO
+
+DEG 0 2 4 5 7 5 4 2
+NUDGE 0.22
+LOOP
+
+ER 5 8
+ER 5 8 1
+ER 6 8
+ER 4 8
+ER 5 8 2
+CONCAT
+LOOP
+
+VEL 76 70 74 68
+BROWN -6 6
+LOOP
+
+DUR 0.5
+ACTIVE
+RUN

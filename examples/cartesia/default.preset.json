@@ -1,0 +1,620 @@
+{
+  "title": "Cartesia demo C major",
+  "root": "C",
+  "mode": "major",
+  "octave": 4,
+  "quantize": true,
+  "min_degree": 0,
+  "range_semitones": 12,
+  "movement": "free",
+  "master_division": 0.25,
+  "poly_voices": 2,
+  "seed": null,
+  "x": {
+    "pos": 0,
+    "direction": 1,
+    "counter": 0.0,
+    "division": 1,
+    "speed": 1.0,
+    "reverse_forced": false,
+    "ping_pong": true
+  },
+  "y": {
+    "pos": 0,
+    "direction": 1,
+    "counter": 0.0,
+    "division": 4,
+    "speed": 1.0,
+    "reverse_forced": false,
+    "ping_pong": true
+  },
+  "z": {
+    "pos": 0,
+    "direction": 1,
+    "counter": 0.0,
+    "division": 16,
+    "speed": 1.0,
+    "reverse_forced": false,
+    "ping_pong": true
+  },
+  "prob": {
+    "gate": 1.0,
+    "pitch": 1.0,
+    "velocity": 1.0,
+    "layer": 1.0,
+    "reverse_x": 0.08,
+    "reverse_y": 0.05,
+    "reverse_z": 0.0,
+    "skip_step": 0.0,
+    "random_jump": 0.0,
+    "scan_skip": 0.0
+  },
+  "layers": [
+    {
+      "layer_p": 1.0,
+      "cells": [
+        [
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 2,
+            "gate": true,
+            "velocity": 74,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 4,
+            "gate": true,
+            "velocity": 78,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 5,
+            "gate": false,
+            "velocity": 82,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ],
+        [
+          {
+            "degree": 2,
+            "gate": true,
+            "velocity": 74,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 4,
+            "gate": true,
+            "velocity": 78,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 5,
+            "gate": false,
+            "velocity": 82,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 7,
+            "gate": true,
+            "velocity": 86,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ],
+        [
+          {
+            "degree": 4,
+            "gate": true,
+            "velocity": 78,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 5,
+            "gate": false,
+            "velocity": 82,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 7,
+            "gate": true,
+            "velocity": 86,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 9,
+            "gate": true,
+            "velocity": 90,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ],
+        [
+          {
+            "degree": 5,
+            "gate": false,
+            "velocity": 82,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 7,
+            "gate": true,
+            "velocity": 86,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 9,
+            "gate": true,
+            "velocity": 90,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 11,
+            "gate": false,
+            "velocity": 94,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ]
+      ]
+    },
+    {
+      "layer_p": 0.7,
+      "cells": [
+        [
+          {
+            "degree": 1,
+            "gate": true,
+            "velocity": 70,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 3,
+            "gate": true,
+            "velocity": 74,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 5,
+            "gate": false,
+            "velocity": 78,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 6,
+            "gate": true,
+            "velocity": 82,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ],
+        [
+          {
+            "degree": 3,
+            "gate": true,
+            "velocity": 74,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 5,
+            "gate": false,
+            "velocity": 78,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 6,
+            "gate": true,
+            "velocity": 82,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 8,
+            "gate": true,
+            "velocity": 86,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ],
+        [
+          {
+            "degree": 5,
+            "gate": false,
+            "velocity": 78,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 6,
+            "gate": true,
+            "velocity": 82,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 8,
+            "gate": true,
+            "velocity": 86,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 10,
+            "gate": false,
+            "velocity": 90,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ],
+        [
+          {
+            "degree": 6,
+            "gate": true,
+            "velocity": 82,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 8,
+            "gate": true,
+            "velocity": 86,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 10,
+            "gate": false,
+            "velocity": 90,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 12,
+            "gate": true,
+            "velocity": 94,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ]
+      ]
+    },
+    {
+      "layer_p": 1.0,
+      "cells": [
+        [
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 70,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 2,
+            "gate": false,
+            "velocity": 74,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 4,
+            "gate": true,
+            "velocity": 78,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 5,
+            "gate": true,
+            "velocity": 82,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ],
+        [
+          {
+            "degree": 2,
+            "gate": false,
+            "velocity": 74,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 4,
+            "gate": true,
+            "velocity": 78,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 5,
+            "gate": true,
+            "velocity": 82,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 7,
+            "gate": false,
+            "velocity": 86,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ],
+        [
+          {
+            "degree": 4,
+            "gate": true,
+            "velocity": 78,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 5,
+            "gate": true,
+            "velocity": 82,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 7,
+            "gate": false,
+            "velocity": 86,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 9,
+            "gate": true,
+            "velocity": 90,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ],
+        [
+          {
+            "degree": 5,
+            "gate": true,
+            "velocity": 82,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 7,
+            "gate": false,
+            "velocity": 86,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 9,
+            "gate": true,
+            "velocity": 90,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 11,
+            "gate": true,
+            "velocity": 94,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ]
+      ]
+    },
+    {
+      "layer_p": 1.0,
+      "cells": [
+        [
+          {
+            "degree": 1,
+            "gate": false,
+            "velocity": 70,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 3,
+            "gate": true,
+            "velocity": 74,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 5,
+            "gate": true,
+            "velocity": 78,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 6,
+            "gate": false,
+            "velocity": 82,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ],
+        [
+          {
+            "degree": 3,
+            "gate": true,
+            "velocity": 74,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 5,
+            "gate": true,
+            "velocity": 78,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 6,
+            "gate": false,
+            "velocity": 82,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 8,
+            "gate": true,
+            "velocity": 86,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ],
+        [
+          {
+            "degree": 5,
+            "gate": true,
+            "velocity": 78,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 6,
+            "gate": false,
+            "velocity": 82,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 8,
+            "gate": true,
+            "velocity": 86,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 10,
+            "gate": true,
+            "velocity": 90,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ],
+        [
+          {
+            "degree": 6,
+            "gate": false,
+            "velocity": 82,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 8,
+            "gate": true,
+            "velocity": 86,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 10,
+            "gate": true,
+            "velocity": 90,
+            "gate_p": 0.85,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          },
+          {
+            "degree": 12,
+            "gate": false,
+            "velocity": 94,
+            "gate_p": 0.0,
+            "pitch_p": 1.0,
+            "vel_p": 1.0
+          }
+        ]
+      ]
+    }
+  ],
+  "scan_pos": 0,
+  "scan_dir": 1
+}

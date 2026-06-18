@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #1a1a1a;
+  font-family: 'Jost', sans-serif;
+}
+
+/* GPU layer + smooth filtering for raster PNGs under transform: scale() */
+.plugin-frame-native {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.plugin-frame-native img[src$=".png"] {
+  image-rendering: auto;
+}
+
+@keyframes aurora-drift {
+  from { transform: translateX(-2%) scale(1); opacity: 0.85; }
+  to   { transform: translateX(2%) scale(1.04); opacity: 1; }
+}
+
+/* Glass dropdown scroll — transparent track, faint thumb */
+.glass-dd-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.glass-dd-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.glass-dd-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.glass-dd-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.glass-dd-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32);
+  background-clip: padding-box;
+}
+
+.glass-dd-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}

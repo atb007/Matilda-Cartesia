@@ -1,0 +1,25 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 40.9826 40.9826" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Ellipse 42978" filter="url(#filter0_i_0_64)">
+<circle cx="20.4913" cy="20.4913" r="20.4913" fill="url(#paint0_linear_0_64)"/>
+</g>
+<defs>
+<filter id="filter0_i_0_64" x="0" y="0" width="40.9826" height="53.4352" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="12.4526"/>
+<feGaussianBlur stdDeviation="6.22632"/>
+<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0"/>
+<feBlend mode="normal" in2="shape" result="effect1_innerShadow_0_64"/>
+</filter>
+<linearGradient id="paint0_linear_0_64" x1="20.4913" y1="0" x2="20.4913" y2="40.9826" gradientUnits="userSpaceOnUse">
+<stop stop-color="#DACCA4"/>
+<stop offset="0.163462" stop-color="#FF6F00"/>
+<stop offset="0.348984" stop-color="#D76502"/>
+<stop offset="0.649038" stop-color="#D96F0B"/>
+<stop offset="0.836538" stop-color="#F68910"/>
+<stop offset="1" stop-color="#FF8E00"/>
+</linearGradient>
+</defs>
+</svg>

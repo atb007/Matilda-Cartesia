@@ -1,0 +1,22 @@
+<svg viewBox="0 0 1205 1407" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <rect x="0" y="0" height="100%" width="100%" fill="url(#grad)" opacity="0.2"/>
+  <defs>
+    <radialGradient id="grad" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="10" gradientTransform="matrix(-23.45 26.85 -22.995 -20.083 266.78 390.5)">
+      <stop stop-color="rgba(0,0,0,1)" offset="0.033654"/>
+      <stop stop-color="rgba(10,10,10,1)" offset="0.05471"/>
+      <stop stop-color="rgba(21,21,21,1)" offset="0.075767"/>
+      <stop stop-color="rgba(41,41,41,1)" offset="0.11788"/>
+      <stop stop-color="rgba(62,62,62,1)" offset="0.15999"/>
+      <stop stop-color="rgba(83,83,83,1)" offset="0.20211"/>
+      <stop stop-color="rgba(124,124,124,1)" offset="0.28633"/>
+      <stop stop-color="rgba(166,166,166,1)" offset="0.37056"/>
+      <stop stop-color="rgba(125,125,125,1)" offset="0.52792"/>
+      <stop stop-color="rgba(84,84,84,1)" offset="0.68528"/>
+      <stop stop-color="rgba(64,64,64,1)" offset="0.76396"/>
+      <stop stop-color="rgba(43,43,43,1)" offset="0.84264"/>
+      <stop stop-color="rgba(23,23,23,1)" offset="0.92132"/>
+      <stop stop-color="rgba(13,13,13,1)" offset="0.96066"/>
+      <stop stop-color="rgba(2,2,2,1)" offset="1"/>
+    </radialGradient>
+  </defs>
+</svg>
