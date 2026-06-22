@@ -32,7 +32,7 @@ private:
     NativePluginFrame frame_{ shell_ };
 
     juce::Label bpmLabel_{"", "120 BPM"};
-    juce::ToggleButton syncToggle_{"Sync GB transport"};
+    juce::ToggleButton syncToggle_{"Sync external transport"};
     juce::Label statusLabel_{"", ""};
 
     void timerCallback() override;
@@ -42,6 +42,7 @@ private:
     void bindCallbacks();
     void refreshAll();
     void updateStatusLine();
+    void applyBpmFromLabel();
     void layoutChromeOverlays();
     bool lastTransportRunning_ = false;
 };

@@ -30,7 +30,7 @@ BlueARP is a **VST/AU MIDI-FX** inserted before a synth. Matilda should ship the
 | **Logic** | AU MIDI-FX slot on instrument track. |
 | **GarageBand** | No third-party MIDI-FX → keep **Standalone → IAC** workflow. |
 
-**Matilda action:** Build VST3 + AU MIDI effect; use JUCE `AudioPlayHead` for BPM/position in plugin mode (replace IAC clock loopback).
+**Matilda action:** Build VST3 + AU MIDI effect; use JUCE `AudioPlayHead` for BPM/position in plugin mode. **One codebase** — Standalone for GarageBand + IAC; VST3/AU for FL Studio (Fruity Wrapper output port or Patcher), Ableton, Logic, Reaper. No fork required.
 
 ---
 

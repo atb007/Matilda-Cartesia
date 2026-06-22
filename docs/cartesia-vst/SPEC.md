@@ -124,16 +124,21 @@ Each cell stores **scale degree** (not absolute MIDI); display resolves via toni
 2. **Click icon** → arm modifier, show ring at 50%, icon stays visible.
 3. **Drag icon ↕** → adjust probability / jitter amount; tooltip shows exact %.
 4. **Click gem centre** → toggle hard gate.
-5. **Octave label** → drag or step ± octaves (hide when 0).
+5. **Drag gem ↕ or scroll wheel** → step through **all quantised pitches** in the Min…Max window sequentially (0% = Min tonic, 100% = highest in-scale note; **no wrap** at ends).
+6. **Octave label** → drag or step ± octaves (hide when 0).
 
 ### Note pipeline
 
 ```text
-base = scale_degree(degree) + octave_offset * 12
-if gate && roll(trigger_prob): emit(base + jitter(jitter_amount))
+quantised_set = all in-scale MIDI notes from Min tonic … Max (ascending)
+knob index    = position in quantised_set (0 … N-1)
+resolve       = quantised_set[knob index]
+if gate && roll(trigger_prob): emit(resolve + jitter in scale-degree space)
 ```
 
-Jitter applies **after** octave offset, within scale when quantize on.
+**Octave mapping (JUCE engine):** UI label `C#4` → MIDI `(minOctave + 1) * 12 + pitchClass`. Scale degrees use **octave carry** when `root + scaleInterval` crosses 12 (e.g. B# → C at octave boundary).
+
+Jitter applies within the quantised set when quantize is on.
 
 ---
 
@@ -160,9 +165,9 @@ From [Cartesia.cpp](https://github.com/codygeary/CVfunk-Modules/blob/main/src/Ca
 | **Max** | Highest octave — **glass dropdown**; label tonic-relative (e.g. C9) |
 | **Scale** | Chromatic, Major, Minor, Pentatonic, Lydian, Phrygian, … — glass dropdown (`4918:101473`); gem orb image per scale id |
 
-**Tonic change:** Min/Max **labels recalc**; cell `degree` values unchanged; note names refresh.
+**Tonic change:** Min/Max **labels recalc**; cells **re-snap** to nearest quantised pitch when scale window changes.
 
-**Scale / Min / Max change (engine — M9):** Changing scale, tonic, or octave window **re-resolves every cell’s displayed note** on the 4×4 grid. Cell `degree` indices stay fixed; the quantised pitch set and min/max clamp update which note names appear on each gem dial. Knob note labels only show pitches that fall inside the active min…max range for the current scale.
+**Scale / Min / Max change (engine — M9):** Changing scale, tonic, or octave window **re-snaps every cell** to the nearest pitch in the new quantised set. Knob 0% always matches the **Min** picker label (e.g. C#4). Only in-scale note names appear above gems.
 
 Scales stored as mode id; engine maps degrees to pitch classes.
 

@@ -31,9 +31,9 @@ Rescan plugins in Logic / Ableton / Reaper after copying.
 
 ---
 
-## Quick test — Standalone + IAC → GarageBand
+## Quick test — Standalone + IAC → GarageBand (recommended)
 
-Same routing pattern as the GridWalker sandbox:
+**Matilda and GarageBand are two separate apps** — same pattern as GridWalker. A MIDI clip on a GB track does **not** feed Matilda; it plays the instrument directly.
 
 ```text
 Matilda.app  --MIDI OUT-->  IAC Bus 1  --MIDI IN-->  GarageBand instrument track
@@ -45,53 +45,66 @@ Matilda.app  --MIDI OUT-->  IAC Bus 1  --MIDI IN-->  GarageBand instrument track
 2. **GarageBand** → Settings → Audio/MIDI → enable **IAC Driver Bus 1**
 3. **Matilda.app** → **Options → MIDI Output → IAC Driver Bus 1**
 
-### GarageBand transport sync (Standalone)
-
-Enable **Sync GarageBand transport** in Matilda’s footer (on by default).
-
-1. **Audio MIDI Setup** → IAC Driver → Device is online  
-2. **GarageBand** → Settings → Audio/MIDI → enable **IAC Driver Bus 1** (or Bus 2)  
-3. **GarageBand** → Settings → enable **Send MIDI clock** to the same IAC bus  
-4. **Matilda** → Options → **MIDI Output** → IAC Bus 1 (notes to GB)  
-5. **Matilda** → Options → **MIDI Input** → same IAC bus (Start/Stop/Clock from GB)
-
-When GB transport plays, Matilda receives **MIDI Start + Clock** and begins stepping.  
-When GB stops, Matilda receives **MIDI Stop** and sends **all notes off**.
-
-You can still use Matilda’s own Play/Stop when sync is off.
-
 ### Each session
 
-1. Open **Matilda.app** from the build path above (or double-click in Finder).
-2. GarageBand: create a **software instrument** track, **arm** it, press **Play** on the GB transport (optional — GB just needs to receive MIDI).
-3. In Matilda: press the **play gem** (bottom-left). You should hear the default Lydian layer-1 pattern at **120 BPM**, clock **1/16**.
-4. Toggle layers 2–4 in the overview (layer 1 stays on). Each layer completes 16 steps before handing off.
+1. **Match tempo:** GarageBand does **not** send MIDI clock or tempo to external apps — there is no setting for it in GB Preferences. **Double-click the BPM** in Matilda’s footer and set it to your project tempo (e.g. `60`).
+2. Leave **Sync GB transport** **off** (GarageBand cannot drive external transport either).
+3. GarageBand: software instrument track, **arm** it, press **Play** on GB transport (optional — for monitoring).
+4. Matilda: press the **play gem** (Global Settings, bottom-left).
+5. Footer status should show `tick=` increasing (e.g. `step=3 tick=12 · L1 · C lydian`).
 
-### Controls (test UI — Jun 2026 rebuild)
+| Symptom | Fix |
+|---------|-----|
+| BPM stuck at 120 | **Double-click footer BPM** → enter your GB project tempo |
+| `tick=0` not moving | Press **play inside Matilda**; turn **Sync GB transport** off |
+| GB clip plays but no grid | Mute the clip — Matilda sends its own MIDI |
+| Still silent | Confirm IAC in both apps; try a different GB instrument |
 
-Clean code-drawn layout (no Cartesia SVG overlay). Stepic row-major movement — not XYZ.
+### External MIDI transport sync (Logic / Ableton / Reaper only)
 
-| Control | Action |
-|---------|--------|
-| **Play / Stop** | Start/stop sequencer (standalone) |
-| **Clock** combo | 1/64 … 1/4 · triplets (1/12, 1/24, 1/6) · dotted (3/64, 3/32, 3/16, 3/8) |
-| **Play mode** | Transport only (v1) |
-| **Step path** strip | 16 pills — playhead step 0…15 |
-| **Layers** row | `1–4` = active toggle · `E1–E4` = edit layer |
-| **Movement** bar | Forward / Reverse / Ping-pong / Pendulum / Random / Random skip |
-| **Quantise** panel | Tonic · scale (13 modes) · **Min/Max note** (tonic-relative, e.g. C#1…C#9) |
-| **4×4 grid** | Click = gate · scroll = degree · ▲ trigger / ● jitter (drag = %) |
-| **Status** line | tick, step, layer, scale |
+GarageBand **cannot** be a MIDI clock master. For DAWs that support it:
+
+1. Enable **Sync external transport** in Matilda’s footer.
+2. DAW MIDI preferences → enable **MIDI clock** on the IAC bus.
+3. Matilda → Options → **MIDI Input** → same IAC bus.
+
+BPM then follows the host playhead (in-plugin) or incoming MIDI clock (standalone + IAC).
 
 ---
 
-## Plugin in a DAW
+## Plugin in a DAW (FL Studio, Logic, Reaper)
 
 Load **Matilda** as a **MIDI effect** before an instrument (VST3 or AU).
 
-- Sequencer runs when **DAW transport is playing** (host BPM + playhead).
-- Standalone play button is ignored in plugin mode — use the DAW transport.
-- Full patch state (grid, layers, scale, cells) is saved in the project / host preset via Patch v2 JSON inside plugin state.
+| Play mode | When the grid steps |
+|-----------|---------------------|
+| **Note** (default preset) | Matilda play gem armed — internal clock at host BPM |
+| **Transport** | DAW transport playing **and** Matilda play gem armed |
+
+GarageBand does **not** reliably host MIDI-effect plugins in-track — use **Standalone + IAC** above instead.
+
+### FL Studio (BlueARP-style routing)
+
+Same **VST3 MIDI-FX** binary — no separate codebase:
+
+1. **Patcher** — Matilda → generator, wire green MIDI cables; or
+2. **Fruity Wrapper** — Matilda Settings → output port *N*; synth input port *N* (use ports 11+; see BlueARP manual).
+
+Install: `build/Matilda_artefacts/Release/VST3/Matilda.vst3` → `~/Library/Audio/Plug-Ins/VST3/`
+
+---
+
+## Gem knob / scale quantisation
+
+| Behaviour | Detail |
+|-----------|--------|
+| Note list | All in-scale pitches from **Min** tonic through **Max**, ascending |
+| Knob 0% | Matches Min picker (e.g. C#4) |
+| Knob 100% | Highest in-scale note in window |
+| Scroll / drag | Sequential steps; **stops** at ends (no wrap) |
+| Scale change | All cells re-snap to quantised set |
+
+Arp start is **beat-quantized** — first step waits for next downbeat (DAW playhead or internal clock).
 
 ---
 

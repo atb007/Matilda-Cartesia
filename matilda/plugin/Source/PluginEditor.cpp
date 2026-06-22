@@ -48,7 +48,9 @@ MatildaAudioProcessorEditor::MatildaAudioProcessorEditor(MatildaAudioProcessor& 
 
     bpmLabel_.setFont(juce::FontOptions(11.f));
     bpmLabel_.setColour(juce::Label::textColourId, laf_.textMuted);
-    bpmLabel_.setInterceptsMouseClicks(false, false);
+    bpmLabel_.setEditable(true, true, false);
+    bpmLabel_.setTooltip("Double-click to set BPM (GarageBand cannot send tempo to external apps)");
+    bpmLabel_.onEditorHide = [this] { applyBpmFromLabel(); };
     statusLabel_.setFont(juce::FontOptions(10.f));
     statusLabel_.setColour(juce::Label::textColourId, laf_.textMuted.withAlpha(0.65f));
     statusLabel_.setInterceptsMouseClicks(false, false);
@@ -56,9 +58,11 @@ MatildaAudioProcessorEditor::MatildaAudioProcessorEditor(MatildaAudioProcessor& 
     syncToggle_.onClick = [this] {
         processor_.setFollowExternalTransport(syncToggle_.getToggleState());
     };
-    syncToggle_.setVisible(false);
-    statusLabel_.setVisible(false);
-    bpmLabel_.setVisible(false);
+
+    const bool showSandboxChrome = processor_.isStandaloneWrapper() && !matilda::ui::devIsolatedModule();
+    syncToggle_.setVisible(showSandboxChrome);
+    statusLabel_.setVisible(showSandboxChrome);
+    bpmLabel_.setVisible(showSandboxChrome);
 
     addAndMakeVisible(frame_);
     frame_.onViewportSizeChanged = [this](juce::Point<int> sz) {
@@ -113,7 +117,10 @@ void MatildaAudioProcessorEditor::bindCallbacks() {
         transport_.setPlaying(false);
     };
 
-    quantise_.onChanged = [this] { grid_.refresh(); };
+    quantise_.onChanged = [this] {
+        processor_.engine().requantizeAllCells();
+        grid_.refresh();
+    };
 
     overview_.onLayerActivated = [this](int) { grid_.refresh(); overview_.refresh(); };
     overview_.onLayerSelected = [this](int layer) {
@@ -133,12 +140,26 @@ void MatildaAudioProcessorEditor::bindCallbacks() {
 void MatildaAudioProcessorEditor::updateStatusLine() {
     const auto& eng = processor_.engine();
     const auto& patch = processor_.patch();
+    const int step = processor_.isSequencerStepping() ? eng.currentStepIndex() : -1;
+
     statusLabel_.setText(
-        "L" + juce::String(eng.lastPlayingLayer() + 1) + " · " + patch.root + " "
+        "step=" + juce::String(step) + " tick=" + juce::String(eng.masterTick()) + " · L"
+            + juce::String(eng.lastPlayingLayer() + 1) + " · " + patch.root + " "
             + matilda::scaleLabelForMode(patch.mode),
         juce::dontSendNotification);
     bpmLabel_.setText(juce::String(juce::roundToInt(processor_.getBpm())) + " BPM",
                       juce::dontSendNotification);
+}
+
+void MatildaAudioProcessorEditor::applyBpmFromLabel() {
+    auto digits = bpmLabel_.getText().retainCharacters("0123456789");
+    int bpm = digits.getIntValue();
+    if (bpm < 20)
+        bpm = 20;
+    if (bpm > 300)
+        bpm = 300;
+    processor_.setUserBpm(static_cast<double>(bpm));
+    updateStatusLine();
 }
 
 void MatildaAudioProcessorEditor::timerCallback() {
@@ -159,15 +180,17 @@ void MatildaAudioProcessorEditor::timerCallback() {
 }
 
 void MatildaAudioProcessorEditor::layoutChromeOverlays() {
-    if (matilda::ui::devIsolatedModule())
+    if (!processor_.isStandaloneWrapper() || matilda::ui::devIsolatedModule())
         return;
 
     using namespace matilda::react;
 
     const auto shellBounds = frame_.shell().getBounds();
     const int syncH = sx(20.f);
-    syncToggle_.setBounds(shellBounds.getX(), shellBounds.getBottom() - syncH - sx(6.f), sx(180.f), syncH);
-    statusLabel_.setBounds(getWidth() - sx(180.f), getHeight() - syncH - sx(4.f), sx(170.f), syncH);
+    syncToggle_.setBounds(shellBounds.getX(), shellBounds.getBottom() - syncH - sx(6.f), sx(220.f), syncH);
+    bpmLabel_.setBounds(shellBounds.getRight() - sx(78.f), getHeight() - syncH - sx(4.f), sx(72.f), syncH);
+    statusLabel_.setBounds(shellBounds.getX(), getHeight() - syncH - sx(4.f),
+                           shellBounds.getWidth() - sx(80.f), syncH);
 }
 
 void MatildaAudioProcessorEditor::paint(juce::Graphics& g) {

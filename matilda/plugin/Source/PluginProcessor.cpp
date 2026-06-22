@@ -12,6 +12,7 @@ MatildaAudioProcessor::MatildaAudioProcessor()
 void MatildaAudioProcessor::loadStartupPreset() {
     matilda::PatchStore::loadDefaultPreset(patch_);
     engine_.reset();
+    engine_.requantizeAllCells();
 }
 
 void MatildaAudioProcessor::applyPatchJson(const juce::String& json) {
@@ -20,6 +21,7 @@ void MatildaAudioProcessor::applyPatchJson(const juce::String& json) {
         return;
     patch_ = next;
     engine_.reset();
+    engine_.requantizeAllCells();
     sendChangeMessage();
 }
 
@@ -40,20 +42,80 @@ void MatildaAudioProcessor::handleAsyncUpdate() {
 }
 
 void MatildaAudioProcessor::setSequencerRunning(bool running) {
-    sequencerRunning_.store(running);
+    sequencerArmed_.store(running);
     if (!running) {
+        sequencerStepping_.store(false);
+        cancelBeatQuantizedStart();
         sampleClock_ = 0.0;
         useExternalMidiClock_ = false;
         midiClockAccumulator_ = 0;
         panicRequested_.store(true);
     } else {
-        sampleClock_ = 0.0;
         activeNote_ = -1;
         sequencerWasRunning_ = false;
         useExternalMidiClock_ = false;
         midiClockAccumulator_ = 0;
-        engine_.reset();
+        requestBeatQuantizedStart();
     }
+    notifyTransportChanged();
+}
+
+double MatildaAudioProcessor::samplesPerBeat() const {
+    if (sampleRate_ <= 0.0)
+        return 0.0;
+    return sampleRate_ * 60.0 / juce::jmax(20.0, bpm_);
+}
+
+double MatildaAudioProcessor::samplesUntilNextBeat() const {
+    const double spb = samplesPerBeat();
+    if (spb <= 0.0)
+        return 0.0;
+
+    if (auto* playHead = getPlayHead()) {
+        if (auto pos = playHead->getPosition()) {
+            if (auto ppq = pos->getPpqPosition()) {
+                double frac = std::fmod(*ppq, 1.0);
+                if (frac < 0.0)
+                    frac += 1.0;
+                if (frac < 1e-5)
+                    return 0.0;
+                return (1.0 - frac) * spb;
+            }
+        }
+    }
+
+    const double phase = std::fmod(static_cast<double>(standaloneTransportSamples_), spb);
+    if (phase < 1e-5)
+        return 0.0;
+    return spb - phase;
+}
+
+void MatildaAudioProcessor::requestBeatQuantizedStart() {
+    pendingBeatStart_ = true;
+    pendingMidiBeatStart_ = followExternalTransport_.load() && isStandaloneWrapper();
+    pendingStartSampleCountdown_ = samplesUntilNextBeat();
+    midiClockAccumulator_ = 0;
+    if (pendingStartSampleCountdown_ <= 0.0)
+        pendingStartSampleCountdown_ = 0.0;
+}
+
+void MatildaAudioProcessor::cancelBeatQuantizedStart() {
+    pendingBeatStart_ = false;
+    pendingMidiBeatStart_ = false;
+    pendingStartSampleCountdown_ = 0.0;
+}
+
+void MatildaAudioProcessor::beginSequencerOnBeat(juce::MidiBuffer& midi, int samplePos) {
+    pendingBeatStart_ = false;
+    pendingMidiBeatStart_ = false;
+    pendingStartSampleCountdown_ = 0.0;
+    sampleClock_ = 0.0;
+    midiClockAccumulator_ = 0;
+    activeNote_ = -1;
+    engine_.reset();
+    sequencerStepping_.store(true);
+    sequencerWasRunning_ = true;
+    advanceSequencerStep(midi, samplePos);
     notifyTransportChanged();
 }
 
@@ -120,11 +182,65 @@ void MatildaAudioProcessor::advanceSequencerStep(juce::MidiBuffer& midi, int sam
         emitStepNote(midi, samplePos);
 }
 
+void MatildaAudioProcessor::setUserBpm(double bpm) {
+    userBpm_ = juce::jlimit(20.0, 300.0, bpm);
+    if (externalTempoHoldBlocks_ <= 0)
+        bpm_ = userBpm_;
+    notifyTransportChanged();
+}
+
+void MatildaAudioProcessor::markExternalTempo(double bpm) {
+    bpm_ = juce::jlimit(20.0, 300.0, bpm);
+    externalTempoHoldBlocks_ = kExternalTempoHoldBlocks;
+}
+
+void MatildaAudioProcessor::finalizeTempoForBlock() {
+    if (externalTempoHoldBlocks_ > 0) {
+        --externalTempoHoldBlocks_;
+        return;
+    }
+    bpm_ = userBpm_;
+}
+
+void MatildaAudioProcessor::updateTempoFromPlayHead() {
+    if (auto* playHead = getPlayHead()) {
+        if (auto pos = playHead->getPosition()) {
+            if (auto hostBpm = pos->getBpm()) {
+                const double bpm = *hostBpm;
+                if (bpm >= 20.0 && bpm <= 300.0)
+                    markExternalTempo(bpm);
+            }
+        }
+    }
+}
+
+void MatildaAudioProcessor::updateTempoFromMidiClockInterval(int samplesSinceLastClock) {
+    if (samplesSinceLastClock <= 0 || sampleRate_ <= 0.0)
+        return;
+
+    const double secondsPerClock = static_cast<double>(samplesSinceLastClock) / sampleRate_;
+    if (secondsPerClock <= 0.0)
+        return;
+
+    const double estimated = 60.0 / (secondsPerClock * 24.0);
+    if (estimated >= 20.0 && estimated <= 300.0)
+        markExternalTempo(bpm_ * 0.65 + estimated * 0.35);
+}
+
+void MatildaAudioProcessor::scanIncomingMidiForTempo(const juce::MidiBuffer& incoming) {
+    for (const auto metadata : incoming) {
+        if (metadata.getMessage().isMidiClock()) {
+            updateTempoFromMidiClockInterval(midiClockSampleCounter_);
+            midiClockSampleCounter_ = 0;
+        }
+    }
+}
+
 void MatildaAudioProcessor::handleIncomingMidi(const juce::MidiBuffer& incoming, juce::MidiBuffer& outgoing) {
     if (!followExternalTransport_.load())
         return;
 
-    const bool isStandalone = (wrapperType == juce::AudioProcessor::wrapperType_Standalone);
+    const bool isStandalone = isStandaloneWrapper();
     if (!isStandalone)
         return;
 
@@ -132,10 +248,23 @@ void MatildaAudioProcessor::handleIncomingMidi(const juce::MidiBuffer& incoming,
         const auto msg = metadata.getMessage();
 
         if (msg.isMidiClock()) {
-            if (!sequencerRunning_.load())
+            if (!sequencerArmed_.load())
                 continue;
 
             useExternalMidiClock_ = true;
+
+            if (pendingMidiBeatStart_) {
+                ++midiClockAccumulator_;
+                if (midiClockAccumulator_ < 24)
+                    continue;
+                midiClockAccumulator_ = 0;
+                beginSequencerOnBeat(outgoing, 0);
+                continue;
+            }
+
+            if (!sequencerStepping_.load())
+                continue;
+
             ++midiClockAccumulator_;
             if (midiClockAccumulator_ < midiClocksPerStep())
                 continue;
@@ -146,23 +275,23 @@ void MatildaAudioProcessor::handleIncomingMidi(const juce::MidiBuffer& incoming,
         }
 
         if (msg.isMidiStart() || msg.isMidiContinue()) {
-            if (!sequencerRunning_.load()) {
-                midiClockAccumulator_ = 0;
+            midiClockSampleCounter_ = 0;
+            if (!sequencerArmed_.load()) {
                 sampleClock_ = 0.0;
                 activeNote_ = -1;
-                engine_.reset();
-                // Lock to MIDI clock immediately so internal sample clock cannot double-step.
                 useExternalMidiClock_ = true;
-                sequencerRunning_.store(true);
-                sequencerWasRunning_ = true;
+                sequencerArmed_.store(true);
+                requestBeatQuantizedStart();
                 notifyTransportChanged();
             }
             continue;
         }
 
         if (msg.isMidiStop()) {
-            if (sequencerRunning_.load()) {
-                sequencerRunning_.store(false);
+            if (sequencerArmed_.load() || sequencerStepping_.load()) {
+                sequencerArmed_.store(false);
+                sequencerStepping_.store(false);
+                cancelBeatQuantizedStart();
                 useExternalMidiClock_ = false;
                 midiClockAccumulator_ = 0;
                 panicRequested_.store(true);
@@ -173,36 +302,64 @@ void MatildaAudioProcessor::handleIncomingMidi(const juce::MidiBuffer& incoming,
 }
 
 void MatildaAudioProcessor::processSequencer(juce::MidiBuffer& midi, int numSamples) {
-    const bool isStandalone = (wrapperType == juce::AudioProcessor::wrapperType_Standalone);
+    const bool isStandalone = isStandaloneWrapper();
 
     bool hostPlaying = false;
     if (auto* playHead = getPlayHead()) {
-        if (auto pos = playHead->getPosition()) {
+        if (auto pos = playHead->getPosition())
             hostPlaying = pos->getIsPlaying();
-            if (!isStandalone && pos->getBpm())
-                bpm_ = *pos->getBpm();
-        }
     }
 
-    if (isStandalone)
-        bpm_ = kStandaloneBpm;
+    const bool armed = sequencerArmed_.load();
 
-    const bool shouldRun = isStandalone ? sequencerRunning_.load() : hostPlaying;
+    // DAW transport start in Transport mode — quantize to next downbeat.
+    if (!isStandalone && patch_.playMode == matilda::PlayMode::Transport && armed
+        && hostPlaying && !hostWasPlaying_) {
+        cancelBeatQuantizedStart();
+        requestBeatQuantizedStart();
+    }
+    hostWasPlaying_ = hostPlaying;
+
+    // GridWalker parity — Standalone+IAC: when sync is on, MIDI clock drives steps.
+    if (isStandalone && followExternalTransport_.load() && armed)
+        return;
+
+    bool shouldRun = false;
+    if (isStandalone || patch_.playMode == matilda::PlayMode::Note) {
+        shouldRun = armed;
+    } else {
+        shouldRun = armed && hostPlaying;
+    }
+
     if (!shouldRun) {
-        if (sequencerWasRunning_ || activeNote_ >= 0) {
+        if (sequencerWasRunning_ || sequencerStepping_.load() || activeNote_ >= 0) {
+            sequencerStepping_.store(false);
+            cancelBeatQuantizedStart();
             panicNotes(midi, 0);
             sequencerWasRunning_ = false;
         }
         return;
     }
 
+    if (pendingBeatStart_) {
+        if (pendingStartSampleCountdown_ >= static_cast<double>(numSamples)) {
+            pendingStartSampleCountdown_ -= static_cast<double>(numSamples);
+            return;
+        }
+
+        const int offset = juce::jlimit(0, numSamples - 1,
+                                        static_cast<int>(std::lround(pendingStartSampleCountdown_)));
+        beginSequencerOnBeat(midi, offset);
+        sampleClock_ = static_cast<double>(numSamples - offset);
+        return;
+    }
+
+    if (!sequencerStepping_.load())
+        return;
+
     sequencerWasRunning_ = true;
 
     if (sampleRate_ <= 0.0 || numSamples <= 0)
-        return;
-
-    // When GarageBand is sending MIDI clock, steps are driven in handleIncomingMidi().
-    if (useExternalMidiClock_ && isStandalone)
         return;
 
     const double stepSamples = samplesPerStep(numSamples);
@@ -222,12 +379,19 @@ void MatildaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     juce::MidiBuffer incoming;
     incoming.swapWith(midi);
 
+    midiClockSampleCounter_ += buffer.getNumSamples();
+    scanIncomingMidiForTempo(incoming);
+    updateTempoFromPlayHead();
+
     handleIncomingMidi(incoming, midi);
+
+    standaloneTransportSamples_ += buffer.getNumSamples();
 
     if (panicRequested_.exchange(false))
         panicNotes(midi, 0);
 
     processSequencer(midi, buffer.getNumSamples());
+    finalizeTempoForBlock();
 }
 
 juce::AudioProcessorEditor* MatildaAudioProcessor::createEditor() {
@@ -238,6 +402,7 @@ void MatildaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
     juce::ValueTree state("MatildaState");
     state.setProperty("patchJson", matilda::PatchStore::patchToJson(patch_), nullptr);
     state.setProperty("followExternalTransport", followExternalTransport_.load(), nullptr);
+    state.setProperty("userBpm", userBpm_, nullptr);
     if (auto xml = state.createXml())
         copyXmlToBinary(*xml, destData);
 }
@@ -246,7 +411,8 @@ void MatildaAudioProcessor::setStateInformation(const void* data, int sizeInByte
     if (auto xml = getXmlFromBinary(data, sizeInBytes)) {
         const auto vt = juce::ValueTree::fromXml(*xml);
         const auto json = vt.getProperty("patchJson", {}).toString();
-        followExternalTransport_.store(static_cast<bool>(vt.getProperty("followExternalTransport", true)));
+        followExternalTransport_.store(static_cast<bool>(vt.getProperty("followExternalTransport", false)));
+        setUserBpm(static_cast<double>(vt.getProperty("userBpm", kFallbackBpm)));
         if (json.isNotEmpty())
             applyPatchJson(json);
         else {

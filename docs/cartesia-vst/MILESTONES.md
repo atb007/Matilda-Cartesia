@@ -196,7 +196,8 @@ Wire transport, playhead, layer scheduler, quantise scale resolution, and preset
 | Default preset load (`default.layer1.json`) | ✅ |
 | Scale/tonic/min/max → knob note label re-resolution | ✅ |
 | JUCE — scale-aware MIDI + playhead step tracking | ✅ |
-| JUCE — full UI port from `cartesia-vst-ui` (hero, glass shell) | ⬜ |
+| JUCE — transport / tempo / host sync | 🔄 GB standalone ✅; in-DAW matrix pending |
+| JUCE — full UI port from `cartesia-vst-ui` (hero, glass shell) | ✅ M8b frozen |
 | Preset save/load in JUCE + web | ⬜ |
 | Web Audio / Web MIDI preview output | ⬜ |
 
@@ -321,4 +322,138 @@ React reference: `ScalePanel.tsx` · Figma `4976:3937` · isolated dev view `Dev
 **Problem (fixed):** `ShellChrome` painted at design px inside scaled shell — frame overlapped knobs.
 
 **Dev view:** `DevView::M7_ShellChrome` — isolate chrome alignment before `FullShell`.
+
+---
+
+## Host / transport integration (`matilda/plugin/` — Jun 17–18, 2026)
+
+First end-to-end MIDI playback path validated. GarageBand exposed hard platform limits; multi-DAW testing is the next gate before locking host architecture.
+
+### What works today
+
+| Piece | Status | Notes |
+|-------|--------|-------|
+| Standalone → IAC → GB instrument track | ✅ | Matilda MIDI **out** to GB; grid steps, notes audible |
+| Play gem arms sequencer | ✅ | Note mode (default preset) — internal sample clock |
+| Transport gating (GridWalker parity) | ✅ | Standalone sync off = Matilda play; sync on = external MIDI clock steps |
+| Host playhead BPM (in-plugin) | ✅ | Logic / Ableton / Reaper / FL / Bitwig when loaded as MIDI effect |
+| Manual BPM (standalone footer) | ✅ | Double-click footer BPM; persisted in plugin state |
+| MIDI clock BPM estimate | ✅ | When a DAW sends clock on IAC input |
+| `play_mode` in preset JSON | ✅ | `note` \| `transport` parsed/saved |
+| Debug footer (standalone) | ✅ | `step=` / `tick=` / layer / scale + BPM + sync toggle |
+| Git repo on GitHub | ✅ | `origin/main` — HTTPS remote |
+
+**Key files:** `PluginProcessor.cpp/h`, `PluginEditor.cpp`, `PatchStore.cpp`, `matilda/plugin/README.md`
+
+### GarageBand findings (blockers documented)
+
+GarageBand is a valid **MIDI sink** (receives Matilda notes via IAC) but **cannot** be a MIDI master for external apps:
+
+| Capability | GarageBand | Implication |
+|------------|------------|-------------|
+| MIDI out (notes) to IAC | ✅ (Matilda → GB) | Recommended workflow |
+| MIDI clock / transport out | ❌ | No "Send MIDI clock" preference exists |
+| Host BPM to external app | ❌ | Matilda cannot auto-read GB project tempo |
+| In-track MIDI effect plugin | ⚠️ unreliable | Use Standalone + IAC instead |
+
+**Workaround (current):** Match tempo manually — double-click Matilda footer BPM to GB transport-bar tempo (e.g. 60). Keep **Sync external transport** off. Press play in Matilda.
+
+### Transport / tempo model (current)
+
+```text
+                    ┌─────────────────────────────────────┐
+                    │           MatildaAudioProcessor      │
+                    └─────────────────────────────────────┘
+                                      │
+          ┌───────────────────────────┼───────────────────────────┐
+          │                           │                           │
+   Host playhead BPM            MIDI clock (24 ppq)          userBpm_ (manual)
+   (plugin in DAW)              (standalone + IAC)           (standalone + GB)
+          │                           │                           │
+          └───────────────────────────┴───────────────────────────┘
+                                      │
+                              effective bpm_ → sample clock
+```
+
+| Mode | Stepping | Tempo source |
+|------|----------|--------------|
+| Standalone, sync **off**, play gem | Internal sample clock | `userBpm_` (or clock/playhead if present) |
+| Standalone, sync **on**, play gem | Incoming MIDI Start/Clock on IAC | Clock interval + playhead |
+| Plugin, `play_mode: note` | Play gem armed | Host playhead BPM |
+| Plugin, `play_mode: transport` | DAW playing **and** play gem armed | Host playhead BPM |
+
+Default: `followExternalTransport_ = false` (GB-safe). `userBpm_` defaults to 120.
+
+**Beat-quantized start (Jun 18, 2026):** Play (DAW transport or Matilda play gem) arms the sequencer but the **first arp step waits for the next downbeat** — host PPQ when in-plugin, internal beat phase when standalone, 24 MIDI clocks when external sync is on. Stop is immediate.
+
+### Engine QOL — pitch / knob (Jun 18, 2026)
+
+| Piece | Status | Notes |
+|-------|--------|-------|
+| Scale-quantised note list | ✅ | All in-scale MIDI notes between Min…Max, ascending |
+| Min octave = knob 0% | ✅ | Display octave matches UI (`minOctave + 1` MIDI base) |
+| Octave-boundary carry | ✅ | B#→C crossings (e.g. A#5 → C6 → C#6) without jumps |
+| Knob arc 0…100% | ✅ | Full window mapped to indicator arc; no wrap at ends |
+| Drag + scroll | ✅ | ~154px full turn; trackpad accumulator; clamp at min/max |
+| Re-quantise on scale change | ✅ | Tonic / scale / min / max snaps all cells |
+
+**Key files:** `SequencerEngine.cpp/h`, `GemCell.cpp/h`, `KnobDrawing.h`
+
+**FL Studio / BlueARP routing:** No separate codebase — VST3 MIDI-FX + host port wiring (see `BLUEARP-ENHANCEMENTS.md`, `ARCHITECTURE.md`).
+
+---
+
+## DAW compatibility — test matrix (not yet run)
+
+Use this checklist before freezing host architecture. Build outputs: VST3 + AU + Standalone (`matilda/plugin/README.md`).
+
+| DAW | Load as | Transport sync | Auto BPM | MIDI out to instrument | Priority | Status |
+|-----|---------|----------------|----------|------------------------|----------|--------|
+| **GarageBand** | Standalone + IAC | ❌ external master | Manual BPM | ✅ | P0 (done) | ✅ smoke-tested |
+| **Logic Pro** | AU MIDI effect | ? | Host playhead | In-chain | P1 | ⬜ |
+| **Ableton Live** | VST3 MIDI effect | ? | Host playhead | In-chain | P1 | ⬜ |
+| **Bitwig** | VST3 / CLAP? | ? | Host playhead | In-chain | P1 | ⬜ |
+| **FL Studio** | VST3 MIDI effect | Host playhead | Fruity Wrapper ports or Patcher | P1 | ⬜ built, untested |
+| **Reaper** | VST3 / AU | ? | Host playhead | In-chain | P2 | ⬜ |
+
+**Per-DAW test script (copy for each row):**
+
+1. Install `Matilda.vst3` / `Matilda.component`; rescan plugins.
+2. New project @ **60 BPM**; add instrument track; insert Matilda **before** instrument.
+3. Arm Matilda play gem → confirm footer/host shows **60 BPM** (not 120).
+4. DAW transport play → grid steps (`play_mode: transport`) or gem-only (`play_mode: note`).
+5. Confirm MIDI reaches instrument; no stuck notes on stop.
+6. Save/reload session → patch + BPM + sync state restored.
+7. *(Optional)* Standalone + IAC: enable DAW MIDI clock on bus; toggle sync on; confirm steps follow DAW transport.
+
+Record pass/fail + quirks in a row below or in `matilda/plugin/README.md`.
+
+---
+
+## Open architecture questions (Jun 18, 2026)
+
+Not decided — keep flexible until P1 DAW matrix is complete.
+
+| Question | Options | Leaning |
+|----------|---------|---------|
+| **Primary deployment** | A) In-DAW plugin only · B) Standalone + IAC only · C) Both first-class | **C** — GB forces Standalone; pro DAWs prefer in-plugin |
+| **Tempo when host can't sync** | Manual BPM · Tap tempo · Audio click follower | **Manual BPM** shipped; tap/audio later |
+| **Default play mode** | `note` (gem gates clock) vs `transport` (DAW + gem) | **`note`** for GB standalone; document per-DAW |
+| **Sync toggle default** | On (Logic/Ableton) vs Off (GB) | **Off** — safe default; enable when clock confirmed |
+| **Plugin format priority** | AU (Logic) · VST3 (Win/cross) · CLAP (Bitwig) | AU + VST3 now; CLAP if Bitwig needs it |
+| **MIDI effect vs instrument wrapper** | Pure MIDI FX vs silent instrument shell | **MIDI FX** — matches spec; verify each host accepts it |
+| **Web UI vs native JUCE** | Finish JUCE port vs embed WebView | **JUCE** — M8b shell frozen natively; no WebView for v1 |
+| **State persistence** | Host preset only vs `.matilda` file export | Host preset + JSON in state blob (partial ✅) |
+
+### Possible architecture shifts (if DAW tests fail)
+
+- **Instrument shell** — some hosts reject MIDI-only plugins; wrap as instrument with dummy audio pass-through.
+- **Dedicated clock bus** — separate IAC port for clock vs note data (avoid feedback loops).
+- **Per-host play mode presets** — e.g. `garageband-standalone.json` vs `logic-transport.json`.
+- **Remove sync toggle from shipping UI** — dev-only when only Logic users need it; or rename + contextual help per host.
+- **Bidirectional sync** — Matilda as clock master (Ableton slave) — only if product needs it.
+
+---
+
+*Milestones v1 · pairs with `SPEC.md` and `FIGMA-CHECKLIST.md` · M8b final Jun 11, 2026 · host + engine QOL Jun 18, 2026*
 

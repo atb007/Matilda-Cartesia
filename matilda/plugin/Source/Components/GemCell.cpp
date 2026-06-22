@@ -115,7 +115,7 @@ void GemCell::paint(juce::Graphics& g) {
     const float stageBright = cartesia::lighting::stageBrightness(state);
 
     matilda::knob::drawSequencerKnob(g, knob, variant, cell_->gate,
-                                     engine_.knobVisualIndex(*cell_), stageBright);
+                                     engine_.knobVisualPosition(*cell_), stageBright);
 
     if (!mini_) {
         const juce::String lbl = engine_.noteLabel(layer_, cellX_, cellY_);
@@ -198,6 +198,7 @@ void GemCell::mouseDown(const juce::MouseEvent& e) {
         dragTarget_ = DragTarget::Degree;
         dragStartY_ = e.getPosition().y;
         dragStartQuantisedIndex_ = engine_.quantisedNoteIndex(*cell_);
+        wheelAccumulator_ = 0.f;
         dragMoved_ = false;
     }
     updateMouseCursor(p);
@@ -221,10 +222,18 @@ void GemCell::mouseDrag(const juce::MouseEvent& e) {
         notifyChanged();
     } else if (dragTarget_ == DragTarget::Degree) {
         const int dy = dragStartY_ - e.getPosition().y;
-        if (std::abs(dy) > 3)
+        if (std::abs(dy) > 2)
             dragMoved_ = true;
+
+        const int noteCount = engine_.quantisedNoteCount();
+        if (noteCount <= 1)
+            return;
+
+        constexpr float kPixelsPerFullTurn = 11.f * 14.f;
+        const int delta = juce::roundToInt(static_cast<float>(dy) * static_cast<float>(noteCount - 1)
+                                           / kPixelsPerFullTurn);
         const int before = engine_.quantisedNoteIndex(*cell_);
-        engine_.setQuantisedNoteIndex(*cell_, dragStartQuantisedIndex_ + dy / 14);
+        engine_.setQuantisedNoteIndex(*cell_, dragStartQuantisedIndex_ + delta);
         if (engine_.quantisedNoteIndex(*cell_) != before)
             notifyChanged();
     }
@@ -247,9 +256,17 @@ void GemCell::mouseUp(const juce::MouseEvent& e) {
 }
 
 void GemCell::mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel) {
-    juce::ignoreUnused(e);
-    if (!cell_ || mini_) return;
-    const int delta = wheel.deltaY > 0 ? -1 : 1;
-    engine_.bumpCellDegree(*cell_, delta);
+    if (!cell_ || mini_ || !cell_->gate)
+        return;
+    if (!hitGemCentre(e.position))
+        return;
+
+    wheelAccumulator_ += wheel.deltaY;
+    const int steps = static_cast<int>(std::trunc(wheelAccumulator_));
+    if (steps == 0)
+        return;
+
+    wheelAccumulator_ -= static_cast<float>(steps);
+    engine_.bumpCellDegree(*cell_, -steps);
     notifyChanged();
 }

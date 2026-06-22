@@ -9,8 +9,15 @@ Product UI codename from Figma: **Matilda**.
 |-----|---------|
 | [SPEC.md](../docs/cartesia-vst/SPEC.md) | Product + engine spec (source of truth) |
 | [DESIGN.md](../docs/cartesia-vst/DESIGN.md) | UI layout, cell interactions, Figma links |
+| [MILESTONES.md](../docs/cartesia-vst/MILESTONES.md) | UI milestones + **host/DAW progress log** |
 | [ARCHITECTURE.md](../docs/cartesia-vst/ARCHITECTURE.md) | Repo layout, phases, module map |
 | [FIGMA-CHECKLIST.md](../docs/cartesia-vst/FIGMA-CHECKLIST.md) | Component handoff checklist |
+
+### Current focus (Jun 18, 2026)
+
+- **Done:** UI shell (M1–M8b), transport/BPM, beat-quantized start, scale-quantised gem knobs, VST3/AU/Standalone builds
+- **GarageBand:** Standalone + IAC + manual BPM (no host tempo sync)
+- **Next:** DAW test matrix — FL Studio, Logic, Ableton, Bitwig ([MILESTONES.md](../docs/cartesia-vst/MILESTONES.md))
 
 ## Figma
 

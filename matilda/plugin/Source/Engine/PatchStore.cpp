@@ -105,7 +105,7 @@ juce::String PatchStore::patchToJson(const PatchState& patch) {
     root->setProperty("min_octave", patch.minOctave);
     root->setProperty("max_octave", patch.maxOctave);
     root->setProperty("master_division", patch.masterDivision);
-    root->setProperty("play_mode", "transport");
+    root->setProperty("play_mode", patch.playMode == PlayMode::Note ? "note" : "transport");
     root->setProperty("play_on_transport", false);
     root->setProperty("selected_layer", patch.selectedLayer);
     root->setProperty("poly_voices", 1);
@@ -131,6 +131,9 @@ bool PatchStore::patchFromJson(const juce::String& json, PatchState& out) {
     out.masterDivision = static_cast<double>(parsed.getProperty("master_division", 1.0 / 16.0));
     out.selectedLayer = juce::jlimit(0, kLayerCount - 1,
                                      static_cast<int>(parsed.getProperty("selected_layer", 0)));
+
+    const auto playModeStr = parsed.getProperty("play_mode", "note").toString().toLowerCase();
+    out.playMode = playModeStr == "transport" ? PlayMode::Transport : PlayMode::Note;
 
     const auto layers = parsed.getProperty("layers", {});
     if (layers.isArray()) {

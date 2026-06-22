@@ -35,6 +35,7 @@ private:
     int dragStartY_ = 0;
     int dragStartQuantisedIndex_ = 0;
     bool dragMoved_ = false;
+    float wheelAccumulator_ = 0.f;
 
     juce::Rectangle<float> knobBounds() const;
     juce::Rectangle<float> ledBounds() const;

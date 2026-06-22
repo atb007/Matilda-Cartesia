@@ -27,8 +27,9 @@ public:
     [[nodiscard]] int quantisedNoteIndex(const CellState& cell) const;
     /** Set cell pitch from an index into quantisedMidisInWindow (clamped). */
     void setQuantisedNoteIndex(CellState& cell, int index) const;
-    /** Map current pitch to 0…11 for the gem indicator arc across the full window. */
-    [[nodiscard]] int knobVisualIndex(const CellState& cell) const;
+    [[nodiscard]] int quantisedNoteCount() const;
+    [[nodiscard]] float knobVisualPosition(const CellState& cell) const;
+    void requantizeAllCells();
     [[nodiscard]] bool lastStepFired() const { return lastFired_; }
     [[nodiscard]] int lastStepIndex() const { return lastStepIndex_; }
     [[nodiscard]] int currentStepIndex() const;
@@ -51,7 +52,7 @@ private:
     void reconcilePlayingLayer();
     void advancePath(LayerState& layer);
     void maybeSwitchLayer();
-    [[nodiscard]] int resolveMidi(const CellState& cell) const;
+    [[nodiscard]] int computeCandidateMidi(const CellState& cell) const;
     [[nodiscard]] bool rollTrigger(const CellState& cell) const;
     [[nodiscard]] static std::pair<int, int> indexToXY(int index);
     [[nodiscard]] std::vector<int> quantisedMidisInWindow() const;

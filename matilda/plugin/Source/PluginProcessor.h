@@ -39,8 +39,15 @@ public:
     matilda::SequencerEngine& engine() { return engine_; }
 
     void setSequencerRunning(bool running);
-    [[nodiscard]] bool isSequencerRunning() const { return sequencerRunning_.load(); }
+    [[nodiscard]] bool isSequencerRunning() const { return sequencerArmed_.load(); }
+    [[nodiscard]] bool isSequencerStepping() const { return sequencerStepping_.load(); }
+    [[nodiscard]] bool isStandaloneWrapper() const {
+        return wrapperType == juce::AudioProcessor::wrapperType_Standalone;
+    }
     [[nodiscard]] double getBpm() const { return bpm_; }
+    [[nodiscard]] double getUserBpm() const { return userBpm_; }
+    void setUserBpm(double bpm);
+    [[nodiscard]] bool hasExternalTempo() const { return externalTempoHoldBlocks_ > 0; }
     [[nodiscard]] bool followExternalTransport() const { return followExternalTransport_.load(); }
     void setFollowExternalTransport(bool enabled);
 
@@ -51,28 +58,49 @@ private:
     matilda::PatchState patch_;
     matilda::SequencerEngine engine_;
 
-    std::atomic<bool> sequencerRunning_{false};
+    std::atomic<bool> sequencerArmed_{false};
+    std::atomic<bool> sequencerStepping_{false};
     std::atomic<bool> panicRequested_{false};
-    std::atomic<bool> followExternalTransport_{true};
+    std::atomic<bool> followExternalTransport_{false};
 
     double sampleRate_ = 44100.0;
     double sampleClock_ = 0.0;
-    double bpm_ = 120.0;
+    double bpm_ = kFallbackBpm;
+    double userBpm_ = kFallbackBpm;
+    int externalTempoHoldBlocks_ = 0;
     int activeNote_ = -1;
     bool sequencerWasRunning_ = false;
+    bool hostWasPlaying_ = false;
+    bool pendingBeatStart_ = false;
+    bool pendingMidiBeatStart_ = false;
+    double pendingStartSampleCountdown_ = 0.0;
+    int64_t standaloneTransportSamples_ = 0;
 
     bool useExternalMidiClock_ = false;
     int midiClockAccumulator_ = 0;
+    int midiClockSampleCounter_ = 0;
 
     static constexpr int kMidiChannel = 1;
     static constexpr int kMaxTicksPerBlock = 1;
-    static constexpr double kStandaloneBpm = 120.0;
+    static constexpr double kFallbackBpm = 120.0;
+    static constexpr int kExternalTempoHoldBlocks = 220;
 
     void handleAsyncUpdate() override;
 
     [[nodiscard]] int midiClocksPerStep() const;
     [[nodiscard]] double samplesPerStep(int numSamples) const;
 
+    void updateTempoFromPlayHead();
+    void updateTempoFromMidiClockInterval(int samplesSinceLastClock);
+    void scanIncomingMidiForTempo(const juce::MidiBuffer& incoming);
+    void markExternalTempo(double bpm);
+    void finalizeTempoForBlock();
+
+    [[nodiscard]] double samplesPerBeat() const;
+    [[nodiscard]] double samplesUntilNextBeat() const;
+    void requestBeatQuantizedStart();
+    void cancelBeatQuantizedStart();
+    void beginSequencerOnBeat(juce::MidiBuffer& midi, int samplePos);
     void panicNotes(juce::MidiBuffer& midi, int samplePos);
     void sendNoteOff(juce::MidiBuffer& midi, int note, int samplePos);
     void emitStepNote(juce::MidiBuffer& midi, int samplePos);

@@ -72,6 +72,23 @@ MatildaPluginFrame (scale 0.52 preview)
 └─────────────────────────────────────────┘
 ```
 
+### Host deployment modes (Jun 2026)
+
+Matilda ships three binaries from one codebase: **Standalone**, **VST3**, **AU**. Host behaviour is not uniform — see [MILESTONES.md — Host / transport integration](./MILESTONES.md#host--transport-integration-matildaplugin--jun-1718-2026).
+
+| Deployment | Best for | Tempo | Transport |
+|------------|----------|-------|-----------|
+| **Standalone + IAC** | GarageBand (no in-track MIDI FX) | Manual BPM or MIDI clock from DAW | Matilda play gem; optional external sync |
+| **In-DAW plugin** | Logic, Ableton, Bitwig, FL Studio, Reaper | Host playhead BPM | `play_mode`: note or transport |
+
+**GarageBand constraint:** GB receives MIDI from Matilda via IAC but cannot send MIDI clock or project tempo to external apps. Do not assume auto-BPM sync with GB.
+
+**Next gate:** Run the [DAW compatibility test matrix](./MILESTONES.md#daw-compatibility--test-matrix-not-yet-run) before locking transport architecture.
+
+### Pitch quantisation (Jun 2026)
+
+`SequencerEngine` builds a sorted list of in-scale MIDI notes between the Min and Max pickers. Gem knobs index into this list (not raw semitones). Octave labels use `minOctave + 1` as the MIDI octave base so UI `C#4` matches knob 0%. Knob drag/scroll clamps at min/max — no wrap.
+
 Python prototype (`cartesia/`) mirrors engine logic for fast iteration without rebuilding JUCE.
 
 ---
@@ -84,7 +101,7 @@ Python prototype (`cartesia/`) mirrors engine logic for fast iteration without r
 | `movement.PathState` | step_index, direction, mode-specific advance |
 | `movement.advance(mode, state, skip_prob)` | Next index 0…15 |
 | `engine.SequencerEngine` | Tick → layer queue → cell → MIDI event |
-| `engine.resolve_pitch(cell, patch)` | degree + octave + jitter + scale |
+| `engine.resolve_pitch(cell, patch)` | degree + octave + jitter + scale → MIDI note from quantised window |
 | `engine.roll_trigger(cell)` | gate + trigger_prob |
 
 ---
@@ -127,7 +144,9 @@ Each layer maintains its own `PathState` (step index, ping-pong direction, rando
 | **1** | Python engine: movement modes + layer 1 MIDI |
 | **2** | JUCE shell: `cartesia-vst-ui` prototype (M1–M8b ✅) ported to JUCE + layer 1 playback |
 | **3** | Layers 2–4 sequential + edit-while-playing |
-| **4** | External chrome wiring · play on transport |
+| Phase | Deliverable |
+|-------|-------------|
+| **4** | External chrome wiring · play on transport | 🔄 GB standalone ✅; beat-quantized start ✅; knob quantise ✅; multi-DAW matrix pending |
 | **B** | XYZ clock divisions · polyphony · randomize modal |
 | **UI+** | Rive hero animation · state machine wired to transport/playback (deferred) |
 
@@ -152,4 +171,4 @@ New binary name: **Matilda** (avoid Cartesia trademark in shipping build).
 
 ---
 
-*Architecture v1 · UI prototype M8b complete Jun 2026*
+*Architecture v1 · UI prototype M8b complete Jun 2026 · host integration notes Jun 18, 2026*

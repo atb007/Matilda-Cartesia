@@ -44,7 +44,7 @@ inline void drawImageCentred(juce::Graphics& g,
 
 inline void drawIndicatorTick(juce::Graphics& g,
                               juce::Rectangle<float> knobBounds,
-                              int noteIndex,
+                              float notePosition,
                               bool gateOn) {
     if (!gateOn)
         return;
@@ -54,7 +54,7 @@ inline void drawIndicatorTick(juce::Graphics& g,
     const float sphereR = knobBounds.getWidth() * 0.5f;
     const float innerR = sphereR * 0.55f;
     const float outerR = sphereR * 0.90f;
-    const float idx = juce::jlimit(0, 11, noteIndex);
+    const float idx = juce::jlimit(0.f, 11.f, notePosition);
     const float angleDeg = -135.f + (idx / 11.f) * 270.f;
     const float rad = juce::degreesToRadians(angleDeg);
     const float sx = cx + std::sin(rad) * innerR;
@@ -72,7 +72,7 @@ inline void drawSequencerKnob(juce::Graphics& g,
                             juce::Rectangle<float> bounds,
                             Variant variant,
                             bool gateOn,
-                            int noteIndex,
+                            float notePosition,
                             float stageBrightness) {
     if (stageBrightness > 0.f) {
         const auto glow = matilda::images::knobStageGlow();
@@ -110,7 +110,7 @@ inline void drawSequencerKnob(juce::Graphics& g,
         g.fillEllipse(sphereBounds);
     }
 
-    drawIndicatorTick(g, bounds, noteIndex, gateOn);
+    drawIndicatorTick(g, bounds, notePosition, gateOn);
 }
 
 inline juce::Point<float> miniPointAt(float cx, float cy, float r, float degFrom12) {
