@@ -90,6 +90,18 @@ juce_add_binary_data(MatildaAssets
         ../../cartesia-vst-ui/public/assets/minigrid-blue-on.png
         ../../cartesia-vst-ui/public/assets/minigrid-blue-off.png
         ../../cartesia-vst-ui/public/assets/scale-gem-chromatic.png
+        ../../cartesia-vst-ui/public/assets/scale-gem-major.png
+        ../../cartesia-vst-ui/public/assets/scale-gem-minor.png
+        ../../cartesia-vst-ui/public/assets/scale-gem-dorian.png
+        ../../cartesia-vst-ui/public/assets/scale-gem-phrygian.png
+        ../../cartesia-vst-ui/public/assets/scale-gem-lydian.png
+        ../../cartesia-vst-ui/public/assets/scale-gem-mixolydian.png
+        ../../cartesia-vst-ui/public/assets/scale-gem-locrian.png
+        ../../cartesia-vst-ui/public/assets/scale-gem-harmonic_minor.png
+        ../../cartesia-vst-ui/public/assets/scale-gem-melodic_minor.png
+        ../../cartesia-vst-ui/public/assets/scale-gem-pentatonic.png
+        ../../cartesia-vst-ui/public/assets/scale-gem-pentatonic_minor.png
+        ../../cartesia-vst-ui/public/assets/scale-gem-blues.png
         ../../cartesia-vst-ui/public/assets/scale-title-filigree-top.svg
         ../../cartesia-vst-ui/public/assets/scale-title-filigree-bottom.svg
         ../../cartesia-vst-ui/public/assets/scale-title-rule.svg

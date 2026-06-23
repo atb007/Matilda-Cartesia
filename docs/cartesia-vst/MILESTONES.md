@@ -104,7 +104,7 @@ Figma `4976:3937` (left panel) · scale dropdown `4918:101473`.
 |-------|--------|
 | Title + filigree ornaments + rule | ✅ |
 | Min / Tonic / Max glass dropdowns (tonic-relative octave labels on Min/Max) | ✅ |
-| Scale gem orb — `scaleConfig.ts` keyed by scale id (Chromatic only for now) | ✅ |
+| Scale gem orb — all 13 scales in `scaleConfig.ts` + `ScaleGemOrb.tsx` animations | ✅ |
 | `◄ Scale ►` bar + glass dropdown (same material as MovementMenu) | ✅ |
 | Standalone showcase in `App.tsx` (separate from right-panel modules) | ✅ |
 | Full-box dropdown hit targets + click-outside dismiss | ✅ |
@@ -288,21 +288,27 @@ Native port tracks React modules via `UiDevConfig.h` isolated dev views, then `F
 | Frosted glass menus — backdrop blur + tuned frost | ✅ |
 | Legacy `clockBox_` removed · wired to patch | ✅ |
 
-### M6 Quantise Scale — frozen (Jun 18, 2026)
+### M6 Quantise Scale — frozen (Jun 18, 2026) · gems + motion (Jun 23, 2026)
 
 React reference: `ScalePanel.tsx` · Figma `4976:3937` · isolated dev view `DevView::M4_QuantisePanel`.
 
-**Files:** `QuantisePanel.cpp/h`, `ScaleLayout.h`, `GemSparksOverlay.cpp/h`, `ScaleGemPalette.h`, `GlassDropdownDrawing.h`
+**Files:** `QuantisePanel.cpp/h`, `ScaleLayout.h`, `GemSparksOverlay.cpp/h`, `ScaleGemPalette.h`, `GlassDropdownDrawing.h`, `ScaleGemOrb.tsx`, `scaleConfig.ts`, `MatildaImages.cpp`
 
 | Piece | Status |
 |-------|--------|
 | Title filigree — movement-style SVG + bg texture tint | ✅ |
 | Min / Tonic / Max pickers — glass boxes + connectors + labels | ✅ |
-| Scale gem + spark overlay (chromatic fallback) | ✅ |
+| Scale gem orb art — all 13 scales (`scale-gem-{id}.png`) | ✅ Jun 23 |
+| Per-scale gem lookup — React `SCALE_GEM_IMAGES` + JUCE `scaleGemForMode()` | ✅ Jun 23 |
+| Scale gem + spark overlay | ✅ |
+| Scale change transition — shrink-out 160ms → swap → grow-in 220ms | ✅ Jun 23 |
+| Idle float (3.2s sine, ~3px) + hover boost — React + JUCE parity | ✅ Jun 23 |
 | Scale bar ◄ ► + mode dropdown | ✅ |
 | Supermercado One labels · 20px dropdown items | ✅ |
 
 > Polish deferred: divider ornaments (minor).
+
+**Asset drop:** `cartesia-vst-ui/public/assets/scale-gem-{chromatic,major,minor,dorian,phrygian,lydian,mixolydian,locrian,harmonic_minor,melodic_minor,pentatonic,pentatonic_minor,blues}.png` — embedded in JUCE via `CMakeLists.txt` · container uses contain / centred fit for varying export sizes.
 
 ### M8b Shell / hero — frozen (Jun 18, 2026)
 

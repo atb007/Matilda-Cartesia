@@ -29,13 +29,25 @@ export const PITCH_CLASSES = [
 
 export type PitchClass = (typeof PITCH_CLASSES)[number];
 
-/** Gem orb art per scale — only Chromatic supplied for now; others fall back. */
-export const SCALE_GEM_IMAGES: Partial<Record<ScaleId, string>> = {
+/** Gem orb art per scale — `public/assets/scale-gem-{id}.png` */
+export const SCALE_GEM_IMAGES: Record<ScaleId, string> = {
   chromatic: "/assets/scale-gem-chromatic.png",
+  major: "/assets/scale-gem-major.png",
+  minor: "/assets/scale-gem-minor.png",
+  dorian: "/assets/scale-gem-dorian.png",
+  phrygian: "/assets/scale-gem-phrygian.png",
+  lydian: "/assets/scale-gem-lydian.png",
+  mixolydian: "/assets/scale-gem-mixolydian.png",
+  locrian: "/assets/scale-gem-locrian.png",
+  harmonic_minor: "/assets/scale-gem-harmonic_minor.png",
+  melodic_minor: "/assets/scale-gem-melodic_minor.png",
+  pentatonic: "/assets/scale-gem-pentatonic.png",
+  pentatonic_minor: "/assets/scale-gem-pentatonic_minor.png",
+  blues: "/assets/scale-gem-blues.png",
 };
 
 export function gemImageForScale(scale: ScaleId): string {
-  return SCALE_GEM_IMAGES[scale] ?? SCALE_GEM_IMAGES.chromatic!;
+  return SCALE_GEM_IMAGES[scale];
 }
 
 /** Spark / glow palette per scale gem — extend as art lands. */

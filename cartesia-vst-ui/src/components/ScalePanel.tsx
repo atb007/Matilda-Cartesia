@@ -5,7 +5,6 @@ import {
   PITCH_CLASSES,
   SCALES,
   formatOctaveNote,
-  gemImageForScale,
   scaleDisplayName,
   type PitchClass,
   type ScaleId,
@@ -19,7 +18,7 @@ import {
   glassHairline,
   glassPanelStyle,
 } from "./glassDropdownStyle";
-import { GemSparks } from "./GemSparks";
+import { ScaleGemOrb } from "./ScaleGemOrb";
 
 /**
  * M6 — Quantise Scale panel (Figma 4976:3937).
@@ -321,27 +320,14 @@ export function ScalePanel({
           width: GEM_W * s,
           height: GEM_H * s,
           overflow: "visible",
-          pointerEvents: "none",
-          isolation: "isolate",
+          pointerEvents: "auto",
         }}
       >
-        <GemSparks
+        <ScaleGemOrb
           scaleId={scaleId}
           width={GEM_W * s}
           height={GEM_H * s}
           panelScale={s}
-        />
-        <img
-          alt=""
-          src={gemImageForScale(scaleId)}
-          style={{
-            position: "relative",
-            zIndex: 2,
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-            filter: "drop-shadow(-10px 5px 34px rgba(0,0,0,0.5))",
-          }}
         />
       </div>
 

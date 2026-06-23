@@ -6,16 +6,29 @@ namespace {
 constexpr int kMaxAlive = 7;
 constexpr int kMinGapMs = 700;
 constexpr int kMaxGapMs = 1800;
+constexpr double kOutMs = 160.0;
+constexpr double kInMs = 220.0;
+constexpr double kFloatMs = 3200.0;
+constexpr float kFloatPx = 3.f;
+constexpr float kHoverFloatMult = 1.35f;
 
 float rand01() { return juce::Random::getSystemRandom().nextFloat(); }
+
+float easeIn(float t) { return t * t; }
+
+float easeOut(float t) {
+    const float u = 1.f - t;
+    return 1.f - u * u;
+}
 
 } // namespace
 
 GemSparksOverlay::GemSparksOverlay() {
     setOpaque(false);
-    setInterceptsMouseClicks(false, false);
+    setInterceptsMouseClicks(true, false);
     setPaintingIsUnclipped(true);
     colors_ = matilda::scale::gemPaletteForModeId(modeId_);
+    floatStartMs_ = juce::Time::getMillisecondCounterHiRes();
     resetSpawns();
     startTimerHz(60);
 }
@@ -24,17 +37,72 @@ void GemSparksOverlay::setPanelScale(float scale) {
     panelScale_ = scale;
 }
 
-void GemSparksOverlay::setScaleModeId(const juce::String& modeId) {
-    if (modeId_ == modeId)
+void GemSparksOverlay::beginScaleTransition(const juce::String& modeId, const juce::Image& gemImage) {
+    targetModeId_ = modeId;
+    pendingGemImage_ = gemImage;
+
+    if (modeId_ == modeId && gemImage_ == gemImage)
         return;
-    modeId_ = modeId;
+
+    if (transitionPhase_ == TransitionPhase::idle && modeId_ == modeId) {
+        gemImage_ = gemImage;
+        repaint();
+        return;
+    }
+
+    transitionPhase_ = TransitionPhase::out;
+    transitionStartMs_ = juce::Time::getMillisecondCounterHiRes();
+}
+
+void GemSparksOverlay::completeTransitionSwap() {
+    modeId_ = targetModeId_;
+    if (pendingGemImage_.isValid())
+        gemImage_ = pendingGemImage_;
     colors_ = matilda::scale::gemPaletteForModeId(modeId_);
     resetSpawns();
+    spawnStreak("left");
+    spawnStreak("right");
+    transitionPhase_ = TransitionPhase::in;
+    transitionStartMs_ = juce::Time::getMillisecondCounterHiRes();
+}
+
+void GemSparksOverlay::updateTransitionVisuals(double nowMs) {
+    if (transitionPhase_ == TransitionPhase::out) {
+        const float t = juce::jlimit(0.f, 1.f, static_cast<float>((nowMs - transitionStartMs_) / kOutMs));
+        const float e = easeIn(t);
+        gemVisualScale_ = 1.f - e * 0.28f;
+        gemVisualAlpha_ = 1.f - e;
+        if (t >= 1.f)
+            completeTransitionSwap();
+    } else if (transitionPhase_ == TransitionPhase::in) {
+        const float t = juce::jlimit(0.f, 1.f, static_cast<float>((nowMs - transitionStartMs_) / kInMs));
+        const float e = easeOut(t);
+        gemVisualScale_ = 0.88f + e * 0.12f;
+        gemVisualAlpha_ = e;
+        if (t >= 1.f) {
+            transitionPhase_ = TransitionPhase::idle;
+            gemVisualScale_ = 1.f;
+            gemVisualAlpha_ = 1.f;
+        }
+    } else {
+        gemVisualScale_ = 1.f;
+        gemVisualAlpha_ = 1.f;
+    }
+}
+
+void GemSparksOverlay::setScaleModeId(const juce::String& modeId) {
+    if (modeId_ == modeId && transitionPhase_ == TransitionPhase::idle && targetModeId_ == modeId)
+        return;
+    targetModeId_ = modeId;
+    if (transitionPhase_ == TransitionPhase::idle)
+        beginScaleTransition(modeId, gemImage_);
+    else
+        transitionPhase_ = TransitionPhase::out;
+    transitionStartMs_ = juce::Time::getMillisecondCounterHiRes();
 }
 
 void GemSparksOverlay::setGemImage(const juce::Image& gemImage) {
-    gemImage_ = gemImage;
-    repaint();
+    beginScaleTransition(targetModeId_.isNotEmpty() ? targetModeId_ : modeId_, gemImage);
 }
 
 void GemSparksOverlay::resetSpawns() {
@@ -44,6 +112,14 @@ void GemSparksOverlay::resetSpawns() {
     spawnStreak("left");
     spawnStreak("right");
     scheduleSpawn();
+}
+
+void GemSparksOverlay::mouseEnter(const juce::MouseEvent&) {
+    hovered_ = true;
+}
+
+void GemSparksOverlay::mouseExit(const juce::MouseEvent&) {
+    hovered_ = false;
 }
 
 GemSparksOverlay::Vec2 GemSparksOverlay::quadPoint(const Vec2& p0, const Vec2& p1, const Vec2& p2, float t) {
@@ -95,6 +171,13 @@ void GemSparksOverlay::scheduleSpawn() {
 
 void GemSparksOverlay::timerCallback() {
     const double now = juce::Time::getMillisecondCounterHiRes();
+
+    const float floatAmp = kFloatPx * panelScale_ * (hovered_ ? kHoverFloatMult : 1.f);
+    const float floatT = static_cast<float>((now - floatStartMs_) / kFloatMs) * juce::MathConstants<float>::twoPi;
+    floatY_ = std::sin(floatT) * floatAmp;
+
+    updateTransitionVisuals(now);
+
     streaks_.erase(std::remove_if(streaks_.begin(), streaks_.end(),
                                   [&](const Streak& s) {
                                       return (now - s.startMs) > (s.duration * 1000.0 + 120.0);
@@ -120,6 +203,8 @@ void GemSparksOverlay::timerCallback() {
 
 void GemSparksOverlay::drawOneStreak(juce::Graphics& g, const Streak& streak, bool behind,
                                      double nowMs) const {
+    const matilda::scale::GemPalette streakColors = matilda::scale::gemPaletteForModeId(modeId_);
+
     const float t = juce::jlimit(0.f, 1.f, static_cast<float>((nowMs - streak.startMs) / (streak.duration * 1000.0)));
     const float eased = t < 0.5f ? 2.f * t * t : 1.f - juce::square(-2.f * t + 2.f) * 0.5f;
     const auto pos = quadPoint(streak.p0, streak.p1, streak.p2, eased);
@@ -147,15 +232,15 @@ void GemSparksOverlay::drawOneStreak(juce::Graphics& g, const Streak& streak, bo
     const float hh = streak.thickness * 0.5f;
     const auto body = juce::Rectangle<float>(-hw, -hh, streak.length, streak.thickness);
 
-    juce::ColourGradient outer(colors_.glow.withAlpha(0.33f * opacity), body.getX(), body.getCentreY(),
-                               colors_.core.withAlpha(0.6f * opacity), body.getCentreX(), body.getCentreY(), false);
-    outer.addColour(0.5, colors_.core.withAlpha(0.6f * opacity));
-    outer.addColour(0.82, colors_.glow.withAlpha(0.33f * opacity));
+    juce::ColourGradient outer(streakColors.glow.withAlpha(0.33f * opacity), body.getX(), body.getCentreY(),
+                               streakColors.core.withAlpha(0.6f * opacity), body.getCentreX(), body.getCentreY(), false);
+    outer.addColour(0.5, streakColors.core.withAlpha(0.6f * opacity));
+    outer.addColour(0.82, streakColors.glow.withAlpha(0.33f * opacity));
     g.setGradientFill(outer);
     g.fillRoundedRectangle(body.expanded(streak.thickness * 0.8f, 4.f), streak.thickness * 2.f);
 
     juce::ColourGradient core(juce::Colours::transparentBlack, body.getX(), body.getCentreY(),
-                              colors_.hot.withAlpha(0.93f * opacity), body.getCentreX(), body.getCentreY(), false);
+                              streakColors.hot.withAlpha(0.93f * opacity), body.getCentreX(), body.getCentreY(), false);
     core.addColour(0.5, juce::Colours::white.withAlpha(0.95f * opacity));
     core.addColour(1.f, juce::Colours::transparentBlack);
     g.setGradientFill(core);
@@ -177,8 +262,17 @@ void GemSparksOverlay::paint(juce::Graphics& g) {
 void GemSparksOverlay::paintGem(juce::Graphics& g, juce::Rectangle<float> gemBounds) const {
     drawStreakLayer(g, true);
 
-    if (gemImage_.isValid())
+    if (gemImage_.isValid()) {
+        const float cx = gemBounds.getCentreX();
+        const float cy = gemBounds.getCentreY();
+
+        g.saveState();
+        g.addTransform(juce::AffineTransform::translation(0.f, floatY_)
+                            .scaled(gemVisualScale_, gemVisualScale_, cx, cy));
+        g.setOpacity(gemVisualAlpha_);
         g.drawImage(gemImage_, gemBounds, juce::RectanglePlacement::centred);
+        g.restoreState();
+    }
 
     drawStreakLayer(g, false);
 }

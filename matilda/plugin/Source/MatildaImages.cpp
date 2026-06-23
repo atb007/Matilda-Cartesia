@@ -94,17 +94,34 @@ juce::Image miniGridOff(int layer) {
     }
 }
 
-juce::Image scaleGemChromatic() {
-    return load(BinaryData::scalegemchromatic_png, BinaryData::scalegemchromatic_pngSize);
-}
+struct ScaleGemAsset {
+    const char* modeId;
+    const char* data;
+    int size;
+};
 
-/**
- * Per-scale gem rune orb — falls back to chromatic until `scale-gem-{mode}.png` assets are supplied.
- * Expected naming: scale-gem-major.png, scale-gem-minor.png, … (see MILESTONES.md M6).
- */
+static const ScaleGemAsset kScaleGemAssets[] = {
+    {"chromatic", BinaryData::scalegemchromatic_png, BinaryData::scalegemchromatic_pngSize},
+    {"major", BinaryData::scalegemmajor_png, BinaryData::scalegemmajor_pngSize},
+    {"minor", BinaryData::scalegemminor_png, BinaryData::scalegemminor_pngSize},
+    {"dorian", BinaryData::scalegemdorian_png, BinaryData::scalegemdorian_pngSize},
+    {"phrygian", BinaryData::scalegemphrygian_png, BinaryData::scalegemphrygian_pngSize},
+    {"lydian", BinaryData::scalegemlydian_png, BinaryData::scalegemlydian_pngSize},
+    {"mixolydian", BinaryData::scalegemmixolydian_png, BinaryData::scalegemmixolydian_pngSize},
+    {"locrian", BinaryData::scalegemlocrian_png, BinaryData::scalegemlocrian_pngSize},
+    {"harmonic_minor", BinaryData::scalegemharmonic_minor_png, BinaryData::scalegemharmonic_minor_pngSize},
+    {"melodic_minor", BinaryData::scalegemmelodic_minor_png, BinaryData::scalegemmelodic_minor_pngSize},
+    {"pentatonic", BinaryData::scalegempentatonic_png, BinaryData::scalegempentatonic_pngSize},
+    {"pentatonic_minor", BinaryData::scalegempentatonic_minor_png, BinaryData::scalegempentatonic_minor_pngSize},
+    {"blues", BinaryData::scalegemblues_png, BinaryData::scalegemblues_pngSize},
+};
+
 juce::Image scaleGemForMode(const juce::String& modeId) {
-    juce::ignoreUnused(modeId);
-    return scaleGemChromatic();
+    const auto id = modeId.toLowerCase();
+    for (const auto& entry : kScaleGemAssets)
+        if (id == entry.modeId)
+            return load(entry.data, entry.size);
+    return load(BinaryData::scalegemchromatic_png, BinaryData::scalegemchromatic_pngSize);
 }
 
 juce::Image knobOuterRing() {
