@@ -72,16 +72,12 @@ jobs:
       - name: Package VST3
         working-directory: matilda/plugin
         shell: pwsh
-        run: |
-          Compress-Archive -Force -Path build/Matilda_artefacts/Release/VST3/Matilda.vst3 \
-            -DestinationPath Matilda-Windows-vst3.zip
+        run: Compress-Archive -Force -Path build/Matilda_artefacts/Release/VST3/Matilda.vst3 -DestinationPath Matilda-Windows-vst3.zip
 
       - name: Package Standalone
         working-directory: matilda/plugin
         shell: pwsh
-        run: |
-          Compress-Archive -Force -Path build/Matilda_artefacts/Release/Standalone/* \
-            -DestinationPath Matilda-Windows-standalone.zip
+        run: Compress-Archive -Force -Path build/Matilda_artefacts/Release/Standalone/* -DestinationPath Matilda-Windows-standalone.zip
 
       - uses: actions/upload-artifact@v4
         with:
