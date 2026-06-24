@@ -26,7 +26,9 @@ Not a piano roll. A **layered step field** with movement modes, per-cell probabi
 | **Expanded** (default) | **2376 × 1805** | `x=886`, `y=50` | Portrait + wordmark visible (left) |
 | **Collapsed** | **1515 × 1805** | `x=85`, `y=50` (centred in MainFrame) | Portrait slides off (`−660 px`) |
 
-Preview scale default **0.52** (native design px rendered then CSS-scaled). Chevron toggle **70 × 70** px — expanded: top-left hero `(83, 17)` · collapsed: inside vines frame `(95, 67)`.
+Preview scale **0.52 × uiScaleFactor** (default factor **0.9** → ~1112×845 px expanded). User scale **0.7…1.0** via corner/edge drag (`UiScale.h` / `uiScale.ts`). Chevron toggle **70 × 70** px — `@2x` PNG pair (`collapse-toggle-expanded@2x.png` / `collapsed`); expanded: top-left hero `(83, 17)` · collapsed: inside vines frame `(95, 67)`.
+
+**VST3 / DAW hosts (FL Studio, etc.):** Editor declares `setResizeLimits` (collapsed min × 0.7 … expanded max × user scale). If the host window is wider than content, `HeroBackdropDrawing` aspect-covers the starfield so no black/teal void appears. Module title filigree stays in design-space shell layout (not stretched by host). Debug footer (BPM / sync / status) is **Standalone-only**.
 
 ```text
 ┌─ Expanded (2376 × 1805) ────────────────────────────────────────────────┐

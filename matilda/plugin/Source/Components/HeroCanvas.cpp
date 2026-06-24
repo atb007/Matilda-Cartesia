@@ -6,12 +6,15 @@
 void HeroCanvas::paint(juce::Graphics& g) {
     using namespace matilda::react;
 
-    const float s = static_cast<float>(getWidth()) / kExpandedW;
+    const auto bounds = getLocalBounds().toFloat();
+    const float s = bounds.getWidth() / kExpandedW;
 
     const auto bg = matilda::images::heroBackground();
     if (bg.isValid()) {
-        g.drawImage(bg, juce::Rectangle<float>(kHeroMainLeft * s, kHeroBgTop * s, kHeroBgW * 1.0758f * s,
-                                               kHeroBgH * 1.032f * s));
+        const float bgW = juce::jmax(bounds.getWidth(), (kHeroMainLeft + kHeroBgW * 1.0758f) * s);
+        const float bgH = kHeroBgH * 1.032f * s;
+        const float bgY = kHeroBgTop * s - bgH * 0.0174f;
+        g.drawImage(bg, juce::Rectangle<float>(0.f, bgY, bgW, bgH));
     } else {
         g.fillAll(juce::Colour(0xff050510));
     }

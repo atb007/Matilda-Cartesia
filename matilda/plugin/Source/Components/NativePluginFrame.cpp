@@ -1,4 +1,5 @@
 #include "NativePluginFrame.h"
+#include "../HeroBackdropDrawing.h"
 #include "../UiDevConfig.h"
 
 namespace {
@@ -34,6 +35,16 @@ NativePluginFrame::NativePluginFrame(MatildaShellPanel& shell)
     setPaintingIsUnclipped(false);
 
     collapseToggle_.onToggle = [this] { setCollapsed(!collapsed_, true); };
+}
+
+juce::Point<int> NativePluginFrame::currentViewportPixelSize() const {
+    using namespace matilda::react;
+    const float viewportW = juce::jmap(animProgress_, kExpandedW, kCollapsedW);
+    return { sx(viewportW, previewScale_), sx(kFrameH, previewScale_) };
+}
+
+void NativePluginFrame::paint(juce::Graphics& g) {
+    matilda::ui::paintHeroBackdropCover(g, getLocalBounds());
 }
 
 void NativePluginFrame::setPreviewScale(float scale) {

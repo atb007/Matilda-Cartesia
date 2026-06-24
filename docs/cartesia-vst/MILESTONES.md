@@ -184,6 +184,22 @@ Control modules from M8 (`MatildaShell`) are reused unchanged; only the outer ca
 
 > **Polish (Jun 11):** Chevron shrunk 30 % (100 → 70 px). Collapsed shell alignment fixed to Figma MainFrame centre (`x=85`). Vine aliasing reduced — integer 1:1 frame dimensions, feathered alpha on keyed PNG, bilinear-friendly CSS under `transform: scale(0.52)`.
 
+> **Polish (Jun 25):** User UI scale — default **0.9**, drag **0.7…1.0** via 8 grips (corners + edges). Hero wallpaper full-bleed (no left/right void). Chevron uses corrected `@2x` PNGs with circular clip. **VST3/Windows:** `setResizeLimits`, hero backdrop cover for host oversize windows, `syncEditorToViewport()` — fixes FL Studio Fruity Wrapper void + title/filigree drift when host stretches plugin frame.
+
+### 🔄 M8c — VST3 / Windows host UI parity (Jun 25, 2026)
+
+| Piece | Status |
+|-------|--------|
+| `UiScale.h` / `uiScale.ts` — default 0.9, min 0.7, max 1.0 | ✅ |
+| 8 resize grips (corners + edges) — Standalone + VST3 | ✅ |
+| Hero full-bleed wallpaper (React + JUCE) | ✅ |
+| Chevron `@2x` PNG per state + circular clip | ✅ |
+| `HeroBackdropDrawing` — aspect-cover when host window > content | ✅ |
+| `setResizeLimits` + `syncEditorToViewport()` in `PluginEditor` | ✅ |
+| FL Studio Fruity Wrapper — void + title decoration alignment | 🔄 verify on Win build |
+
+**Files:** `PluginEditor.cpp/h`, `NativePluginFrame.cpp/h`, `HeroCanvas.cpp`, `HeroBackdropDrawing.h`, `UiScale.h`, `CollapseToggle.cpp`, `UiResizeGrip.cpp/h`, `MatildaPluginFrame.tsx`, `HeroCanvas.tsx`, `CollapseToggle.tsx`, `uiScale.ts`
+
 ### 🔄 M9 — JUCE / Cartesia engine linking (in progress Jun 11, 2026)
 
 Wire transport, playhead, layer scheduler, quantise scale resolution, and preset load/save from `cartesia/` into the UI prototype and JUCE shell.
@@ -419,7 +435,7 @@ Use this checklist before freezing host architecture. Build outputs: VST3 + AU +
 | **Logic Pro** | AU MIDI effect | ? | Host playhead | In-chain | P1 | ⬜ |
 | **Ableton Live** | VST3 MIDI effect | ? | Host playhead | In-chain | P1 | ⬜ |
 | **Bitwig** | VST3 / CLAP? | ? | Host playhead | In-chain | P1 | ⬜ |
-| **FL Studio** | VST3 MIDI effect | Host playhead | Fruity Wrapper ports or Patcher | P1 | ⬜ built, untested |
+| **FL Studio** | VST3 MIDI effect | Host playhead | Fruity Wrapper ports or Patcher | P1 | 🔄 UI smoke-tested Win (Jun 25) |
 | **Reaper** | VST3 / AU | ? | Host playhead | In-chain | P2 | ⬜ |
 
 **Per-DAW test script (copy for each row):**

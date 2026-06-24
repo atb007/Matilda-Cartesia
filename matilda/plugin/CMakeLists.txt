@@ -138,6 +138,7 @@ target_sources(Matilda
         Source/Components/ShellChrome.cpp
         Source/Components/HeroCanvas.cpp
         Source/Components/NativePluginFrame.cpp
+        Source/Components/UiResizeGrip.cpp
         Source/Components/CollapseToggle.cpp
         Source/Engine/SequencerEngine.cpp
         Source/Engine/PatchStore.cpp

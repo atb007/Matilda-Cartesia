@@ -102,7 +102,20 @@ Same **VST3 MIDI-FX** binary — no separate codebase:
 1. **Patcher** — Matilda → generator, wire green MIDI cables; or
 2. **Fruity Wrapper** — Matilda Settings → output port *N*; synth input port *N* (use ports 11+; see BlueARP manual).
 
-Install: `build/Matilda_artefacts/Release/VST3/Matilda.vst3` → `~/Library/Audio/Plug-Ins/VST3/`
+Install: `build/Matilda_artefacts/Release/VST3/Matilda.vst3` → `C:\Program Files\Common Files\VST3\` (Windows) or `~/Library/Audio/Plug-Ins/VST3/` (macOS)
+
+### Windows / VST3 UI (Jun 2026)
+
+| Topic | Detail |
+|-------|--------|
+| **Default size** | Expanded **2376×1805** design px at **0.52 × 0.9** ≈ **1112×845** logical px |
+| **User resize** | Drag any **corner or edge** (8 grips) — scale factor **0.7…1.0** |
+| **Host oversize** | If FL Studio / Fruity Wrapper leaves empty space right of the UI, starfield wallpaper fills it (`HeroBackdropDrawing`) |
+| **Chevron** | `collapse-toggle-expanded@2x.png` / `collapse-toggle-collapsed@2x.png` — re-export to `cartesia-vst-ui/public/assets/` then rebuild |
+| **Title filigree** | Module titles (Quantize Scale, Global Settings, etc.) live in fixed design-space shell — not stretched when host resizes |
+| **Not in VST3** | Footer BPM label, sync toggle, debug status (Standalone sandbox only) |
+
+After replacing chevron PNGs: `cmake --build build --config Release` (re-embeds `MatildaAssets`).
 
 ---
 

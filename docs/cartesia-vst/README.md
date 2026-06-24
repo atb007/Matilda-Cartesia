@@ -43,4 +43,4 @@ python3 live_cartesia.py matilda/presets/default.layer1.json --dry-run
 cd cartesia-vst-ui && npm install && npm run dev
 ```
 
-Open the local URL (e.g. `http://localhost:5173/`) — renders `MatildaPluginFrame` at 52% scale.
+Open the local URL (e.g. `http://localhost:5173/`) — renders `MatildaPluginFrame` at default user scale (0.52 × 0.9). Drag corners/edges to resize 0.7…1.0.

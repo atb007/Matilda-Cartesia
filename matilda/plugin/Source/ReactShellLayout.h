@@ -16,7 +16,7 @@ inline constexpr float kHeroPanelW = kExpandedW - kCollapsedW;
 inline constexpr float kShellLeft = 886.f;   // EXPANDED_W - SHELL_W - SHELL_RIGHT_GUTTER
 inline constexpr float kShellTop = 50.f;
 inline constexpr float kShellRightGutter = 85.f;
-inline constexpr float kPreviewScale = 0.52f;
+inline constexpr float kPreviewScale = 0.52f; // 100% user scale (see UiScale.h)
 inline constexpr int kCollapseMs = 380;
 
 // Collapse chevron (heroLayout.ts · CollapseToggle.tsx)

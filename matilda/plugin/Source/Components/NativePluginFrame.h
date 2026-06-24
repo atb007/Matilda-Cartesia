@@ -17,6 +17,8 @@ public:
     void setPreviewScale(float scale);
     [[nodiscard]] float previewScale() const { return previewScale_; }
     [[nodiscard]] bool isCollapsed() const { return collapsed_; }
+    [[nodiscard]] bool isAnimating() const { return animating_; }
+    [[nodiscard]] juce::Point<int> currentViewportPixelSize() const;
 
     void setCollapsed(bool collapsed, bool animate = true);
     std::function<void(juce::Point<int> viewportSize)> onViewportSizeChanged;
@@ -64,6 +66,7 @@ private:
     CollapseToggle collapseToggle_;
 
     void resized() override;
+    void paint(juce::Graphics& g) override;
     void timerCallback() override;
     void layoutFromProgress(float progress);
     [[nodiscard]] static float collapseEased(float linearT);

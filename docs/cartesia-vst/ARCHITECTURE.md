@@ -34,9 +34,10 @@ Ideas/
 ## UI prototype (`cartesia-vst-ui`) — shipped M8b
 
 ```text
-MatildaPluginFrame (scale 0.52 preview)
-├── HeroCanvas          starfield · masked portrait · wordmark · slide on collapse
-├── CollapseToggle      70×70 chevron — hero (expanded) / shell frame (collapsed)
+MatildaPluginFrame (0.52 × uiScaleFactor; default factor 0.9)
+├── HeroCanvas          starfield (full-bleed) · masked portrait · wordmark · slide on collapse
+├── CollapseToggle      70×70 · collapse-toggle-{expanded|collapsed}@2x.png
+├── UiResizeGrips       8 grips — corners + edges (0.7…1.0 user scale)
 └── MatildaShell        glass → vines overlay → M1–M7 controls
 ```
 

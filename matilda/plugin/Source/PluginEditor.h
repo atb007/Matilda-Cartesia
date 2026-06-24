@@ -10,6 +10,9 @@
 #include "Components/MovementSelector.h"
 #include "Components/MatildaShellPanel.h"
 #include "Components/NativePluginFrame.h"
+#include "Components/UiResizeGrip.h"
+#include "UiScale.h"
+#include <array>
 
 class MatildaAudioProcessorEditor : public juce::AudioProcessorEditor,
                                     private juce::Timer,
@@ -44,5 +47,33 @@ private:
     void updateStatusLine();
     void applyBpmFromLabel();
     void layoutChromeOverlays();
+    void applyUiScale();
+    void beginGripResize(matilda::ui::UiResizeGripId grip);
+    void continueGripResize(juce::Point<int> screenMouse);
+    void layoutResizeGrips();
+    void updateResizeLimits();
+    void syncEditorToViewport();
+    [[nodiscard]] juce::Point<int> intendedEditorSize() const;
+
+    bool suppressHostResizeSync_ = false;
+
+    std::array<UiResizeGrip, 8> resizeGrips_ {
+        UiResizeGrip(matilda::ui::UiResizeGripId::topLeft),
+        UiResizeGrip(matilda::ui::UiResizeGripId::top),
+        UiResizeGrip(matilda::ui::UiResizeGripId::topRight),
+        UiResizeGrip(matilda::ui::UiResizeGripId::left),
+        UiResizeGrip(matilda::ui::UiResizeGripId::right),
+        UiResizeGrip(matilda::ui::UiResizeGripId::bottomLeft),
+        UiResizeGrip(matilda::ui::UiResizeGripId::bottom),
+        UiResizeGrip(matilda::ui::UiResizeGripId::bottomRight),
+    };
+    matilda::ui::UiResizeGripId activeResizeGrip_ = matilda::ui::UiResizeGripId::bottomRight;
+    float uiScaleFactor_ = matilda::ui::kUiScaleDefault;
+    bool gripResizeActive_ = false;
+    juce::Point<int> gripResizeStartMouse_;
+    int gripResizeStartWidth_ = 0;
+    int gripResizeStartHeight_ = 0;
+    int gripResizeRefWidth100_ = 0;
+    int gripResizeRefHeight100_ = 0;
     bool lastTransportRunning_ = false;
 };

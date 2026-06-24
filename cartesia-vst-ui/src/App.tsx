@@ -12,7 +12,7 @@ export default function App() {
         M9 · engine-linked shell
       </p>
 
-      <MatildaPluginFrame scale={0.52} />
+      <MatildaPluginFrame />
     </main>
   );
 }

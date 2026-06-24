@@ -1,5 +1,5 @@
+import { EXPANDED_W, FRAME_H, HERO, HERO_MAIN_LEFT } from "../heroLayout";
 import { AURORA } from "../auroraConfig";
-import { FRAME_H, HERO, HERO_MAIN_LEFT } from "../heroLayout";
 import { AuroraShader } from "./AuroraShader";
 
 /**
@@ -12,14 +12,14 @@ export function HeroCanvas() {
 
   return (
     <>
-      {/* Static starfield + forest raster + aurora (same MainFrame bounds) */}
+      {/* Full-bleed starfield — covers entire frame (no left gutter void) */}
       <div
         style={{
           position: "absolute",
-          left: HERO_MAIN_LEFT,
-          top: HERO.bg.top,
-          width: HERO.bg.width,
-          height: HERO.bg.height,
+          left: 0,
+          top: 0,
+          width: EXPANDED_W,
+          height: FRAME_H,
           overflow: "hidden",
           pointerEvents: "none",
           zIndex: 0,
@@ -30,10 +30,10 @@ export function HeroCanvas() {
           src="/assets/hero-bg-m8b.png"
           style={{
             position: "absolute",
-            width: "107.58%",
-            height: "103.2%",
+            width: `${((HERO_MAIN_LEFT + HERO.bg.width * 1.0758) / EXPANDED_W) * 100}%`,
+            height: `${(HERO.bg.height * 1.032 / FRAME_H) * 100}%`,
             left: 0,
-            top: "-1.74%",
+            top: `${((HERO.bg.top - HERO.bg.height * 1.032 * 0.0174) / FRAME_H) * 100}%`,
             maxWidth: "none",
           }}
         />

@@ -10,9 +10,30 @@ Pixel constants for the Matilda control shell, ported from `cartesia-vst-ui`:
 | Component `BASE_*` | ScalePanel, LayerMiniGrid, MovementMenu, Grid4x4, TransportChrome |
 
 **C++ header:** `matilda/plugin/Source/ReactShellLayout.h`  
+**UI scale:** `matilda/plugin/Source/UiScale.h` · React mirror `cartesia-vst-ui/src/uiScale.ts`  
+**Host backdrop:** `matilda/plugin/Source/HeroBackdropDrawing.h` (VST3 void fill)  
 **Shell container:** `Components/MatildaShellPanel` + `ShellChrome`
 
-Default preview scale **0.52** matches React `MatildaPluginFrame`.
+Default preview scale **0.52 × 0.9** (user factor; was 1.0). React `MatildaPluginFrame` matches JUCE `NativePluginFrame`.
+
+### User UI scale (Jun 2026)
+
+| Constant | Value |
+|----------|-------|
+| Design 100% | `kPreviewScale` = 0.52 |
+| Default open | factor **0.9** |
+| Drag range | **0.7 … 1.0** (same absolute minimum as before) |
+| Grips | 4 corners + 4 edges → `UiResizeGrip` / `UiResizeGrips` |
+
+### VST3 / Windows host parity
+
+| Concern | JUCE handling |
+|---------|----------------|
+| Host window wider than UI | `PluginEditor` + `NativePluginFrame` paint hero starfield cover |
+| Hero left gutter | Full-bleed bg from `x=0` (`HeroCanvas`) |
+| Host resize drift | `syncEditorToViewport()` + `setResizeLimits()` |
+| Chevron | `@2x` PNG per state (transparent); circular clip |
+| Standalone debug footer | BPM / sync / status — not shown in VST3 |
 
 ## Module positions (design px, shell-relative)
 
