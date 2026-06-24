@@ -1,8 +1,20 @@
 # Matilda — JUCE plugin (VST3 / AU / Standalone)
 
-MIDI arp / grid sequencer for macOS DAWs. Builds on the Cartesia engine (Patch v2, sequential layers, movement modes, trigger probability, jitter).
+MIDI arp / grid sequencer for macOS and Windows DAWs. Builds on the Cartesia engine (Patch v2, sequential layers, movement modes, trigger probability, jitter).
 
-## Build
+## Download pre-built plugins
+
+**GitHub Releases:** [github.com/atb007/Matilda-Cartesia/releases](https://github.com/atb007/Matilda-Cartesia/releases)
+
+| Zip | Use |
+|-----|-----|
+| `Matilda-Windows-vst3.zip` | FL Studio / Windows — copy `Matilda.vst3` to `C:\Program Files\Common Files\VST3\` |
+| `Matilda-macOS-vst3.zip` | macOS DAWs — copy to `~/Library/Audio/Plug-Ins/VST3/` |
+| `*-standalone.zip` | Standalone app (no DAW) |
+
+See `releases/README.md` for CI workflow details.
+
+## Build locally
 
 Requires CMake 3.22+ and a C++17 compiler. JUCE is taken from `../../gridwalker/JUCE` when present.
 

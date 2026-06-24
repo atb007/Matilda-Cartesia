@@ -25,6 +25,10 @@ dist-ssr/
 *.xcodeproj/
 *.xcworkspace/
 
+# Pre-built plugin drops (use GitHub Releases instead)
+matilda/plugin/releases/**/Matilda.vst3/
+matilda/plugin/releases/**/*.zip
+
 # JUCE submodule (fetched via CMake FetchContent or local gridwalker copy)
 gridwalker/JUCE/
 

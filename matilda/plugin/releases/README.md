@@ -1,13 +1,51 @@
-# Matilda pre-built binaries (manual drops)
+# Matilda pre-built binaries
 
-Temporary distribution until CI/CD publishes GitHub Releases.
+**Do not commit plugin binaries here.** Builds are published via GitHub Actions:
 
-## macOS — VST3
+| Workflow | Trigger | Output |
+|----------|---------|--------|
+| [Matilda Release](https://github.com/atb007/Matilda-Cartesia/actions/workflows/matilda-release.yml) | Push tag `v*` (e.g. `v1.0.1`) or **Run workflow** in Actions | GitHub Release zips |
+| [Matilda CI](https://github.com/atb007/Matilda-Cartesia/actions/workflows/matilda-ci.yml) | Push / PR to `main` | Build verification only |
 
-| File | Platform | Install |
-|------|----------|---------|
-| `macOS/Matilda.vst3` | macOS (Apple Silicon / Intel — match your build machine) | Copy folder to `~/Library/Audio/Plug-Ins/VST3/` then rescan plugins in your DAW |
+## Download (latest release)
 
-**FL Studio (Windows):** this macOS binary will not run on Windows. Build on Windows or wait for a Windows CI artefact.
+1. Open [github.com/atb007/Matilda-Cartesia/releases](https://github.com/atb007/Matilda-Cartesia/releases)
+2. Download the zip for your platform:
 
-Built from commit on `main` — see repo history for source revision.
+| File | Platform |
+|------|----------|
+| `Matilda-Windows-vst3.zip` | **FL Studio / Windows DAWs** |
+| `Matilda-Windows-standalone.zip` | Windows standalone app |
+| `Matilda-macOS-vst3.zip` | macOS VST3 (Logic, Ableton, etc.) |
+| `Matilda-macOS-standalone.zip` | macOS Standalone |
+
+## Install
+
+### Windows (FL Studio)
+
+1. Unzip `Matilda-Windows-vst3.zip`
+2. Copy the `Matilda.vst3` folder to:
+   ```
+   C:\Program Files\Common Files\VST3\
+   ```
+3. FL Studio → **Options → Manage plugins** → add folder if needed → **Find plugins**
+
+### macOS
+
+1. Unzip `Matilda-macOS-vst3.zip`
+2. Copy `Matilda.vst3` to:
+   ```
+   ~/Library/Audio/Plug-Ins/VST3/
+   ```
+3. Rescan plugins in your DAW
+
+Universal binary (Apple Silicon + Intel).
+
+## Cut a new release (maintainers)
+
+```bash
+git tag v1.0.2
+git push origin v1.0.2
+```
+
+Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.

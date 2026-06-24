@@ -1,0 +1,140 @@
+# Build Matilda VST3 (+ Standalone) for macOS and Windows; publish GitHub Release zips.
+name: Matilda Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.0.1)"
+        required: true
+        default: "v1.0.1"
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    name: Build macOS
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        working-directory: matilda/plugin
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+
+      - name: Build
+        working-directory: matilda/plugin
+        run: cmake --build build --config Release -j$(sysctl -n hw.ncpu)
+
+      - name: Package VST3
+        working-directory: matilda/plugin
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/Matilda_artefacts/Release/VST3/Matilda.vst3 \
+            Matilda-macOS-vst3.zip
+
+      - name: Package Standalone
+        working-directory: matilda/plugin
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/Matilda_artefacts/Release/Standalone/Matilda.app \
+            Matilda-macOS-standalone.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: matilda-macos
+          path: |
+            matilda/plugin/Matilda-macOS-vst3.zip
+            matilda/plugin/Matilda-macOS-standalone.zip
+          retention-days: 14
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        working-directory: matilda/plugin
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        working-directory: matilda/plugin
+        run: cmake --build build --config Release -j 4
+
+      - name: Package VST3
+        working-directory: matilda/plugin
+        shell: pwsh
+        run: |
+          Compress-Archive -Force -Path build/Matilda_artefacts/Release/VST3/Matilda.vst3 \
+            -DestinationPath Matilda-Windows-vst3.zip
+
+      - name: Package Standalone
+        working-directory: matilda/plugin
+        shell: pwsh
+        run: |
+          Compress-Archive -Force -Path build/Matilda_artefacts/Release/Standalone/* \
+            -DestinationPath Matilda-Windows-standalone.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: matilda-windows
+          path: |
+            matilda/plugin/Matilda-Windows-vst3.zip
+            matilda/plugin/Matilda-Windows-standalone.zip
+          retention-days: 14
+
+  release:
+    name: Publish Release
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: matilda-*
+          merge-multiple: true
+
+      - name: Resolve tag
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: Matilda ${{ steps.meta.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            dist/Matilda-macOS-vst3.zip
+            dist/Matilda-macOS-standalone.zip
+            dist/Matilda-Windows-vst3.zip
+            dist/Matilda-Windows-standalone.zip
+          body: |
+            ## Install
+
+            ### macOS
+            - **VST3:** unzip `Matilda-macOS-vst3.zip` → copy `Matilda.vst3` to `~/Library/Audio/Plug-Ins/VST3/`
+            - **Standalone:** unzip `Matilda-macOS-standalone.zip` → open `Matilda.app`
+            - Universal binary (Apple Silicon + Intel)
+
+            ### Windows (FL Studio, etc.)
+            - **VST3:** unzip `Matilda-Windows-vst3.zip` → copy `Matilda.vst3` to `C:\Program Files\Common Files\VST3\`
+            - **Standalone:** unzip `Matilda-Windows-standalone.zip` → run `Matilda.exe`
+            - Rescan plugins in your DAW after copying the VST3 folder
+
+            Matilda is a **MIDI effect** — insert before your instrument in the chain.

@@ -1,0 +1,60 @@
+# Verify Matilda builds on macOS and Windows (no release upload).
+name: Matilda CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "matilda/**"
+      - "cartesia-vst-ui/public/assets/**"
+      - ".github/workflows/matilda-*.yml"
+  pull_request:
+    paths:
+      - "matilda/**"
+      - "cartesia-vst-ui/public/assets/**"
+      - ".github/workflows/matilda-*.yml"
+
+concurrency:
+  group: matilda-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-macos:
+    name: macOS
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        working-directory: matilda/plugin
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+
+      - name: Build
+        working-directory: matilda/plugin
+        run: cmake --build build --config Release -j$(sysctl -n hw.ncpu)
+
+      - name: Verify artefacts
+        working-directory: matilda/plugin
+        run: test -d build/Matilda_artefacts/Release/VST3/Matilda.vst3
+
+  build-windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        working-directory: matilda/plugin
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        working-directory: matilda/plugin
+        run: cmake --build build --config Release -j 4
+
+      - name: Verify artefacts
+        working-directory: matilda/plugin
+        shell: bash
+        run: test -d build/Matilda_artefacts/Release/VST3/Matilda.vst3
