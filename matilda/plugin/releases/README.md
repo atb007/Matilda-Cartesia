@@ -44,8 +44,10 @@ Universal binary (Apple Silicon + Intel).
 ## Cut a new release (maintainers)
 
 ```bash
-git tag v1.0.2
-git push origin v1.0.2
+git tag v1.0.3
+git push origin v1.0.3
 ```
+
+Latest release: **[v1.0.2](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.2)** — UI scale grips, VST3/Windows backdrop fix, chevron PNG polish.
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.
