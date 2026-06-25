@@ -44,6 +44,8 @@ export function MatildaShell({ scale = 0.78, embedded = false }: Props) {
     minOctave,
     maxOctave,
     clockDivision,
+    playMode,
+    dawSync,
     setPlaying,
     setSelectedLayer,
     toggleLayer,
@@ -53,6 +55,8 @@ export function MatildaShell({ scale = 0.78, embedded = false }: Props) {
     setMinOctave,
     setMaxOctave,
     setClockDivision,
+    setPlayMode,
+    setDawSync,
     patchCell,
     layerCellsFlat,
   } = engine;
@@ -139,8 +143,12 @@ export function MatildaShell({ scale = 0.78, embedded = false }: Props) {
             <TransportChrome
               playing={playing}
               onPlayingChange={setPlaying}
+              playMode={playMode}
+              onPlayModeChange={setPlayMode}
               clockDivision={clockDivision}
               onClockDivisionChange={setClockDivision}
+              dawSync={dawSync}
+              onDawSyncChange={setDawSync}
             />
           </div>
         </div>

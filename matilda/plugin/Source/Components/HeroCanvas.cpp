@@ -50,5 +50,6 @@ void HeroCanvas::paint(juce::Graphics& g) {
 
     g.setColour(juce::Colour(0xffdf90e5));
     g.setFont(matilda::fonts::jacquard24(kHeroSubtitleFs * s));
-    g.drawText("Cartesia - v1.0", labelLeft, subTop, labelW, subH, juce::Justification::right);
+    g.drawText("Cartesia - v" + juce::String(JucePlugin_VersionString), labelLeft, subTop, labelW, subH,
+               juce::Justification::right);
 }

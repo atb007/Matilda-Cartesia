@@ -36,7 +36,7 @@ void MatildaBackground::paint(juce::Graphics& g) {
                    juce::Justification::centredLeft);
         g.setFont(juce::FontOptions(fH * 0.85f));
         g.setColour(juce::Colour(0xffd08c59));  // Cartesia gold colour
-        g.drawText("Cartesia  v1.0", titleX, titleY + fH * 1.65f,
+        g.drawText("Cartesia  v" + juce::String(JucePlugin_VersionString), titleX, titleY + fH * 1.65f,
                    bounds.getWidth() * 0.3f, fH,
                    juce::Justification::centredLeft);
     }

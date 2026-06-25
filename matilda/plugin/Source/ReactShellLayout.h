@@ -85,7 +85,7 @@ inline constexpr float kGridW = kGridCellW * 4.f + kGridColGap * 3.f;
 inline constexpr float kGridH = kGridCellH * 4.f + kGridRowGap * 3.f;
 
 inline constexpr Point kTransportPos{103.218f, 887.449f};
-inline constexpr Size kTransportSize{439.f, 485.f};
+inline constexpr Size kTransportSize{439.f, 541.f};
 
 // TransportChrome.tsx — clock row inside transport module
 inline constexpr Point kTransportClockPos{0.f, 127.55f + 156.37f + 28.f + 12.f}; // play + gap + playMode + gap

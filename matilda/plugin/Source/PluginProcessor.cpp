@@ -30,6 +30,11 @@ void MatildaAudioProcessor::setFollowExternalTransport(bool enabled) {
     notifyTransportChanged();
 }
 
+void MatildaAudioProcessor::setSyncHostTransport(bool enabled) {
+    syncHostTransport_.store(enabled);
+    notifyTransportChanged();
+}
+
 void MatildaAudioProcessor::notifyTransportChanged() {
     if (juce::MessageManager::getInstance()->isThisTheMessageThread())
         sendChangeMessage();
@@ -127,8 +132,11 @@ void MatildaAudioProcessor::prepareToPlay(double sampleRate, int) {
 void MatildaAudioProcessor::releaseResources() {}
 
 bool MatildaAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {
-    return layouts.getMainInputChannelSet() == juce::AudioChannelSet::stereo()
-        && layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo();
+    const auto& in = layouts.getMainInputChannelSet();
+    const auto& out = layouts.getMainOutputChannelSet();
+    if (out != juce::AudioChannelSet::stereo())
+        return false;
+    return in == juce::AudioChannelSet::stereo() || in == juce::AudioChannelSet::disabled();
 }
 
 int MatildaAudioProcessor::midiClocksPerStep() const {
@@ -311,10 +319,21 @@ void MatildaAudioProcessor::processSequencer(juce::MidiBuffer& midi, int numSamp
     }
 
     const bool armed = sequencerArmed_.load();
+    const bool hostSync = !isStandalone && syncHostTransport_.load();
 
-    // DAW transport start in Transport mode — quantize to next downbeat.
-    if (!isStandalone && patch_.playMode == matilda::PlayMode::Transport && armed
-        && hostPlaying && !hostWasPlaying_) {
+    if (hostSync) {
+        if (hostPlaying && !hostWasPlaying_) {
+            if (!armed)
+                setSequencerRunning(true);
+            else {
+                cancelBeatQuantizedStart();
+                requestBeatQuantizedStart();
+            }
+        } else if (!hostPlaying && hostWasPlaying_ && armed) {
+            setSequencerRunning(false);
+        }
+    } else if (!isStandalone && patch_.playMode == matilda::PlayMode::Transport && armed && hostPlaying
+               && !hostWasPlaying_) {
         cancelBeatQuantizedStart();
         requestBeatQuantizedStart();
     }
@@ -325,7 +344,9 @@ void MatildaAudioProcessor::processSequencer(juce::MidiBuffer& midi, int numSamp
         return;
 
     bool shouldRun = false;
-    if (isStandalone || patch_.playMode == matilda::PlayMode::Note) {
+    if (hostSync) {
+        shouldRun = hostPlaying;
+    } else if (isStandalone || patch_.playMode == matilda::PlayMode::Note) {
         shouldRun = armed;
     } else {
         shouldRun = armed && hostPlaying;
@@ -374,7 +395,14 @@ void MatildaAudioProcessor::processSequencer(juce::MidiBuffer& midi, int numSamp
 }
 
 void MatildaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) {
-    buffer.clear();
+    const int numInput = getTotalNumInputChannels();
+    const int numOutput = getTotalNumOutputChannels();
+    if (numInput <= 0) {
+        buffer.clear();
+    } else {
+        for (int ch = numInput; ch < numOutput; ++ch)
+            buffer.clear(ch, 0, buffer.getNumSamples());
+    }
 
     juce::MidiBuffer incoming;
     incoming.swapWith(midi);
@@ -384,6 +412,9 @@ void MatildaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     updateTempoFromPlayHead();
 
     handleIncomingMidi(incoming, midi);
+
+    for (const auto metadata : incoming)
+        midi.addEvent(metadata.getMessage(), metadata.samplePosition);
 
     standaloneTransportSamples_ += buffer.getNumSamples();
 
@@ -402,6 +433,7 @@ void MatildaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
     juce::ValueTree state("MatildaState");
     state.setProperty("patchJson", matilda::PatchStore::patchToJson(patch_), nullptr);
     state.setProperty("followExternalTransport", followExternalTransport_.load(), nullptr);
+    state.setProperty("syncHostTransport", syncHostTransport_.load(), nullptr);
     state.setProperty("userBpm", userBpm_, nullptr);
     if (auto xml = state.createXml())
         copyXmlToBinary(*xml, destData);
@@ -412,6 +444,7 @@ void MatildaAudioProcessor::setStateInformation(const void* data, int sizeInByte
         const auto vt = juce::ValueTree::fromXml(*xml);
         const auto json = vt.getProperty("patchJson", {}).toString();
         followExternalTransport_.store(static_cast<bool>(vt.getProperty("followExternalTransport", false)));
+        syncHostTransport_.store(static_cast<bool>(vt.getProperty("syncHostTransport", true)));
         setUserBpm(static_cast<double>(vt.getProperty("userBpm", kFallbackBpm)));
         if (json.isNotEmpty())
             applyPatchJson(json);

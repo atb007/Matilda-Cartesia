@@ -24,7 +24,7 @@ import {
  */
 
 const BASE_W = 439;
-const BASE_H = 485;
+const BASE_H = 541;
 
 const TITLE_FS = 18.875;
 const TITLE_TRACK = 0.755;
@@ -65,6 +65,8 @@ type Props = {
   onPlayModeChange?: (mode: PlayModeId) => void;
   clockDivision?: ClockDivisionId;
   onClockDivisionChange?: (id: ClockDivisionId) => void;
+  dawSync?: boolean;
+  onDawSyncChange?: (enabled: boolean) => void;
 };
 
 export function TransportChrome({
@@ -75,19 +77,24 @@ export function TransportChrome({
   onPlayModeChange,
   clockDivision: clockProp,
   onClockDivisionChange,
+  dawSync: dawSyncProp,
+  onDawSyncChange,
 }: Props) {
   const [internalPlaying, setInternalPlaying] = useState(false);
   const [internalPlayMode, setInternalPlayMode] = useState<PlayModeId>("transport");
   const [internalClock, setInternalClock] = useState<ClockDivisionId>("1/16");
+  const [internalDawSync, setInternalDawSync] = useState(true);
   const [openMenu, setOpenMenu] = useState<MenuId | null>(null);
 
   const playing = playingProp ?? internalPlaying;
   const playMode = playModeProp ?? internalPlayMode;
   const clockId = clockProp ?? internalClock;
+  const dawSync = dawSyncProp ?? internalDawSync;
 
   const setPlaying = (v: boolean) => { setInternalPlaying(v); onPlayingChange?.(v); };
   const setPlayMode = (m: PlayModeId) => { setInternalPlayMode(m); onPlayModeChange?.(m); };
   const setClock = (id: ClockDivisionId) => { setInternalClock(id); onClockDivisionChange?.(id); };
+  const setDawSync = (v: boolean) => { setInternalDawSync(v); onDawSyncChange?.(v); };
 
   const s = scale;
   const playModeIdx = PLAY_MODES.indexOf(playMode);
@@ -218,7 +225,12 @@ export function TransportChrome({
           gap: COL_GAP * s,
         }}
       >
-        <PlayPauseGem s={s} playing={playing} onToggle={() => setPlaying(!playing)} />
+        <PlayPauseGem
+          s={s}
+          playing={playing}
+          linked={dawSync}
+          onToggle={() => setPlaying(!playing)}
+        />
 
         {/* Play Mode */}
         <SectionBlock s={s} width={PLAY_MODE_W} titleVariant="playMode">
@@ -267,6 +279,11 @@ export function TransportChrome({
             ))}
           </SettingDropdown>
         </SectionBlock>
+
+        {/* DAW Sync — host transport follow (VST) */}
+        <SectionBlock s={s} width={CLOCK_W} titleVariant="dawSync">
+          <SyncToggleRow s={s} width={CLOCK_W} enabled={dawSync} onToggle={() => setDawSync(!dawSync)} />
+        </SectionBlock>
       </div>
     </div>
   );
@@ -284,17 +301,19 @@ const glassInsetStyle = (): CSSProperties => ({
 function PlayPauseGem({
   s,
   playing,
+  linked = false,
   onToggle,
 }: {
   s: number;
   playing: boolean;
+  linked?: boolean;
   onToggle: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onToggle}
-      title={playing ? "Stop" : "Play"}
+      title={linked ? "DAW Sync on — follows host transport in plugin" : playing ? "Stop" : "Play"}
       style={{
         position: "relative",
         width: PLAY_SIZE * s,
@@ -360,7 +379,7 @@ function SectionBlock({
 }: {
   s: number;
   width: number;
-  titleVariant: "playMode" | "clock";
+  titleVariant: "playMode" | "clock" | "dawSync";
   children: ReactNode;
 }) {
   if (titleVariant === "playMode") {
@@ -407,12 +426,63 @@ function SectionBlock({
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
         <img alt="" src="/assets/transport-ornament-clock-left.svg" style={{ width: 88.32 * s, height: 20 * s }} />
         <span style={{ fontFamily: "'Supermercado One', cursive", fontSize: LABEL_FS * s, color: "rgba(255,255,255,0.7)", whiteSpace: "nowrap" }}>
-          Clock
+          {titleVariant === "dawSync" ? "DAW Sync" : "Clock"}
         </span>
         <img alt="" src="/assets/transport-ornament-clock-right.svg" style={{ width: 88.32 * s, height: 20 * s, transform: "scaleY(-1) rotate(180deg)" }} />
       </div>
       {children}
     </div>
+  );
+}
+
+function SyncToggleRow({
+  s,
+  width,
+  enabled,
+  onToggle,
+}: {
+  s: number;
+  width: number;
+  enabled: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      style={{
+        position: "relative",
+        width: width * s,
+        height: (VALUE_FS + 12) * s,
+        padding: 0,
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+      }}
+    >
+      <div
+        style={{
+          ...glassPanelStyle(s),
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 12 * s,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "'Kode Mono', monospace",
+            fontWeight: 700,
+            fontSize: VALUE_FS * s,
+            color: "#fff",
+          }}
+        >
+          {enabled ? "On" : "Off"}
+        </span>
+      </div>
+    </button>
   );
 }
 

@@ -7,8 +7,8 @@
   "min_octave": 1,
   "max_octave": 9,
   "master_division": 0.0625,
-  "play_mode": "note",
-  "play_on_transport": false,
+  "play_mode": "transport",
+  "play_on_transport": true,
   "selected_layer": 0,
   "layers": [
     {

@@ -13,6 +13,18 @@ struct Layout {
     uint8_t grey = 186;
 };
 
+/** Matches SVG horizontal gradient (edges fade, centre bright). */
+inline float horizontalEnvelope(float t) {
+    t = juce::jlimit(0.f, 1.f, t);
+    if (t <= 0.f || t >= 1.f)
+        return 0.f;
+    if (t < 0.155051f)
+        return t / 0.155051f;
+    if (t > 0.852137f)
+        return (1.f - t) / (1.f - 0.852137f);
+    return 1.f;
+}
+
 inline juce::String prepareSvgForRaster(juce::String svg) {
     for (;;) {
         const int defsStart = svg.indexOf("<defs>");
@@ -68,6 +80,13 @@ inline juce::Colour tintFromTexture(const juce::Image& texture, float filigreeT,
     return edge.withAlpha(edge.getFloatAlpha() * wing);
 }
 
+inline float envelopeAlphaAt(const juce::Image& texture, float filigreeT, const Layout& layout) {
+    const auto sample = tintFromTexture(texture, filigreeT, layout);
+    const float grad = horizontalEnvelope(filigreeT) * 0.2f;
+    const float tex = juce::jmax(sample.getFloatAlpha(), sample.getBrightness() * 0.75f);
+    return juce::jmax(grad, tex) * layout.alphaScale;
+}
+
 inline void applyTextureTint(juce::Image& img, const juce::Image& texture, const Layout& layout) {
     if (!img.isValid() || img.getWidth() <= 1)
         return;
@@ -76,22 +95,21 @@ inline void applyTextureTint(juce::Image& img, const juce::Image& texture, const
     const int w = img.getWidth();
     const int h = img.getHeight();
     const float invW = 1.f / static_cast<float>(w - 1);
-    const float grey = static_cast<float>(layout.grey) / 255.f;
+    const uint8_t greyByte = layout.grey;
 
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
-            auto* px = data.getPixelPointer(x, y);
-            const float shapeA = static_cast<float>(px[3]) / 255.f;
+            auto* px = reinterpret_cast<juce::PixelARGB*>(data.getPixelPointer(x, y));
+            const float shapeA =
+                juce::jmax(static_cast<float>(px->getAlpha()), static_cast<float>(px->getRed()),
+                           static_cast<float>(px->getGreen()), static_cast<float>(px->getBlue())) /
+                255.f;
             if (shapeA <= 0.f)
                 continue;
 
-            const float envelopeA =
-                tintFromTexture(texture, static_cast<float>(x) * invW, layout).getFloatAlpha() * layout.alphaScale;
+            const float envelopeA = envelopeAlphaAt(texture, static_cast<float>(x) * invW, layout);
             const float alpha = envelopeA * shapeA;
-            px[0] = static_cast<uint8_t>(grey * 255.f);
-            px[1] = px[0];
-            px[2] = px[0];
-            px[3] = static_cast<uint8_t>(alpha * 255.f);
+            px->setARGB(static_cast<uint8_t>(alpha * 255.f), greyByte, greyByte, greyByte);
         }
     }
 }
@@ -113,6 +131,19 @@ inline juce::Image rasterizeSvg(const char* data, int size, int width, int heigh
                          juce::RectanglePlacement::stretchToFit, 1.f);
     applyTextureTint(img, texture, layout);
     return img;
+}
+
+/** Bottom title filigree — Figma rotate(180) scaleX(-1) ≡ vertical mirror of top. */
+inline juce::Image flipImageVertically(const juce::Image& src) {
+    if (!src.isValid())
+        return {};
+
+    const int w = src.getWidth();
+    const int h = src.getHeight();
+    juce::Image dst(juce::Image::ARGB, w, h, true);
+    juce::Graphics g(dst);
+    g.drawImageTransformed(src, juce::AffineTransform::scale(1.f, -1.f).translated(0.f, static_cast<float>(h)));
+    return dst;
 }
 
 inline void drawImage(juce::Graphics& g, const juce::Image& img, juce::Rectangle<float> dest) {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MovementMode } from "../components/MovementMenu";
-import type { ClockDivisionId } from "../transportConfig";
+import type { ClockDivisionId, PlayModeId } from "../transportConfig";
 import { CLOCK_DIVISIONS } from "../transportConfig";
 import type { PitchClass, ScaleId } from "../scaleConfig";
 import {
@@ -35,6 +35,8 @@ export type MatildaEngineState = {
   minOctave: number;
   maxOctave: number;
   clockDivision: ClockDivisionId;
+  playMode: PlayModeId;
+  dawSync: boolean;
   setPlaying: (v: boolean) => void;
   setSelectedLayer: (layer: number) => void;
   toggleLayer: (layer: number) => void;
@@ -44,6 +46,8 @@ export type MatildaEngineState = {
   setMinOctave: (oct: number) => void;
   setMaxOctave: (oct: number) => void;
   setClockDivision: (id: ClockDivisionId) => void;
+  setPlayMode: (mode: PlayModeId) => void;
+  setDawSync: (enabled: boolean) => void;
   patchCell: (layer: number, index: number, patch: Partial<Cell>) => void;
   layerCellsFlat: (layer: number) => Cell[];
 };
@@ -57,6 +61,7 @@ export function useMatildaEngine(): MatildaEngineState {
   const [playheadStep, setPlayheadStep] = useState(-1);
   const [playingLayer, setPlayingLayer] = useState(-1);
   const [clockDivision, setClockDivisionState] = useState<ClockDivisionId>("1/16");
+  const [dawSync, setDawSyncState] = useState(true);
 
   const selected = patch.selectedLayer;
   const movement = engineMovementToUi(patch.layers[selected].movement);
@@ -145,6 +150,14 @@ export function useMatildaEngine(): MatildaEngineState {
     updatePatch(p => { p.masterDivision = beats / 4; });
   }, [updatePatch]);
 
+  const setPlayMode = useCallback((mode: PlayModeId) => {
+    updatePatch(p => { p.playMode = mode; });
+  }, [updatePatch]);
+
+  const setDawSync = useCallback((enabled: boolean) => {
+    setDawSyncState(enabled);
+  }, []);
+
   const patchCell = useCallback((layer: number, index: number, cellPatch: Partial<Cell>) => {
     updatePatch(p => {
       const x = index % 4;
@@ -172,6 +185,8 @@ export function useMatildaEngine(): MatildaEngineState {
     minOctave: patch.minOctave,
     maxOctave: patch.maxOctave,
     clockDivision,
+    playMode: (patch.playMode === "note" ? "note" : "transport") as PlayModeId,
+    dawSync,
     setPlaying,
     setSelectedLayer,
     toggleLayer,
@@ -181,6 +196,8 @@ export function useMatildaEngine(): MatildaEngineState {
     setMinOctave,
     setMaxOctave,
     setClockDivision,
+    setPlayMode,
+    setDawSync,
     patchCell,
     layerCellsFlat,
   };

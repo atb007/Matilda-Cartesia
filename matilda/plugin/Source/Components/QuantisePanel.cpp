@@ -379,9 +379,7 @@ QuantisePanel::QuantisePanel(matilda::PatchState& patch, MatildaLookAndFeel& laf
     filigreeTopImg_ = matilda::ui::filigree::rasterizeSvg(BinaryData::movementfiligreetop_svg,
                                                             BinaryData::movementfiligreetop_svgSize, filigreeW2x,
                                                             filigreeH2x, bgTextureImg_, filigreeLayout);
-    filigreeBottomImg_ = matilda::ui::filigree::rasterizeSvg(BinaryData::movementfiligreebottom_svg,
-                                                              BinaryData::movementfiligreebottom_svgSize, filigreeW2x,
-                                                              filigreeH2x, bgTextureImg_, filigreeLayout);
+    filigreeBottomImg_ = matilda::ui::filigree::flipImageVertically(filigreeTopImg_);
     minMaxOrnLeftImg_ = rasterizeSvg(BinaryData::scaleminmaxornamentleft_svg,
                                      BinaryData::scaleminmaxornamentleft_svgSize, 120, 40);
     minMaxOrnRightImg_ = rasterizeSvg(BinaryData::scaleminmaxornamentright_svg,
@@ -660,8 +658,8 @@ void QuantisePanel::paint(juce::Graphics& g) {
                                      designRect(kFiligreeCentreLeft, kFiligreeTop, kFiligreeW, kFiligreeH));
     matilda::ui::filigree::drawImage(g, bgTextureImg_,
                                      designRect(kTitleTextureLeft, kTitleTextureY, kTitleTextureW, kTitleTextureH));
-    matilda::ui::filigree::drawImageFlippedY(
-        g, filigreeBottomImg_, designRect(kFiligreeCentreLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
+    matilda::ui::filigree::drawImage(g, filigreeBottomImg_,
+                                     designRect(kFiligreeCentreLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
     drawNeonTitle(g, "Quantise Scale", designRect(0.f, kTitleCenterY - kTitleFs * 0.5f, kBaseW, kTitleFs), s);
     paintMinMaxHeader(g);
 }

@@ -48,6 +48,6 @@ git tag v1.0.3
 git push origin v1.0.3
 ```
 
-Latest release: **[v1.0.2](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.2)** — UI scale grips, VST3/Windows backdrop fix, chevron PNG polish.
+Latest release: **[v1.0.3](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.3)** — FL instrument registration, FX audio passthrough, DAW Sync toggle, filigree tint fix, dynamic version label.
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.

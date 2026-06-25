@@ -1,5 +1,6 @@
 import { EXPANDED_W, FRAME_H, HERO, HERO_MAIN_LEFT } from "../heroLayout";
 import { AURORA } from "../auroraConfig";
+import { cartesiaVersionLabel } from "../pluginVersion";
 import { AuroraShader } from "./AuroraShader";
 
 /**
@@ -102,7 +103,7 @@ export function HeroCanvas() {
             Matilda
           </p>
           <p style={{ margin: "21px 0 0", fontSize: 60, color: "#df90e5", height: 60 }}>
-            Cartesia - v1.0
+            {cartesiaVersionLabel()}
           </p>
         </div>
       </div>

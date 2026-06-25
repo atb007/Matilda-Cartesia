@@ -22,7 +22,8 @@ public:
     const juce::String getName() const override { return JucePlugin_Name; }
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return true; }
-    bool isMidiEffect() const override { return true; }
+    bool isMidiEffect() const override { return false; }
+    bool isSynth() const { return true; }
     double getTailLengthSeconds() const override { return 0.0; }
 
     int getNumPrograms() override { return 1; }
@@ -50,6 +51,9 @@ public:
     [[nodiscard]] bool hasExternalTempo() const { return externalTempoHoldBlocks_ > 0; }
     [[nodiscard]] bool followExternalTransport() const { return followExternalTransport_.load(); }
     void setFollowExternalTransport(bool enabled);
+    /** VST/AU — follow host play/stop (Global Settings → DAW Sync). */
+    [[nodiscard]] bool syncHostTransport() const { return syncHostTransport_.load(); }
+    void setSyncHostTransport(bool enabled);
 
     /** Reload patch from JSON string (preset import / host restore). */
     void applyPatchJson(const juce::String& json);
@@ -62,6 +66,7 @@ private:
     std::atomic<bool> sequencerStepping_{false};
     std::atomic<bool> panicRequested_{false};
     std::atomic<bool> followExternalTransport_{false};
+    std::atomic<bool> syncHostTransport_{true};
 
     double sampleRate_ = 44100.0;
     double sampleClock_ = 0.0;

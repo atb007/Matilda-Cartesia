@@ -115,6 +115,8 @@ void MatildaAudioProcessorEditor::refreshAll() {
     grid_.refresh();
     overview_.refresh();
     quantise_.syncFromPatch();
+    transport_.setDawSyncVisible(!processor_.isStandaloneWrapper());
+    transport_.setSyncHostTransport(processor_.syncHostTransport());
     syncToggle_.setToggleState(processor_.followExternalTransport(), juce::dontSendNotification);
     updateStatusLine();
     layoutChromeOverlays();
@@ -152,6 +154,8 @@ void MatildaAudioProcessorEditor::bindCallbacks() {
     movement_.onChanged = [this] { overview_.refresh(); };
 
     transport_.onSettingsChanged = [this] { updateStatusLine(); };
+
+    transport_.onSyncChanged = [this](bool enabled) { processor_.setSyncHostTransport(enabled); };
 
     grid_.onCellChanged = [this] { overview_.refresh(); };
 }

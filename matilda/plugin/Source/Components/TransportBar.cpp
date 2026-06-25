@@ -201,6 +201,38 @@ private:
     juce::String label_;
 };
 
+class TransportBar::SyncToggleRow : public juce::Component {
+public:
+    explicit SyncToggleRow(TransportBar& owner) : owner_(owner) {}
+
+    void setEnabled(bool enabled) {
+        enabled_ = enabled;
+        repaint();
+    }
+
+    void paint(juce::Graphics& g) override {
+        const auto bounds = getLocalBounds().toFloat();
+        const float s = owner_.designScale();
+
+        matilda::ui::glass::drawInlinePickerBox(g, bounds, s);
+
+        g.setFont(matilda::fonts::kodeMonoBold(kValueFs * s));
+        g.setColour(juce::Colours::white);
+        g.drawText(enabled_ ? "On" : "Off", bounds.toNearestInt(), juce::Justification::centred, false);
+    }
+
+    void mouseDown(const juce::MouseEvent&) override {
+        enabled_ = !enabled_;
+        if (owner_.onSyncChanged)
+            owner_.onSyncChanged(enabled_);
+        repaint();
+    }
+
+private:
+    TransportBar& owner_;
+    bool enabled_ = true;
+};
+
 class TransportBar::GlassMenu : public juce::Component {
 public:
     explicit GlassMenu(TransportBar& o) : owner(o) {}
@@ -417,9 +449,7 @@ TransportBar::TransportBar(matilda::PatchState& patch, MatildaLookAndFeel& laf)
     const int filigreeH2x = juce::roundToInt(kFiligreeH * 2.f);
     filigreeTopImg_ = rasterizeSvg(BinaryData::movementfiligreetop_svg, BinaryData::movementfiligreetop_svgSize,
                                   filigreeW2x, filigreeH2x, bgTextureImg_, filigreeLayout);
-    filigreeBottomImg_ = rasterizeSvg(BinaryData::movementfiligreebottom_svg,
-                                       BinaryData::movementfiligreebottom_svgSize, filigreeW2x, filigreeH2x,
-                                       bgTextureImg_, filigreeLayout);
+    filigreeBottomImg_ = flipImageVertically(filigreeTopImg_);
 
     sectionOrnLeftImg_ = rasterizePlainSvg(BinaryData::transportornamentclockleft_svg,
                                            BinaryData::transportornamentclockleft_svgSize,
@@ -431,6 +461,7 @@ TransportBar::TransportBar(matilda::PatchState& patch, MatildaLookAndFeel& laf)
     playButton_ = std::make_unique<PlayButton>(*this);
     playModeRow_ = std::make_unique<SettingRow>(*this, MenuId::PlayMode);
     clockRow_ = std::make_unique<SettingRow>(*this, MenuId::Clock);
+    syncRow_ = std::make_unique<SyncToggleRow>(*this);
     glassMenu_ = std::make_unique<GlassMenu>(*this);
     dismissLayer_ = std::make_unique<DismissLayer>();
     globalClickListener_ = std::make_unique<GlobalClickListener>(*this);
@@ -438,6 +469,7 @@ TransportBar::TransportBar(matilda::PatchState& patch, MatildaLookAndFeel& laf)
     addAndMakeVisible(*playButton_);
     addAndMakeVisible(*playModeRow_);
     addAndMakeVisible(*clockRow_);
+    addChildComponent(*syncRow_);
 
     syncFromPatch();
 }
@@ -449,6 +481,19 @@ TransportBar::~TransportBar() {
 void TransportBar::setPlaying(bool playing) {
     playing_ = playing;
     playButton_->repaint();
+}
+
+void TransportBar::setSyncHostTransport(bool enabled) {
+    syncEnabled_ = enabled;
+    syncRow_->setEnabled(enabled);
+}
+
+void TransportBar::setDawSyncVisible(bool visible) {
+    dawSyncVisible_ = visible;
+    if (dawSyncVisible_)
+        syncRow_->setVisible(true);
+    else
+        syncRow_->setVisible(false);
 }
 
 void TransportBar::syncFromPatch() {
@@ -573,7 +618,7 @@ void TransportBar::paint(juce::Graphics& g) {
 
     drawImage(g, filigreeTopImg_, designRect(kFiligreeTopLeft, 0.f, kFiligreeW, kFiligreeH));
     drawImage(g, bgTextureImg_, designRect(kTitleTextureLeft, kTitleTextureY, kTitleTextureW, kTitleTextureH));
-    drawImageFlippedY(g, filigreeBottomImg_, designRect(kFiligreeTopLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
+    drawImage(g, filigreeBottomImg_, designRect(kFiligreeTopLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
     drawNeonTitle(g, "Global Settings", designRect(0.f, kTitleCenterY - kTitleFs * 0.5f, kBaseW, kTitleFs), s);
 
     const float playModeHeaderY = kColTop + kPlaySize + kColGap;
@@ -584,6 +629,12 @@ void TransportBar::paint(juce::Graphics& g) {
     const float clockHeaderY = playModeHeaderY + playModeHeaderH + kRowGap + 44.f;
     drawSectionHeader(g, sectionOrnLeftImg_, sectionOrnRightImg_, "Clock",
                       designRect(kColLeft + (kPlayModeW - kClockW) * 0.5f, clockHeaderY, kClockW, kLabelFs), s);
+
+    if (dawSyncVisible_) {
+        const float syncHeaderY = clockHeaderY + kLabelFs + kRowGap + 44.f;
+        drawSectionHeader(g, sectionOrnLeftImg_, sectionOrnRightImg_, "DAW Sync",
+                          designRect(kColLeft + (kPlayModeW - kClockW) * 0.5f, syncHeaderY, kClockW, kLabelFs), s);
+    }
 }
 
 void TransportBar::resized() {
@@ -600,5 +651,10 @@ void TransportBar::resized() {
     const float clockRowY = playModeRowY + kValueFs + kDropdownPadY * 2.f + kRowGap + kLabelFs + kRowGap;
     clockRow_->setBounds(
         designRect(kColLeft + (kPlayModeW - kClockW) * 0.5f, clockRowY, kClockW, kValueFs + kDropdownPadY * 2.f)
+            .toNearestInt());
+
+    const float syncRowY = clockRowY + kValueFs + kDropdownPadY * 2.f + kRowGap + kLabelFs + kRowGap;
+    syncRow_->setBounds(
+        designRect(kColLeft + (kPlayModeW - kClockW) * 0.5f, syncRowY, kClockW, kValueFs + kDropdownPadY * 2.f)
             .toNearestInt());
 }

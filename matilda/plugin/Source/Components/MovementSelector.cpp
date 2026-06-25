@@ -1,5 +1,6 @@
 #include "MovementSelector.h"
 #include "BinaryData.h"
+#include "../FiligreeDrawing.h"
 #include "../GlassDropdownDrawing.h"
 #include "../MatildaFonts.h"
 #include "../MovementLayout.h"
@@ -75,6 +76,17 @@ juce::Colour filigreeTintFromTexture(const juce::Image& texture, float filigreeT
     return edge.withAlpha(edge.getFloatAlpha() * wing);
 }
 
+float horizontalFiligreeEnvelope(float t) {
+    t = juce::jlimit(0.f, 1.f, t);
+    if (t <= 0.f || t >= 1.f)
+        return 0.f;
+    if (t < 0.155051f)
+        return t / 0.155051f;
+    if (t > 0.852137f)
+        return (1.f - t) / (1.f - 0.852137f);
+    return 1.f;
+}
+
 void applyFiligreeTextureTint(juce::Image& img, const juce::Image& texture) {
     if (!img.isValid() || img.getWidth() <= 1)
         return;
@@ -83,23 +95,25 @@ void applyFiligreeTextureTint(juce::Image& img, const juce::Image& texture) {
     const int w = img.getWidth();
     const int h = img.getHeight();
     const float invW = 1.f / static_cast<float>(w - 1);
-    const float grey = static_cast<float>(kFiligreeGrey) / 255.f;
+    const uint8_t greyByte = kFiligreeGrey;
 
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
-            auto* px = data.getPixelPointer(x, y);
-            const float shapeA = static_cast<float>(px[3]) / 255.f;
+            auto* px = reinterpret_cast<juce::PixelARGB*>(data.getPixelPointer(x, y));
+            const float shapeA =
+                juce::jmax(static_cast<float>(px->getAlpha()), static_cast<float>(px->getRed()),
+                           static_cast<float>(px->getGreen()), static_cast<float>(px->getBlue())) /
+                255.f;
             if (shapeA <= 0.f)
                 continue;
 
-            // Texture supplies horizontal fade only; colour stays muted so text stays focal.
-            const float envelopeA =
-                filigreeTintFromTexture(texture, static_cast<float>(x) * invW).getFloatAlpha() * kFiligreeAlphaScale;
+            const float filigreeT = static_cast<float>(x) * invW;
+            const auto sample = filigreeTintFromTexture(texture, filigreeT);
+            const float grad = horizontalFiligreeEnvelope(filigreeT) * 0.2f;
+            const float tex = juce::jmax(sample.getFloatAlpha(), sample.getBrightness() * 0.75f);
+            const float envelopeA = juce::jmax(grad, tex) * kFiligreeAlphaScale;
             const float alpha = envelopeA * shapeA;
-            px[0] = static_cast<uint8_t>(grey * 255.f);
-            px[1] = px[0];
-            px[2] = px[0];
-            px[3] = static_cast<uint8_t>(alpha * 255.f);
+            px->setARGB(static_cast<uint8_t>(alpha * 255.f), greyByte, greyByte, greyByte);
         }
     }
 }
@@ -125,16 +139,6 @@ juce::Image rasterizeFiligreeSvg(const char* data, int size, int width, int heig
 void drawImage(juce::Graphics& g, const juce::Image& img, juce::Rectangle<float> dest) {
     if (img.isValid())
         g.drawImage(img, dest, juce::RectanglePlacement::stretchToFit);
-}
-
-/** React: bottom filigree uses scaleY(-1) at bottom — flip at draw time, not in bitmap cache. */
-void drawImageFlippedY(juce::Graphics& g, const juce::Image& img, juce::Rectangle<float> dest) {
-    if (!img.isValid())
-        return;
-    g.saveState();
-    g.addTransform(juce::AffineTransform::scale(1.f, -1.f, dest.getCentreX(), dest.getCentreY()));
-    g.drawImage(img, dest, juce::RectanglePlacement::stretchToFit);
-    g.restoreState();
 }
 
 void drawMovementArrow(juce::Graphics& g, juce::Rectangle<float> bounds, bool left, bool hover) {
@@ -384,9 +388,7 @@ MovementSelector::MovementSelector(matilda::PatchState& patch, MatildaLookAndFee
 
     filigreeTopImg_ = rasterizeFiligreeSvg(BinaryData::movementfiligreetop_svg, BinaryData::movementfiligreetop_svgSize,
                                            filigreeW2x, filigreeH2x, bgTextureImg_);
-    filigreeBottomImg_ = rasterizeFiligreeSvg(BinaryData::movementfiligreebottom_svg,
-                                              BinaryData::movementfiligreebottom_svgSize, filigreeW2x, filigreeH2x,
-                                              bgTextureImg_);
+    filigreeBottomImg_ = matilda::ui::filigree::flipImageVertically(filigreeTopImg_);
 
     prev_ = std::make_unique<ArrowButton>(true, [this] { cycleMode(-1); });
     next_ = std::make_unique<ArrowButton>(false, [this] { cycleMode(1); });
@@ -528,7 +530,7 @@ void MovementSelector::paint(juce::Graphics& g) {
 
     const auto filigreeBottomDest =
         designRectAt((kBaseW - kFiligreeW) * 0.5f, kBaseH - kFiligreeH, kFiligreeW, kFiligreeH, s, origin);
-    drawImageFlippedY(g, filigreeBottomImg_, filigreeBottomDest);
+    drawImage(g, filigreeBottomImg_, filigreeBottomDest);
 }
 
 void MovementSelector::resized() {
