@@ -54,3 +54,33 @@ body {
 .glass-dd-scroll::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* Icon buttons — collapse, DAW sync, play gem */
+.icon-hover-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  background: rgba(12, 12, 14, 0.92);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: 'Jost', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  z-index: 30;
+}
+
+.icon-hover-tip--gem {
+  bottom: calc(100% + 4px);
+}
+
+.icon-press-btn:focus-visible {
+  outline: 1px solid rgba(16, 255, 207, 0.5);
+  outline-offset: 2px;
+}

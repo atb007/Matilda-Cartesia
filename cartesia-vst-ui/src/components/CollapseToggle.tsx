@@ -1,4 +1,5 @@
 import { COLLAPSE_MS, ICON_SIZE } from "../heroLayout";
+import { PressableIconButton } from "./PressableIconButton";
 
 type Props = {
   left: number;
@@ -11,28 +12,18 @@ type Props = {
  * Glass chevron button — Figma `icon` · 70×70 (100×100 @2x PNG).
  */
 export function CollapseToggle({ left, top, collapsed, onToggle }: Props) {
+  const label = collapsed ? "Expand hero panel" : "Collapse hero panel";
+  const ease = `${COLLAPSE_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+
   return (
-    <button
-      type="button"
-      aria-label={collapsed ? "Expand hero panel" : "Collapse hero panel"}
-      aria-expanded={!collapsed}
+    <PressableIconButton
+      left={left}
+      top={top}
+      size={ICON_SIZE}
+      label={label}
       onClick={onToggle}
-      className="select-none"
-      style={{
-        position: "absolute",
-        left,
-        top,
-        width: ICON_SIZE,
-        height: ICON_SIZE,
-        zIndex: 10,
-        padding: 0,
-        border: "none",
-        background: "transparent",
-        cursor: "pointer",
-        overflow: "hidden",
-        borderRadius: "50%",
-        transition: `left ${COLLAPSE_MS}ms cubic-bezier(0.4, 0, 0.2, 1), top ${COLLAPSE_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`,
-      }}
+      transition={`left ${ease}, top ${ease}`}
+      ariaExpanded={!collapsed}
     >
       <img
         alt=""
@@ -49,6 +40,6 @@ export function CollapseToggle({ left, top, collapsed, onToggle }: Props) {
           objectFit: "contain",
         }}
       />
-    </button>
+    </PressableIconButton>
   );
 }

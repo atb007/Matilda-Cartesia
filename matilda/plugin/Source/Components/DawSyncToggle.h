@@ -3,16 +3,16 @@
 #include <JuceHeader.h>
 #include <functional>
 
-/** Glass chevron — Figma `5002:6419` (expanded >> · collapsed <<). */
-class CollapseToggle : public juce::Component,
-                       public juce::SettableTooltipClient {
+/** Top-right canvas toggle — Figma Sync (5108:109841) · DawSyncOn/Off @2x PNG. */
+class DawSyncToggle : public juce::Component,
+                      public juce::SettableTooltipClient {
 public:
-    CollapseToggle();
+    DawSyncToggle();
 
-    void setCollapsed(bool collapsed);
-    [[nodiscard]] bool isCollapsed() const { return collapsed_; }
+    void setSyncOn(bool on);
+    [[nodiscard]] bool isSyncOn() const { return syncOn_; }
 
-    std::function<void()> onToggle;
+    std::function<void(bool)> onToggle;
 
     void paint(juce::Graphics& g) override;
     void mouseDown(const juce::MouseEvent& e) override;
@@ -23,6 +23,6 @@ public:
 private:
     void updateTooltip();
 
-    bool collapsed_ = false;
+    bool syncOn_ = true;
     bool pressed_ = false;
 };

@@ -21,7 +21,7 @@ inline constexpr int kCollapseMs = 380;
 
 // Collapse chevron (heroLayout.ts · CollapseToggle.tsx)
 inline constexpr float kIconSize = 70.f;
-inline constexpr float kIconCollapsedInsetLeft = 10.f;
+inline constexpr float kIconCollapsedInsetLeft = 17.f;
 
 inline float viewportContentOffset(float viewportW) { return viewportW - kExpandedW; }
 
@@ -30,6 +30,7 @@ inline constexpr float kHeroMainLeft = 66.f;
 /** Equal viewport inset — X and Y both HERO_MAIN_LEFT + 17 (= 83 design px). */
 inline constexpr float kIconExpandedLeft = kHeroMainLeft + 17.f;
 inline constexpr float kIconExpandedTop = kIconExpandedLeft;
+inline constexpr float kDawSyncExpandedLeft = kExpandedW - kIconExpandedLeft - kIconSize;
 inline constexpr float kHeroBgTop = 7.f;
 inline constexpr float kHeroBgW = 2310.f;
 inline constexpr float kHeroBgH = 1798.f;
@@ -85,7 +86,7 @@ inline constexpr float kGridW = kGridCellW * 4.f + kGridColGap * 3.f;
 inline constexpr float kGridH = kGridCellH * 4.f + kGridRowGap * 3.f;
 
 inline constexpr Point kTransportPos{103.218f, 887.449f};
-inline constexpr Size kTransportSize{439.f, 541.f};
+inline constexpr Size kTransportSize{439.f, 485.f};
 
 // TransportChrome.tsx — clock row inside transport module
 inline constexpr Point kTransportClockPos{0.f, 127.55f + 156.37f + 28.f + 12.f}; // play + gap + playMode + gap

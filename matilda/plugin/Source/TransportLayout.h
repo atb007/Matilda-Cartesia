@@ -9,7 +9,7 @@
 namespace matilda::transport {
 
 inline constexpr float kBaseW = 439.f;
-inline constexpr float kBaseH = 541.f;
+inline constexpr float kBaseH = 485.f;
 
 inline constexpr float kTitleFigmaFs = 18.875f;
 /** Boosted for JUCE legibility — matches Movement title. */

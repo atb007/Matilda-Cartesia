@@ -37,6 +37,7 @@ private:
     juce::Label bpmLabel_{"", "120 BPM"};
     juce::ToggleButton syncToggle_{"Sync external transport"};
     juce::Label statusLabel_{"", ""};
+    juce::TooltipWindow tooltipWindow_{this, 400};
 
     void timerCallback() override;
     void changeListenerCallback(juce::ChangeBroadcaster*) override;

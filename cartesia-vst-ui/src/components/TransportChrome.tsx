@@ -1,6 +1,7 @@
 import { useRef, useState, type CSSProperties } from "react";
 import type { ReactNode } from "react";
 import { useClickOutside } from "../hooks/useClickOutside";
+import { ClickableGemButton } from "./ClickableGemButton";
 import {
   CLOCK_DIVISIONS,
   PLAY_MODES,
@@ -24,7 +25,7 @@ import {
  */
 
 const BASE_W = 439;
-const BASE_H = 541;
+const BASE_H = 485;
 
 const TITLE_FS = 18.875;
 const TITLE_TRACK = 0.755;
@@ -65,8 +66,8 @@ type Props = {
   onPlayModeChange?: (mode: PlayModeId) => void;
   clockDivision?: ClockDivisionId;
   onClockDivisionChange?: (id: ClockDivisionId) => void;
-  dawSync?: boolean;
-  onDawSyncChange?: (enabled: boolean) => void;
+  /** DAW host sync — shows link icon and disables manual play/stop. */
+  linked?: boolean;
 };
 
 export function TransportChrome({
@@ -77,24 +78,20 @@ export function TransportChrome({
   onPlayModeChange,
   clockDivision: clockProp,
   onClockDivisionChange,
-  dawSync: dawSyncProp,
-  onDawSyncChange,
+  linked = false,
 }: Props) {
   const [internalPlaying, setInternalPlaying] = useState(false);
   const [internalPlayMode, setInternalPlayMode] = useState<PlayModeId>("transport");
   const [internalClock, setInternalClock] = useState<ClockDivisionId>("1/16");
-  const [internalDawSync, setInternalDawSync] = useState(true);
   const [openMenu, setOpenMenu] = useState<MenuId | null>(null);
 
   const playing = playingProp ?? internalPlaying;
   const playMode = playModeProp ?? internalPlayMode;
   const clockId = clockProp ?? internalClock;
-  const dawSync = dawSyncProp ?? internalDawSync;
 
   const setPlaying = (v: boolean) => { setInternalPlaying(v); onPlayingChange?.(v); };
   const setPlayMode = (m: PlayModeId) => { setInternalPlayMode(m); onPlayModeChange?.(m); };
   const setClock = (id: ClockDivisionId) => { setInternalClock(id); onClockDivisionChange?.(id); };
-  const setDawSync = (v: boolean) => { setInternalDawSync(v); onDawSyncChange?.(v); };
 
   const s = scale;
   const playModeIdx = PLAY_MODES.indexOf(playMode);
@@ -228,8 +225,8 @@ export function TransportChrome({
         <PlayPauseGem
           s={s}
           playing={playing}
-          linked={dawSync}
-          onToggle={() => setPlaying(!playing)}
+          linked={linked}
+          onToggle={() => { if (!linked) setPlaying(!playing); }}
         />
 
         {/* Play Mode */}
@@ -279,11 +276,6 @@ export function TransportChrome({
             ))}
           </SettingDropdown>
         </SectionBlock>
-
-        {/* DAW Sync — host transport follow (VST) */}
-        <SectionBlock s={s} width={CLOCK_W} titleVariant="dawSync">
-          <SyncToggleRow s={s} width={CLOCK_W} enabled={dawSync} onToggle={() => setDawSync(!dawSync)} />
-        </SectionBlock>
       </div>
     </div>
   );
@@ -310,19 +302,12 @@ function PlayPauseGem({
   onToggle: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <ClickableGemButton
+      disabled={linked}
       onClick={onToggle}
-      title={linked ? "DAW Sync on — follows host transport in plugin" : playing ? "Stop" : "Play"}
       style={{
-        position: "relative",
         width: PLAY_SIZE * s,
         height: PLAY_SIZE * s,
-        padding: 0,
-        border: "none",
-        background: "transparent",
-        cursor: "pointer",
-        lineHeight: 0,
       }}
     >
       <div style={{ ...glassInsetStyle(), pointerEvents: "none" }}>
@@ -354,20 +339,40 @@ function PlayPauseGem({
       <div style={{ ...glassInsetStyle(), pointerEvents: "none" }}>
         <img
           alt=""
-          src={playing ? "/assets/transport-stop-icon.png" : "/assets/transport-play-icon.png"}
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            transform: "translate(-50%, -50%)",
-            width: playing ? "47.3%" : "42.9%",
-            height: playing ? "48.4%" : "54.5%",
-            objectFit: "contain",
-            objectPosition: "center",
-          }}
+          src={
+            linked
+              ? "/assets/transport-play-link-icon.svg"
+              : playing
+                ? "/assets/transport-stop-icon.png"
+                : "/assets/transport-play-icon.png"
+          }
+          style={
+            linked
+              ? {
+                  position: "absolute",
+                  left: "50%",
+                  top: "50%",
+                  transform: "translate(-50%, -50%)",
+                  height: "36%",
+                  width: "auto",
+                  maxWidth: "58%",
+                  objectFit: "contain",
+                  objectPosition: "center",
+                }
+              : {
+                  position: "absolute",
+                  left: "50%",
+                  top: "50%",
+                  transform: "translate(-50%, -50%)",
+                  width: playing ? "47.3%" : "42.9%",
+                  height: playing ? "48.4%" : "54.5%",
+                  objectFit: "contain",
+                  objectPosition: "center",
+                }
+          }
         />
       </div>
-    </button>
+    </ClickableGemButton>
   );
 }
 
@@ -379,7 +384,7 @@ function SectionBlock({
 }: {
   s: number;
   width: number;
-  titleVariant: "playMode" | "clock" | "dawSync";
+  titleVariant: "playMode" | "clock";
   children: ReactNode;
 }) {
   if (titleVariant === "playMode") {
@@ -426,63 +431,12 @@ function SectionBlock({
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
         <img alt="" src="/assets/transport-ornament-clock-left.svg" style={{ width: 88.32 * s, height: 20 * s }} />
         <span style={{ fontFamily: "'Supermercado One', cursive", fontSize: LABEL_FS * s, color: "rgba(255,255,255,0.7)", whiteSpace: "nowrap" }}>
-          {titleVariant === "dawSync" ? "DAW Sync" : "Clock"}
+          Clock
         </span>
         <img alt="" src="/assets/transport-ornament-clock-right.svg" style={{ width: 88.32 * s, height: 20 * s, transform: "scaleY(-1) rotate(180deg)" }} />
       </div>
       {children}
     </div>
-  );
-}
-
-function SyncToggleRow({
-  s,
-  width,
-  enabled,
-  onToggle,
-}: {
-  s: number;
-  width: number;
-  enabled: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      style={{
-        position: "relative",
-        width: width * s,
-        height: (VALUE_FS + 12) * s,
-        padding: 0,
-        border: "none",
-        background: "transparent",
-        cursor: "pointer",
-      }}
-    >
-      <div
-        style={{
-          ...glassPanelStyle(s),
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          borderRadius: 12 * s,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "'Kode Mono', monospace",
-            fontWeight: 700,
-            fontSize: VALUE_FS * s,
-            color: "#fff",
-          }}
-        >
-          {enabled ? "On" : "Off"}
-        </span>
-      </div>
-    </button>
   );
 }
 

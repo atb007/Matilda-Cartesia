@@ -56,6 +56,33 @@ juce::Image transportStopIcon() {
     return load(BinaryData::transportstopicon_png, BinaryData::transportstopicon_pngSize);
 }
 
+juce::Image transportPlayLinkIcon() {
+    static const juce::Image cached = [] {
+        const auto xml = juce::parseXML(juce::String::fromUTF8(
+            BinaryData::transportplaylinkicon_svg, static_cast<size_t>(BinaryData::transportplaylinkicon_svgSize)));
+        if (!xml)
+            return juce::Image{};
+        const auto drawable = juce::Drawable::createFromSVG(*xml);
+        if (!drawable)
+            return juce::Image{};
+        juce::Image img(juce::Image::ARGB, 150, 90, true);
+        juce::Graphics g(img);
+        g.fillAll(juce::Colours::transparentBlack);
+        drawable->drawWithin(g, juce::Rectangle<float>(0.f, 0.f, 150.f, 90.f),
+                             juce::RectanglePlacement::stretchToFit, 1.f);
+        return img;
+    }();
+    return cached;
+}
+
+juce::Image dawSyncOn() {
+    return load(BinaryData::DawSyncOn_png, BinaryData::DawSyncOn_pngSize);
+}
+
+juce::Image dawSyncOff() {
+    return load(BinaryData::DawSyncOff_png, BinaryData::DawSyncOff_pngSize);
+}
+
 juce::Image movementBgTexture() {
     return load(BinaryData::movementbgtexture2xpng_png, BinaryData::movementbgtexture2xpng_pngSize);
 }

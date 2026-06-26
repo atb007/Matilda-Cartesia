@@ -12,11 +12,10 @@ public:
     std::function<void()> onPlay;
     std::function<void()> onStop;
     std::function<void()> onSettingsChanged;
-    std::function<void(bool)> onSyncChanged;
 
     void setPlaying(bool playing);
-    void setSyncHostTransport(bool enabled);
-    void setDawSyncVisible(bool visible);
+    /** When true, play gem shows link icon and ignores clicks (DAW host sync). */
+    void setHostSyncLocked(bool locked);
     void syncFromPatch();
 
 private:
@@ -24,7 +23,6 @@ private:
 
     class PlayButton;
     class SettingRow;
-    class SyncToggleRow;
     class GlassMenu;
     class DismissLayer;
     class GlobalClickListener;
@@ -32,8 +30,7 @@ private:
     matilda::PatchState& patch_;
     MatildaLookAndFeel& laf_;
     bool playing_ = false;
-    bool syncEnabled_ = true;
-    bool dawSyncVisible_ = true;
+    bool hostSyncLocked_ = false;
     MenuId openMenu_ = MenuId::None;
 
     juce::Image filigreeTopImg_;
@@ -45,7 +42,6 @@ private:
     std::unique_ptr<PlayButton> playButton_;
     std::unique_ptr<SettingRow> playModeRow_;
     std::unique_ptr<SettingRow> clockRow_;
-    std::unique_ptr<SyncToggleRow> syncRow_;
     std::unique_ptr<GlassMenu> glassMenu_;
     std::unique_ptr<DismissLayer> dismissLayer_;
     std::unique_ptr<GlobalClickListener> globalClickListener_;

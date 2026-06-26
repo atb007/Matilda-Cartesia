@@ -1,26 +1,26 @@
-#include "CollapseToggle.h"
+#include "DawSyncToggle.h"
 #include "../ClickFeedbackDrawing.h"
 #include "../MatildaImages.h"
 
-CollapseToggle::CollapseToggle() {
+DawSyncToggle::DawSyncToggle() {
     setInterceptsMouseClicks(true, false);
     setOpaque(false);
     updateTooltip();
 }
 
-void CollapseToggle::setCollapsed(bool collapsed) {
-    if (collapsed_ != collapsed) {
-        collapsed_ = collapsed;
+void DawSyncToggle::setSyncOn(bool on) {
+    if (syncOn_ != on) {
+        syncOn_ = on;
         updateTooltip();
         repaint();
     }
 }
 
-void CollapseToggle::updateTooltip() {
-    setTooltip(collapsed_ ? "Expand hero panel" : "Collapse hero panel");
+void DawSyncToggle::updateTooltip() {
+    setTooltip(syncOn_ ? "DAW sync is on" : "DAW sync is off");
 }
 
-void CollapseToggle::paint(juce::Graphics& g) {
+void DawSyncToggle::paint(juce::Graphics& g) {
     const auto bounds = getLocalBounds().toFloat();
     matilda::ui::paintWithPressScale(g, bounds, pressed_);
 
@@ -29,33 +29,37 @@ void CollapseToggle::paint(juce::Graphics& g) {
     clip.addEllipse(bounds);
     g.reduceClipRegion(clip);
 
-    const auto img = collapsed_ ? matilda::images::collapseToggleCollapsed()
-                                : matilda::images::collapseToggleExpanded();
+    const auto img = syncOn_ ? matilda::images::dawSyncOn() : matilda::images::dawSyncOff();
     if (img.isValid())
         g.drawImage(img, bounds, juce::RectanglePlacement::stretchToFit);
 
     g.restoreState();
 }
 
-void CollapseToggle::mouseDown(const juce::MouseEvent&) {
+void DawSyncToggle::mouseDown(const juce::MouseEvent&) {
     pressed_ = true;
     repaint();
 }
 
-void CollapseToggle::mouseUp(const juce::MouseEvent& e) {
+void DawSyncToggle::mouseUp(const juce::MouseEvent& e) {
     const bool wasPressed = pressed_;
     pressed_ = false;
     repaint();
 
-    if (wasPressed && e.mouseWasClicked() && onToggle)
-        onToggle();
+    if (!wasPressed || !e.mouseWasClicked() || !onToggle)
+        return;
+
+    syncOn_ = !syncOn_;
+    updateTooltip();
+    onToggle(syncOn_);
+    repaint();
 }
 
-void CollapseToggle::mouseEnter(const juce::MouseEvent&) {
+void DawSyncToggle::mouseEnter(const juce::MouseEvent&) {
     setMouseCursor(juce::MouseCursor::PointingHandCursor);
 }
 
-void CollapseToggle::mouseExit(const juce::MouseEvent&) {
+void DawSyncToggle::mouseExit(const juce::MouseEvent&) {
     if (pressed_) {
         pressed_ = false;
         repaint();

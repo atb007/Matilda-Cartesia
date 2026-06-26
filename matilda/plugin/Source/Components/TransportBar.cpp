@@ -1,4 +1,5 @@
 #include "TransportBar.h"
+#include "../ClickFeedbackDrawing.h"
 #include "../FiligreeDrawing.h"
 #include "../GlassDropdownDrawing.h"
 #include "../MatildaFonts.h"
@@ -107,10 +108,12 @@ public:
         const auto bounds = getLocalBounds().toFloat();
         const float bleed = kPlayFrameBleed * owner_.designScale();
         const auto core = bounds.reduced(bleed);
+        matilda::ui::paintWithPressScale(g, core, pressed_ && !owner_.hostSyncLocked_, 0.94f);
         const auto frame = matilda::images::transportPlayFrame();
         const auto glass = matilda::images::transportGlassBg();
         const auto playIcon = matilda::images::transportPlayIcon();
         const auto stopIcon = matilda::images::transportStopIcon();
+        const auto linkIcon = matilda::images::transportPlayLinkIcon();
         const auto inset = glassInsetRect(core);
 
         if (glass.isValid())
@@ -119,16 +122,42 @@ public:
         if (frame.isValid())
             g.drawImage(frame, core, juce::RectanglePlacement::centred);
 
-        const auto& icon = owner_.playing_ ? stopIcon : playIcon;
-        if (icon.isValid()) {
-            const float iconW = owner_.playing_ ? inset.getWidth() * 0.473f : inset.getWidth() * 0.429f;
-            const float iconH = owner_.playing_ ? inset.getHeight() * 0.484f : inset.getHeight() * 0.545f;
+        if (owner_.hostSyncLocked_ && linkIcon.isValid()) {
+            constexpr float kLinkAspect = 75.f / 45.f;
+            const float maxW = inset.getWidth() * 0.58f;
+            const float maxH = inset.getHeight() * 0.36f;
+            float iconH = maxH;
+            float iconW = iconH * kLinkAspect;
+            if (iconW > maxW) {
+                iconW = maxW;
+                iconH = iconW / kLinkAspect;
+            }
             const auto iconDest = juce::Rectangle<float>(iconW, iconH).withCentre(inset.getCentre());
-            g.drawImage(icon, iconDest, juce::RectanglePlacement::centred);
+            g.drawImage(linkIcon, iconDest, juce::RectanglePlacement::centred);
+        } else {
+            const auto& icon = owner_.playing_ ? stopIcon : playIcon;
+            if (icon.isValid()) {
+                const float iconW = owner_.playing_ ? inset.getWidth() * 0.473f : inset.getWidth() * 0.429f;
+                const float iconH = owner_.playing_ ? inset.getHeight() * 0.484f : inset.getHeight() * 0.545f;
+                const auto iconDest = juce::Rectangle<float>(iconW, iconH).withCentre(inset.getCentre());
+                g.drawImage(icon, iconDest, juce::RectanglePlacement::centred);
+            }
         }
     }
 
     void mouseDown(const juce::MouseEvent&) override {
+        if (owner_.hostSyncLocked_)
+            return;
+        pressed_ = true;
+        repaint();
+    }
+
+    void mouseUp(const juce::MouseEvent&) override {
+        const bool wasPressed = pressed_;
+        pressed_ = false;
+        repaint();
+        if (!wasPressed || owner_.hostSyncLocked_)
+            return;
         if (owner_.playing_) {
             if (owner_.onStop)
                 owner_.onStop();
@@ -136,8 +165,22 @@ public:
             owner_.onPlay();
     }
 
+    void mouseEnter(const juce::MouseEvent&) override {
+        if (!owner_.hostSyncLocked_)
+            setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    }
+
+    void mouseExit(const juce::MouseEvent&) override {
+        if (pressed_) {
+            pressed_ = false;
+            repaint();
+        }
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+    }
+
 private:
     TransportBar& owner_;
+    bool pressed_ = false;
 };
 
 class TransportBar::SettingRow : public juce::Component {
@@ -199,38 +242,6 @@ private:
     TransportBar& owner_;
     MenuId menuId_;
     juce::String label_;
-};
-
-class TransportBar::SyncToggleRow : public juce::Component {
-public:
-    explicit SyncToggleRow(TransportBar& owner) : owner_(owner) {}
-
-    void setEnabled(bool enabled) {
-        enabled_ = enabled;
-        repaint();
-    }
-
-    void paint(juce::Graphics& g) override {
-        const auto bounds = getLocalBounds().toFloat();
-        const float s = owner_.designScale();
-
-        matilda::ui::glass::drawInlinePickerBox(g, bounds, s);
-
-        g.setFont(matilda::fonts::kodeMonoBold(kValueFs * s));
-        g.setColour(juce::Colours::white);
-        g.drawText(enabled_ ? "On" : "Off", bounds.toNearestInt(), juce::Justification::centred, false);
-    }
-
-    void mouseDown(const juce::MouseEvent&) override {
-        enabled_ = !enabled_;
-        if (owner_.onSyncChanged)
-            owner_.onSyncChanged(enabled_);
-        repaint();
-    }
-
-private:
-    TransportBar& owner_;
-    bool enabled_ = true;
 };
 
 class TransportBar::GlassMenu : public juce::Component {
@@ -461,7 +472,6 @@ TransportBar::TransportBar(matilda::PatchState& patch, MatildaLookAndFeel& laf)
     playButton_ = std::make_unique<PlayButton>(*this);
     playModeRow_ = std::make_unique<SettingRow>(*this, MenuId::PlayMode);
     clockRow_ = std::make_unique<SettingRow>(*this, MenuId::Clock);
-    syncRow_ = std::make_unique<SyncToggleRow>(*this);
     glassMenu_ = std::make_unique<GlassMenu>(*this);
     dismissLayer_ = std::make_unique<DismissLayer>();
     globalClickListener_ = std::make_unique<GlobalClickListener>(*this);
@@ -469,7 +479,6 @@ TransportBar::TransportBar(matilda::PatchState& patch, MatildaLookAndFeel& laf)
     addAndMakeVisible(*playButton_);
     addAndMakeVisible(*playModeRow_);
     addAndMakeVisible(*clockRow_);
-    addChildComponent(*syncRow_);
 
     syncFromPatch();
 }
@@ -483,17 +492,11 @@ void TransportBar::setPlaying(bool playing) {
     playButton_->repaint();
 }
 
-void TransportBar::setSyncHostTransport(bool enabled) {
-    syncEnabled_ = enabled;
-    syncRow_->setEnabled(enabled);
-}
-
-void TransportBar::setDawSyncVisible(bool visible) {
-    dawSyncVisible_ = visible;
-    if (dawSyncVisible_)
-        syncRow_->setVisible(true);
-    else
-        syncRow_->setVisible(false);
+void TransportBar::setHostSyncLocked(bool locked) {
+    if (hostSyncLocked_ != locked) {
+        hostSyncLocked_ = locked;
+        playButton_->repaint();
+    }
 }
 
 void TransportBar::syncFromPatch() {
@@ -629,12 +632,6 @@ void TransportBar::paint(juce::Graphics& g) {
     const float clockHeaderY = playModeHeaderY + playModeHeaderH + kRowGap + 44.f;
     drawSectionHeader(g, sectionOrnLeftImg_, sectionOrnRightImg_, "Clock",
                       designRect(kColLeft + (kPlayModeW - kClockW) * 0.5f, clockHeaderY, kClockW, kLabelFs), s);
-
-    if (dawSyncVisible_) {
-        const float syncHeaderY = clockHeaderY + kLabelFs + kRowGap + 44.f;
-        drawSectionHeader(g, sectionOrnLeftImg_, sectionOrnRightImg_, "DAW Sync",
-                          designRect(kColLeft + (kPlayModeW - kClockW) * 0.5f, syncHeaderY, kClockW, kLabelFs), s);
-    }
 }
 
 void TransportBar::resized() {
@@ -651,10 +648,5 @@ void TransportBar::resized() {
     const float clockRowY = playModeRowY + kValueFs + kDropdownPadY * 2.f + kRowGap + kLabelFs + kRowGap;
     clockRow_->setBounds(
         designRect(kColLeft + (kPlayModeW - kClockW) * 0.5f, clockRowY, kClockW, kValueFs + kDropdownPadY * 2.f)
-            .toNearestInt());
-
-    const float syncRowY = clockRowY + kValueFs + kDropdownPadY * 2.f + kRowGap + kLabelFs + kRowGap;
-    syncRow_->setBounds(
-        designRect(kColLeft + (kPlayModeW - kClockW) * 0.5f, syncRowY, kClockW, kValueFs + kDropdownPadY * 2.f)
             .toNearestInt());
 }

@@ -29,9 +29,11 @@ const GRID_ROW_GAP = 17.078125;
 type Props = {
   scale?: number;
   embedded?: boolean;
+  /** Host DAW sync — play gem shows link icon when true. */
+  dawSync?: boolean;
 };
 
-export function MatildaShell({ scale = 0.78, embedded = false }: Props) {
+export function MatildaShell({ scale = 0.78, embedded = false, dawSync: dawSyncProp }: Props) {
   const engine = useMatildaEngine();
   const {
     patch,
@@ -45,7 +47,7 @@ export function MatildaShell({ scale = 0.78, embedded = false }: Props) {
     maxOctave,
     clockDivision,
     playMode,
-    dawSync,
+    dawSync: engineDawSync,
     setPlaying,
     setSelectedLayer,
     toggleLayer,
@@ -56,10 +58,11 @@ export function MatildaShell({ scale = 0.78, embedded = false }: Props) {
     setMaxOctave,
     setClockDivision,
     setPlayMode,
-    setDawSync,
     patchCell,
     layerCellsFlat,
   } = engine;
+
+  const dawSync = dawSyncProp ?? engineDawSync;
 
   const selectedLayer = patch.selectedLayer;
   const variant = KNOB_VARIANT_ORDER[selectedLayer];
@@ -147,8 +150,7 @@ export function MatildaShell({ scale = 0.78, embedded = false }: Props) {
               onPlayModeChange={setPlayMode}
               clockDivision={clockDivision}
               onClockDivisionChange={setClockDivision}
-              dawSync={dawSync}
-              onDawSyncChange={setDawSync}
+              linked={dawSync}
             />
           </div>
         </div>

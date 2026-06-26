@@ -19,10 +19,14 @@ export const SHELL_LEFT = EXPANDED_W - SHELL_W - SHELL_RIGHT_GUTTER;
 
 /** Figma 100 px − 30 % → 70 px. */
 export const ICON_SIZE = 70;
+/** Symmetric inset from hero / viewport edges (Figma 17 px inside 66 px main gutter). */
+export const ICON_INSET = 17;
 /** Expanded — top-left inside hero MainFrame. */
-export const ICON_EXPANDED = { left: HERO_MAIN_LEFT + 17, top: 17 };
+export const ICON_EXPANDED = { left: HERO_MAIN_LEFT + ICON_INSET, top: HERO_MAIN_LEFT + ICON_INSET };
+/** Expanded — top-right (mirror of collapse chevron). */
+export const DAW_SYNC_EXPANDED_LEFT = EXPANDED_W - (HERO_MAIN_LEFT + ICON_INSET) - ICON_SIZE;
 /** Collapsed — inset inside control shell frame (shell-absolute). */
-export const ICON_COLLAPSED_INSET = { left: 10, top: 17 };
+export const ICON_COLLAPSED_INSET = { left: ICON_INSET, top: ICON_INSET };
 
 export const HERO = {
   mainW: 2310,

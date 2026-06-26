@@ -32,6 +32,7 @@ NativePluginFrame::NativePluginFrame(MatildaShellPanel& shell)
     : shell_(shell), content_(hero_, shell) {
     addAndMakeVisible(content_);
     addAndMakeVisible(collapseToggle_);
+    addAndMakeVisible(dawSyncToggle_);
     setPaintingIsUnclipped(false);
 
     collapseToggle_.onToggle = [this] { setCollapsed(!collapsed_, true); };
@@ -105,6 +106,7 @@ void NativePluginFrame::layoutFromProgress(float progress) {
         content_.setBounds(getLocalBounds());
         content_.layoutContent(previewScale_, false);
         collapseToggle_.setVisible(false);
+        dawSyncToggle_.setVisible(false);
         return;
     }
 
@@ -117,12 +119,18 @@ void NativePluginFrame::layoutFromProgress(float progress) {
         juce::jmap(progress, kIconExpandedLeft, kShellLeft + kIconCollapsedInsetLeft);
     const float iconViewportX = iconCanvasX + contentOffset;
 
+    const float dawSyncViewportX = kDawSyncExpandedLeft + contentOffset;
+
     const int offsetPx = sx(contentOffset, previewScale_);
     content_.setBounds(offsetPx, 0, sx(kExpandedW, previewScale_), sx(kFrameH, previewScale_));
     content_.layoutContent(previewScale_, hero_.isVisible());
 
     collapseToggle_.setBounds(sx(iconViewportX, previewScale_), sx(kIconExpandedTop, previewScale_),
                               sx(kIconSize, previewScale_), sx(kIconSize, previewScale_));
+    dawSyncToggle_.setBounds(sx(dawSyncViewportX, previewScale_), sx(kIconExpandedTop, previewScale_),
+                             sx(kIconSize, previewScale_), sx(kIconSize, previewScale_));
+    collapseToggle_.toFront(false);
+    dawSyncToggle_.toFront(false);
 }
 
 void NativePluginFrame::notifyViewportSize() {

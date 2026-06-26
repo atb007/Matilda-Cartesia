@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "../ReactShellLayout.h"
 #include "CollapseToggle.h"
+#include "DawSyncToggle.h"
 #include "HeroCanvas.h"
 #include "MatildaShellPanel.h"
 
@@ -25,6 +26,9 @@ public:
 
     HeroCanvas& hero() { return hero_; }
     MatildaShellPanel& shell() { return shell_; }
+    DawSyncToggle& dawSyncToggle() { return dawSyncToggle_; }
+
+    void setDawSyncVisible(bool visible) { dawSyncToggle_.setVisible(visible); }
 
 private:
     class ContentPanel : public juce::Component {
@@ -64,6 +68,7 @@ private:
     MatildaShellPanel& shell_;
     ContentPanel content_;
     CollapseToggle collapseToggle_;
+    DawSyncToggle dawSyncToggle_;
 
     void resized() override;
     void paint(juce::Graphics& g) override;

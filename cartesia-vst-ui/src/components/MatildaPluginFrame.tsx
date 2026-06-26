@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   COLLAPSED_W,
   COLLAPSE_MS,
+  DAW_SYNC_EXPANDED_LEFT,
   EXPANDED_W,
   FRAME_H,
   ICON_COLLAPSED_INSET,
@@ -12,6 +13,7 @@ import {
 } from "../heroLayout";
 import { effectiveScale, UI_SCALE_DEFAULT } from "../uiScale";
 import { CollapseToggle } from "./CollapseToggle";
+import { DawSyncToggle } from "./DawSyncToggle";
 import { HeroCanvas } from "./HeroCanvas";
 import { MatildaShell } from "./MatildaShell";
 import { UiResizeGrips } from "./UiResizeGrip";
@@ -29,6 +31,7 @@ type Props = {
  */
 export function MatildaPluginFrame({ scale: scaleOverride, resizable = scaleOverride == null }: Props) {
   const [collapsed, setCollapsed] = useState(false);
+  const [dawSync, setDawSync] = useState(true);
   const [uiScaleFactor, setUiScaleFactor] = useState(UI_SCALE_DEFAULT);
 
   const scale = scaleOverride ?? effectiveScale(uiScaleFactor);
@@ -84,7 +87,7 @@ export function MatildaPluginFrame({ scale: scaleOverride, resizable = scaleOver
               zIndex: 2,
             }}
           >
-            <MatildaShell scale={1} embedded />
+            <MatildaShell scale={1} embedded dawSync={dawSync} />
           </div>
 
           <CollapseToggle
@@ -92,6 +95,13 @@ export function MatildaPluginFrame({ scale: scaleOverride, resizable = scaleOver
             top={iconTop}
             collapsed={collapsed}
             onToggle={() => setCollapsed(c => !c)}
+          />
+
+          <DawSyncToggle
+            left={DAW_SYNC_EXPANDED_LEFT}
+            top={ICON_EXPANDED.top}
+            enabled={dawSync}
+            onToggle={setDawSync}
           />
         </div>
       </div>

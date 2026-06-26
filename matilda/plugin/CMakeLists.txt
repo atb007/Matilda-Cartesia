@@ -73,6 +73,8 @@ juce_add_binary_data(MatildaAssets
         ../../cartesia-vst-ui/public/assets/hero-bg-m8b.png
         ../../cartesia-vst-ui/public/assets/collapse-toggle-expanded@2x.png
         ../../cartesia-vst-ui/public/assets/collapse-toggle-collapsed@2x.png
+        ../../cartesia-vst-ui/public/assets/DawSyncOn.png
+        ../../cartesia-vst-ui/public/assets/DawSyncOff.png
         ../../cartesia-vst-ui/public/assets/matilda-portrait-masked.png
         ../../cartesia-vst-ui/public/assets/matilda-mask-alpha.png
         ../../cartesia-vst-ui/public/assets/transport-play-gem.png
@@ -80,6 +82,7 @@ juce_add_binary_data(MatildaAssets
         ../../cartesia-vst-ui/public/assets/transport-glass-bg.png
         ../../cartesia-vst-ui/public/assets/transport-play-icon.png
         ../../cartesia-vst-ui/public/assets/transport-stop-icon.png
+        ../../cartesia-vst-ui/public/assets/transport-play-link-icon.svg
         ../../cartesia-vst-ui/public/assets/transport-title-filigree.svg
         ../../cartesia-vst-ui/public/assets/transport-title-rule.svg
         ../../cartesia-vst-ui/public/assets/transport-ornament-clock-left.svg
@@ -145,6 +148,7 @@ target_sources(Matilda
         Source/Components/NativePluginFrame.cpp
         Source/Components/UiResizeGrip.cpp
         Source/Components/CollapseToggle.cpp
+        Source/Components/DawSyncToggle.cpp
         Source/Engine/SequencerEngine.cpp
         Source/Engine/PatchStore.cpp
 )
