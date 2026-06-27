@@ -44,10 +44,10 @@ Universal binary (Apple Silicon + Intel).
 ## Cut a new release (maintainers)
 
 ```bash
-git tag v1.0.3
-git push origin v1.0.3
+git tag v1.0.4
+git push origin v1.0.4
 ```
 
-Latest release: **[v1.0.3](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.3)** — FL instrument registration, FX audio passthrough, DAW Sync toggle, filigree tint fix, dynamic version label.
+Latest release: **[v1.0.4](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.4)** — DAW sync top-right toggle, linked play gem, hover tips and press feedback on canvas controls.
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.
