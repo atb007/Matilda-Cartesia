@@ -1,4 +1,5 @@
-# Build Matilda VST3 (+ Standalone) for macOS and Windows; publish GitHub Release zips.
+# Build Matilda VST3/AU (from matilda/plugin) + Standalone (from matilda/standalone)
+# for macOS and Windows; publish GitHub Release zips.
 name: Matilda Release
 
 on:
@@ -40,8 +41,20 @@ jobs:
             build/Matilda_artefacts/Release/VST3/Matilda.vst3 \
             Matilda-macOS-vst3.zip
 
+      # Standalone is built from the separate matilda/standalone codebase (stable v1.0.2 base).
+      - name: Configure standalone
+        working-directory: matilda/standalone
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+
+      - name: Build standalone
+        working-directory: matilda/standalone
+        run: cmake --build build --config Release -j$(sysctl -n hw.ncpu)
+
       - name: Package Standalone
-        working-directory: matilda/plugin
+        working-directory: matilda/standalone
         run: |
           ditto -c -k --sequesterRsrc --keepParent \
             build/Matilda_artefacts/Release/Standalone/Matilda.app \
@@ -52,7 +65,7 @@ jobs:
           name: matilda-macos
           path: |
             matilda/plugin/Matilda-macOS-vst3.zip
-            matilda/plugin/Matilda-macOS-standalone.zip
+            matilda/standalone/Matilda-macOS-standalone.zip
           retention-days: 14
 
   build-windows:
@@ -74,8 +87,17 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Force -Path build/Matilda_artefacts/Release/VST3/Matilda.vst3 -DestinationPath Matilda-Windows-vst3.zip
 
+      # Standalone is built from the separate matilda/standalone codebase (stable v1.0.2 base).
+      - name: Configure standalone
+        working-directory: matilda/standalone
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build standalone
+        working-directory: matilda/standalone
+        run: cmake --build build --config Release -j 4
+
       - name: Package Standalone
-        working-directory: matilda/plugin
+        working-directory: matilda/standalone
         shell: pwsh
         run: Compress-Archive -Force -Path build/Matilda_artefacts/Release/Standalone/* -DestinationPath Matilda-Windows-standalone.zip
 
@@ -84,7 +106,7 @@ jobs:
           name: matilda-windows
           path: |
             matilda/plugin/Matilda-Windows-vst3.zip
-            matilda/plugin/Matilda-Windows-standalone.zip
+            matilda/standalone/Matilda-Windows-standalone.zip
           retention-days: 14
 
   release:

@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" MATILDA_VERSION)
-string(STRIP "${MATILDA_VERSION}" MATILDA_VERSION)
-
-project(Matilda VERSION ${MATILDA_VERSION} LANGUAGES C CXX)
+# Matilda Standalone-only codebase (forked from plugin v1.0.2, before DAW-coupling regressions).
+# Kept independent from matilda/plugin so the macOS standalone app stays known-good.
+project(MatildaStandalone VERSION 1.0.2 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,15 +23,12 @@ juce_add_plugin(Matilda
     COMPANY_NAME "IdeasLab"
     PLUGIN_MANUFACTURER_CODE Idlb
     PLUGIN_CODE Mtld
-    # Standalone now lives in matilda/standalone/ (separate known-good codebase). Plugin = VST3 + AU only.
-    FORMATS VST3 AU
+    FORMATS Standalone
     PRODUCT_NAME "Matilda"
-    VERSION ${MATILDA_VERSION}
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT TRUE
     IS_MIDI_EFFECT TRUE
-    VST3_CATEGORIES Instrument Fx Tools
     EDITOR_WANTS_KEYBOARD_FOCUS TRUE
 )
 
@@ -74,8 +70,6 @@ juce_add_binary_data(MatildaAssets
         ../../cartesia-vst-ui/public/assets/hero-bg-m8b.png
         ../../cartesia-vst-ui/public/assets/collapse-toggle-expanded@2x.png
         ../../cartesia-vst-ui/public/assets/collapse-toggle-collapsed@2x.png
-        ../../cartesia-vst-ui/public/assets/DawSyncOn.png
-        ../../cartesia-vst-ui/public/assets/DawSyncOff.png
         ../../cartesia-vst-ui/public/assets/matilda-portrait-masked.png
         ../../cartesia-vst-ui/public/assets/matilda-mask-alpha.png
         ../../cartesia-vst-ui/public/assets/transport-play-gem.png
@@ -83,7 +77,6 @@ juce_add_binary_data(MatildaAssets
         ../../cartesia-vst-ui/public/assets/transport-glass-bg.png
         ../../cartesia-vst-ui/public/assets/transport-play-icon.png
         ../../cartesia-vst-ui/public/assets/transport-stop-icon.png
-        ../../cartesia-vst-ui/public/assets/transport-play-link-icon.svg
         ../../cartesia-vst-ui/public/assets/transport-title-filigree.svg
         ../../cartesia-vst-ui/public/assets/transport-title-rule.svg
         ../../cartesia-vst-ui/public/assets/transport-ornament-clock-left.svg
@@ -149,7 +142,6 @@ target_sources(Matilda
         Source/Components/NativePluginFrame.cpp
         Source/Components/UiResizeGrip.cpp
         Source/Components/CollapseToggle.cpp
-        Source/Components/DawSyncToggle.cpp
         Source/Engine/SequencerEngine.cpp
         Source/Engine/PatchStore.cpp
 )

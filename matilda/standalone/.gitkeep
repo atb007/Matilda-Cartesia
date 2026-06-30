@@ -1,0 +1,2 @@
+# JUCE plugin sources land here (Phase 0).
+# Bootstrap from gridwalker/ or fresh CMake + JUCE submodule.
