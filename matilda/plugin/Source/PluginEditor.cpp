@@ -73,6 +73,18 @@ MatildaAudioProcessorEditor::MatildaAudioProcessorEditor(MatildaAudioProcessor& 
     statusLabel_.setVisible(showSandboxChrome);
     bpmLabel_.setVisible(showSandboxChrome);
 
+    // MIDI-out device selector — visible in plugin + standalone (FL Studio / VST3 routing workaround).
+    const bool showMidiOut = !matilda::ui::devIsolatedModule();
+    midiOutLabel_.setFont(juce::FontOptions(11.f));
+    midiOutLabel_.setColour(juce::Label::textColourId, laf_.textMuted);
+    midiOutLabel_.setJustificationType(juce::Justification::centredLeft);
+    midiOutLabel_.setVisible(showMidiOut);
+    midiOutCombo_.setTooltip("Send Matilda's notes to a virtual MIDI port (e.g. loopMIDI / IAC), then set the "
+                             "same port as the synth channel's MIDI Input. Works in any DAW/FL version.");
+    midiOutCombo_.setVisible(showMidiOut);
+    refreshMidiOutList();
+    midiOutCombo_.onChange = [this] { processor_.setMidiOutputByName(midiOutCombo_.getText()); };
+
     addAndMakeVisible(frame_);
     frame_.onViewportSizeChanged = [this](juce::Point<int> sz) {
         suppressHostResizeSync_ = true;
@@ -96,7 +108,9 @@ MatildaAudioProcessorEditor::MatildaAudioProcessorEditor(MatildaAudioProcessor& 
     }
     for (auto* c : { static_cast<juce::Component*>(&bpmLabel_),
                      static_cast<juce::Component*>(&syncToggle_),
-                     static_cast<juce::Component*>(&statusLabel_) })
+                     static_cast<juce::Component*>(&statusLabel_),
+                     static_cast<juce::Component*>(&midiOutLabel_),
+                     static_cast<juce::Component*>(&midiOutCombo_) })
         addAndMakeVisible(c);
 
     processor_.addChangeListener(this);
@@ -209,6 +223,11 @@ void MatildaAudioProcessorEditor::timerCallback() {
 
     transport_.setPlaying(running);
     updateStatusLine();
+
+    // Pick up virtual MIDI ports created after the editor opened (loopMIDI / IAC).
+    if (midiOutCombo_.isShowing() && !midiOutCombo_.isPopupActive()
+        && processor_.midiOutputDeviceNames().size() != midiOutCombo_.getNumItems())
+        refreshMidiOutList();
 }
 
 void MatildaAudioProcessorEditor::applyUiScale() {
@@ -372,5 +391,38 @@ void MatildaAudioProcessorEditor::resized() {
     }
 
     layoutChromeOverlays();
+    layoutMidiOutSelector();
     layoutResizeGrips();
+}
+
+void MatildaAudioProcessorEditor::refreshMidiOutList() {
+    const auto names = processor_.midiOutputDeviceNames();
+    const auto current = processor_.currentMidiOutputName();
+    midiOutCombo_.clear(juce::dontSendNotification);
+    int idToSelect = 1;
+    for (int i = 0; i < names.size(); ++i) {
+        midiOutCombo_.addItem(names[i], i + 1);
+        if (current.isNotEmpty() && names[i] == current)
+            idToSelect = i + 1;
+    }
+    midiOutCombo_.setSelectedId(idToSelect, juce::dontSendNotification);
+}
+
+void MatildaAudioProcessorEditor::layoutMidiOutSelector() {
+    const bool show = !matilda::ui::devIsolatedModule();
+    midiOutLabel_.setVisible(show);
+    midiOutCombo_.setVisible(show);
+    if (!show)
+        return;
+
+    const float previewScale = matilda::ui::effectivePreviewScale(uiScaleFactor_);
+    const int h = matilda::react::sx(20.f, previewScale);
+    const int labelW = matilda::react::sx(54.f, previewScale);
+    const int comboW = matilda::react::sx(190.f, previewScale);
+    const int pad = matilda::react::sx(8.f, previewScale);
+    const int y = getHeight() - h - pad;
+    midiOutLabel_.setBounds(pad, y, labelW, h);
+    midiOutCombo_.setBounds(pad + labelW, y, comboW, h);
+    midiOutLabel_.toFront(false);
+    midiOutCombo_.toFront(false);
 }

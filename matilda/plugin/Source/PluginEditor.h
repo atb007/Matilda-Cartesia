@@ -37,6 +37,8 @@ private:
     juce::Label bpmLabel_{"", "120 BPM"};
     juce::ToggleButton syncToggle_{"Sync external transport"};
     juce::Label statusLabel_{"", ""};
+    juce::Label midiOutLabel_{"", "MIDI Out"};
+    juce::ComboBox midiOutCombo_;
     juce::TooltipWindow tooltipWindow_{this, 400};
 
     void timerCallback() override;
@@ -48,6 +50,8 @@ private:
     void updateStatusLine();
     void applyBpmFromLabel();
     void layoutChromeOverlays();
+    void layoutMidiOutSelector();
+    void refreshMidiOutList();
     void applyUiScale();
     void beginGripResize(matilda::ui::UiResizeGripId grip);
     void continueGripResize(juce::Point<int> screenMouse);

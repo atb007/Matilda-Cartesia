@@ -138,6 +138,43 @@ void MatildaAudioProcessor::setEditorShellCollapsed(bool collapsed) {
     editorShellCollapsed_ = collapsed;
 }
 
+juce::StringArray MatildaAudioProcessor::midiOutputDeviceNames() const {
+    juce::StringArray names;
+    names.add("(None)");
+    for (const auto& device : juce::MidiOutput::getAvailableDevices())
+        names.addIfNotAlreadyThere(device.name);
+    return names;
+}
+
+juce::String MatildaAudioProcessor::currentMidiOutputName() const {
+    const juce::ScopedLock sl(midiOutLock_);
+    return midiOutName_;
+}
+
+void MatildaAudioProcessor::setMidiOutputByName(const juce::String& name) {
+    std::unique_ptr<juce::MidiOutput> opened;
+    if (name.isNotEmpty() && name != "(None)") {
+        for (const auto& device : juce::MidiOutput::getAvailableDevices()) {
+            if (device.name == name) {
+                opened = juce::MidiOutput::openDevice(device.identifier);
+                break;
+            }
+        }
+    }
+
+    const juce::ScopedLock sl(midiOutLock_);
+    midiOut_ = std::move(opened);
+    midiOutName_ = (midiOut_ != nullptr) ? name : juce::String();
+}
+
+void MatildaAudioProcessor::sendBufferToMidiOutput(const juce::MidiBuffer& midi) {
+    const juce::ScopedTryLock stl(midiOutLock_);
+    if (!stl.isLocked() || midiOut_ == nullptr || midi.isEmpty())
+        return;
+    for (const auto metadata : midi)
+        midiOut_->sendMessageNow(metadata.getMessage());
+}
+
 void MatildaAudioProcessor::markHostTransportDetected() {
     hostTransportEverDetected_.store(true);
     hostOpaqueFallback_.store(false);
@@ -457,6 +494,9 @@ void MatildaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
 
     processSequencer(midi, buffer.getNumSamples());
     finalizeTempoForBlock();
+
+    // FL Studio / VST3 workaround: also push notes to a virtual MIDI device (loopMIDI / IAC).
+    sendBufferToMidiOutput(midi);
 }
 
 juce::AudioProcessorEditor* MatildaAudioProcessor::createEditor() {
@@ -471,6 +511,7 @@ void MatildaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
     state.setProperty("userBpm", userBpm_, nullptr);
     state.setProperty("editorUiScale", static_cast<double>(editorUiScale_), nullptr);
     state.setProperty("editorShellCollapsed", editorShellCollapsed_, nullptr);
+    state.setProperty("midiOutName", currentMidiOutputName(), nullptr);
     if (auto xml = state.createXml())
         copyXmlToBinary(*xml, destData);
 }
@@ -484,6 +525,8 @@ void MatildaAudioProcessor::setStateInformation(const void* data, int sizeInByte
         setUserBpm(static_cast<double>(vt.getProperty("userBpm", kFallbackBpm)));
         setEditorUiScale(static_cast<float>(static_cast<double>(vt.getProperty("editorUiScale", matilda::ui::kUiScaleDefault))));
         setEditorShellCollapsed(static_cast<bool>(vt.getProperty("editorShellCollapsed", false)));
+        if (const auto savedMidiOut = vt.getProperty("midiOutName", {}).toString(); savedMidiOut.isNotEmpty())
+            setMidiOutputByName(savedMidiOut);
         if (json.isNotEmpty())
             applyPatchJson(json);
         else {

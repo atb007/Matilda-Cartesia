@@ -64,6 +64,12 @@ public:
     [[nodiscard]] bool editorShellCollapsed() const { return editorShellCollapsed_; }
     void setEditorShellCollapsed(bool collapsed);
 
+    /** Direct MIDI-device output (FL Studio / VST3 workaround — mirrors Standalone → IAC).
+        Generated notes are sent to this device in addition to the host MIDI buffer. */
+    [[nodiscard]] juce::StringArray midiOutputDeviceNames() const;
+    [[nodiscard]] juce::String currentMidiOutputName() const;
+    void setMidiOutputByName(const juce::String& name);
+
 private:
     matilda::PatchState patch_;
     matilda::SequencerEngine engine_;
@@ -78,6 +84,10 @@ private:
 
     float editorUiScale_ = matilda::ui::kUiScaleDefault;
     bool editorShellCollapsed_ = false;
+
+    juce::CriticalSection midiOutLock_;
+    std::unique_ptr<juce::MidiOutput> midiOut_;
+    juce::String midiOutName_;
 
     double sampleRate_ = 44100.0;
     double sampleClock_ = 0.0;
@@ -127,6 +137,7 @@ private:
     void loadStartupPreset();
     void notifyTransportChanged();
     void markHostTransportDetected();
+    void sendBufferToMidiOutput(const juce::MidiBuffer& midi);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MatildaAudioProcessor)
 };
