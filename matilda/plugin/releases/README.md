@@ -44,10 +44,10 @@ Universal binary (Apple Silicon + Intel).
 ## Cut a new release (maintainers)
 
 ```bash
-git tag v1.0.8
-git push origin v1.0.8
+git tag v1.0.9
+git push origin v1.0.9
 ```
 
-Latest release: **[v1.0.8](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.8)** — direct MIDI output: route Matilda to any synth via a virtual MIDI port (loopMIDI / IAC), fixing FL Studio 20.x silence.
+Latest release: **[v1.0.9](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.9)** — Standalone: DAW BPM sync over MIDI clock (sample-accurate) + reliable manual BPM, plus forward-ported filigree/UI fixes and window-state persistence.
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.

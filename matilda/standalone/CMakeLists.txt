@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 
 # Matilda Standalone-only codebase (forked from plugin v1.0.2, before DAW-coupling regressions).
 # Kept independent from matilda/plugin so the macOS standalone app stays known-good.
-project(MatildaStandalone VERSION 1.0.2 LANGUAGES C CXX)
+project(MatildaStandalone VERSION 1.0.9 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
