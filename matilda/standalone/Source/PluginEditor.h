@@ -48,6 +48,7 @@ private:
     void applyBpmFromLabel();
     void layoutChromeOverlays();
     void applyUiScale();
+    void persistEditorLayout();
     void beginGripResize(matilda::ui::UiResizeGripId grip);
     void continueGripResize(juce::Point<int> screenMouse);
     void layoutResizeGrips();

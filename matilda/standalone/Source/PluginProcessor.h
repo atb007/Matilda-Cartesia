@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "Engine/SequencerEngine.h"
 #include "Engine/PatchStore.h"
+#include "UiScale.h"
 
 class MatildaAudioProcessor : public juce::AudioProcessor,
                               public juce::ChangeBroadcaster,
@@ -51,6 +52,11 @@ public:
     [[nodiscard]] bool followExternalTransport() const { return followExternalTransport_.load(); }
     void setFollowExternalTransport(bool enabled);
 
+    [[nodiscard]] float editorUiScale() const { return editorUiScale_; }
+    void setEditorUiScale(float factor);
+    [[nodiscard]] bool editorShellCollapsed() const { return editorShellCollapsed_; }
+    void setEditorShellCollapsed(bool collapsed);
+
     /** Reload patch from JSON string (preset import / host restore). */
     void applyPatchJson(const juce::String& json);
 
@@ -62,6 +68,9 @@ private:
     std::atomic<bool> sequencerStepping_{false};
     std::atomic<bool> panicRequested_{false};
     std::atomic<bool> followExternalTransport_{false};
+
+    float editorUiScale_ = matilda::ui::kUiScaleDefault;
+    bool editorShellCollapsed_ = false;
 
     double sampleRate_ = 44100.0;
     double sampleClock_ = 0.0;

@@ -30,6 +30,14 @@ void MatildaAudioProcessor::setFollowExternalTransport(bool enabled) {
     notifyTransportChanged();
 }
 
+void MatildaAudioProcessor::setEditorUiScale(float factor) {
+    editorUiScale_ = juce::jlimit(matilda::ui::kUiScaleMin, matilda::ui::kUiScaleMax, factor);
+}
+
+void MatildaAudioProcessor::setEditorShellCollapsed(bool collapsed) {
+    editorShellCollapsed_ = collapsed;
+}
+
 void MatildaAudioProcessor::notifyTransportChanged() {
     if (juce::MessageManager::getInstance()->isThisTheMessageThread())
         sendChangeMessage();
@@ -403,6 +411,8 @@ void MatildaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
     state.setProperty("patchJson", matilda::PatchStore::patchToJson(patch_), nullptr);
     state.setProperty("followExternalTransport", followExternalTransport_.load(), nullptr);
     state.setProperty("userBpm", userBpm_, nullptr);
+    state.setProperty("editorUiScale", static_cast<double>(editorUiScale_), nullptr);
+    state.setProperty("editorShellCollapsed", editorShellCollapsed_, nullptr);
     if (auto xml = state.createXml())
         copyXmlToBinary(*xml, destData);
 }
@@ -413,6 +423,8 @@ void MatildaAudioProcessor::setStateInformation(const void* data, int sizeInByte
         const auto json = vt.getProperty("patchJson", {}).toString();
         followExternalTransport_.store(static_cast<bool>(vt.getProperty("followExternalTransport", false)));
         setUserBpm(static_cast<double>(vt.getProperty("userBpm", kFallbackBpm)));
+        setEditorUiScale(static_cast<float>(static_cast<double>(vt.getProperty("editorUiScale", matilda::ui::kUiScaleDefault))));
+        setEditorShellCollapsed(static_cast<bool>(vt.getProperty("editorShellCollapsed", false)));
         if (json.isNotEmpty())
             applyPatchJson(json);
         else {
