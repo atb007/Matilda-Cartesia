@@ -44,10 +44,10 @@ Universal binary (Apple Silicon + Intel).
 ## Cut a new release (maintainers)
 
 ```bash
-git tag v1.0.5
-git push origin v1.0.5
+git tag v1.0.6
+git push origin v1.0.6
 ```
 
-Latest release: **[v1.0.5](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.5)** — VST3 MIDI-FX for FL Fruity Wrapper, filigree tint fix on Windows, DAW transport fallback.
+Latest release: **[v1.0.6](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.6)** — FL opaque-host clock fallback (sound in Wrapper), native SVG filigree parity, UI scale/collapse persistence.
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.

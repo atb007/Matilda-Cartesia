@@ -61,6 +61,8 @@ void NativePluginFrame::setCollapsed(bool collapsed, bool animate) {
 
     collapsed_ = collapsed;
     collapseToggle_.setCollapsed(collapsed);
+    if (onCollapsedChanged)
+        onCollapsedChanged(collapsed_);
 
     const float target = collapsed ? 1.f : 0.f;
     if (!animate || matilda::ui::devIsolatedModule()) {

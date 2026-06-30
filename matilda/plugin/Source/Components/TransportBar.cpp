@@ -447,20 +447,8 @@ TransportBar::TransportBar(matilda::PatchState& patch, MatildaLookAndFeel& laf)
     setPaintingIsUnclipped(true);
 
     bgTextureImg_ = matilda::images::movementBgTexture();
-
-    Layout filigreeLayout;
-    filigreeLayout.filigreeW = kFiligreeW;
-    filigreeLayout.filigreeLeft = kFiligreeTopLeft;
-    filigreeLayout.textureW = kTitleTextureW;
-    filigreeLayout.textureLeft = kTitleTextureLeft;
-    filigreeLayout.alphaScale = kTitleFiligreeAlphaScale;
-    filigreeLayout.grey = kTitleFiligreeGrey;
-
-    const int filigreeW2x = juce::roundToInt(kFiligreeW * 2.f);
-    const int filigreeH2x = juce::roundToInt(kFiligreeH * 2.f);
-    filigreeTopImg_ = rasterizeSvg(BinaryData::movementfiligreetop_svg, BinaryData::movementfiligreetop_svgSize,
-                                  filigreeW2x, filigreeH2x, bgTextureImg_, filigreeLayout);
-    filigreeBottomImg_ = flipImageVertically(filigreeTopImg_);
+    filigreeTop_ = matilda::ui::filigree::loadSvgDrawable(BinaryData::transporttitlefiligree_svg,
+                                                          BinaryData::transporttitlefiligree_svgSize);
 
     sectionOrnLeftImg_ = rasterizePlainSvg(BinaryData::transportornamentclockleft_svg,
                                            BinaryData::transportornamentclockleft_svgSize,
@@ -619,9 +607,11 @@ void TransportBar::handleGlobalMouseDown(const juce::MouseEvent& e) {
 void TransportBar::paint(juce::Graphics& g) {
     const float s = designScale();
 
-    drawImage(g, filigreeTopImg_, designRect(kFiligreeTopLeft, 0.f, kFiligreeW, kFiligreeH));
+    if (filigreeTop_)
+        drawDrawableInRect(g, *filigreeTop_, designRect(kFiligreeTopLeft, 0.f, kFiligreeW, kFiligreeH));
     drawImage(g, bgTextureImg_, designRect(kTitleTextureLeft, kTitleTextureY, kTitleTextureW, kTitleTextureH));
-    drawImage(g, filigreeBottomImg_, designRect(kFiligreeTopLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
+    if (filigreeTop_)
+        drawDrawableFlipped180ScaleX(g, *filigreeTop_, designRect(kFiligreeTopLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
     drawNeonTitle(g, "Global Settings", designRect(0.f, kTitleCenterY - kTitleFs * 0.5f, kBaseW, kTitleFs), s);
 
     const float playModeHeaderY = kColTop + kPlaySize + kColGap;

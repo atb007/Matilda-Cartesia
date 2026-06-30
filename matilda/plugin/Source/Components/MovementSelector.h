@@ -23,8 +23,8 @@ private:
     matilda::PatchState& patch_;
     MatildaLookAndFeel& laf_;
 
-    juce::Image filigreeTopImg_;
-    juce::Image filigreeBottomImg_;
+    std::unique_ptr<juce::Drawable> filigreeTop_;
+    std::unique_ptr<juce::Drawable> filigreeBottom_;
     juce::Image bgTextureImg_;
 
     std::unique_ptr<ArrowButton> prev_;

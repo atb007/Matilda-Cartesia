@@ -259,21 +259,10 @@ MovementSelector::MovementSelector(matilda::PatchState& patch, MatildaLookAndFee
     setPaintingIsUnclipped(true);
 
     bgTextureImg_ = matilda::images::movementBgTexture();
-
-    const int filigreeW2x = juce::roundToInt(kFiligreeW * 2.f);
-    const int filigreeH2x = juce::roundToInt(kFiligreeH * 2.f);
-
-    Layout filigreeLayout;
-    filigreeLayout.filigreeW = kFiligreeW;
-    filigreeLayout.filigreeLeft = (kBaseW - kFiligreeW) * 0.5f;
-    filigreeLayout.textureW = kTextureW;
-    filigreeLayout.textureLeft = kTextureLeft;
-    filigreeLayout.alphaScale = kFiligreeAlphaScale;
-    filigreeLayout.grey = kFiligreeGrey;
-
-    filigreeTopImg_ = rasterizeSvg(BinaryData::movementfiligreetop_svg, BinaryData::movementfiligreetop_svgSize,
-                                   filigreeW2x, filigreeH2x, bgTextureImg_, filigreeLayout);
-    filigreeBottomImg_ = flipImageVertically(filigreeTopImg_);
+    filigreeTop_ = matilda::ui::filigree::loadSvgDrawable(BinaryData::movementfiligreetop_svg,
+                                                          BinaryData::movementfiligreetop_svgSize);
+    filigreeBottom_ = matilda::ui::filigree::loadSvgDrawable(BinaryData::movementfiligreebottom_svg,
+                                                             BinaryData::movementfiligreebottom_svgSize);
 
     prev_ = std::make_unique<ArrowButton>(true, [this] { cycleMode(-1); });
     next_ = std::make_unique<ArrowButton>(false, [this] { cycleMode(1); });
@@ -408,14 +397,18 @@ void MovementSelector::paint(juce::Graphics& g) {
 
     const auto filigreeDest =
         designRectAt((kBaseW - kFiligreeW) * 0.5f, 0.f, kFiligreeW, kFiligreeH, s, origin);
-    drawImage(g, filigreeTopImg_, filigreeDest);
+    if (filigreeTop_)
+        drawDrawableInRect(g, *filigreeTop_, filigreeDest);
 
     const auto textureDest = designRectAt(kTextureLeft, kTextureY, kTextureW, kTextureH, s, origin);
     drawImage(g, bgTextureImg_, textureDest);
 
     const auto filigreeBottomDest =
         designRectAt((kBaseW - kFiligreeW) * 0.5f, kBaseH - kFiligreeH, kFiligreeW, kFiligreeH, s, origin);
-    drawImage(g, filigreeBottomImg_, filigreeBottomDest);
+    if (filigreeBottom_)
+        drawDrawableInRect(g, *filigreeBottom_, filigreeBottomDest);
+    else if (filigreeTop_)
+        drawDrawableFlipped180ScaleX(g, *filigreeTop_, filigreeBottomDest);
 }
 
 void MovementSelector::resized() {

@@ -55,6 +55,7 @@ private:
     void updateResizeLimits();
     void syncEditorToViewport();
     [[nodiscard]] juce::Point<int> intendedEditorSize() const;
+    void persistEditorLayout();
 
     bool suppressHostResizeSync_ = false;
 

@@ -169,4 +169,25 @@ inline void drawImageFlipped180ScaleX(juce::Graphics& g, const juce::Image& img,
     g.restoreState();
 }
 
+/** React / standalone parity — render SVG with native gradients (no raster tint pass). */
+inline std::unique_ptr<juce::Drawable> loadSvgDrawable(const char* data, int size) {
+    const auto xml = juce::parseXML(juce::String::fromUTF8(data, static_cast<size_t>(size)));
+    if (!xml)
+        return {};
+    return juce::Drawable::createFromSVG(*xml);
+}
+
+inline void drawDrawableInRect(juce::Graphics& g, const juce::Drawable& drawable, juce::Rectangle<float> dest) {
+    drawable.drawWithin(g, dest, juce::RectanglePlacement::stretchToFit, 1.f);
+}
+
+/** Figma bottom filigree — rotate(180deg) scaleX(-1). */
+inline void drawDrawableFlipped180ScaleX(juce::Graphics& g, const juce::Drawable& drawable,
+                                         juce::Rectangle<float> dest) {
+    g.saveState();
+    g.addTransform(juce::AffineTransform::scale(-1.f, -1.f, dest.getCentreX(), dest.getCentreY()));
+    drawable.drawWithin(g, dest, juce::RectanglePlacement::stretchToFit, 1.f);
+    g.restoreState();
+}
+
 } // namespace matilda::ui::filigree

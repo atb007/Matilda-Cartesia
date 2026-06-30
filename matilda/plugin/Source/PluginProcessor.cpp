@@ -32,6 +32,12 @@ void MatildaAudioProcessor::setFollowExternalTransport(bool enabled) {
 
 void MatildaAudioProcessor::setSyncHostTransport(bool enabled) {
     syncHostTransport_.store(enabled);
+    if (!isStandaloneWrapper() && enabled) {
+        hostOpaqueFallback_.store(true);
+        hostTransportEverDetected_.store(false);
+    } else {
+        hostOpaqueFallback_.store(false);
+    }
     notifyTransportChanged();
 }
 
@@ -124,13 +130,30 @@ void MatildaAudioProcessor::beginSequencerOnBeat(juce::MidiBuffer& midi, int sam
     notifyTransportChanged();
 }
 
+void MatildaAudioProcessor::setEditorUiScale(float factor) {
+    editorUiScale_ = juce::jlimit(matilda::ui::kUiScaleMin, matilda::ui::kUiScaleMax, factor);
+}
+
+void MatildaAudioProcessor::setEditorShellCollapsed(bool collapsed) {
+    editorShellCollapsed_ = collapsed;
+}
+
+void MatildaAudioProcessor::markHostTransportDetected() {
+    hostTransportEverDetected_.store(true);
+    hostOpaqueFallback_.store(false);
+}
+
 void MatildaAudioProcessor::prepareToPlay(double sampleRate, int) {
     sampleRate_ = sampleRate;
     sampleClock_ = 0.0;
 
     // Plugin + DAW Sync: arm immediately so host transport / MIDI Start drives the grid.
-    if (!isStandaloneWrapper() && syncHostTransport_.load())
+    if (!isStandaloneWrapper() && syncHostTransport_.load()) {
         sequencerArmed_.store(true);
+        // FL Fruity Wrapper often omits playhead — step on internal clock until host proves sync.
+        hostOpaqueFallback_.store(true);
+        hostTransportEverDetected_.store(false);
+    }
 }
 
 void MatildaAudioProcessor::releaseResources() {}
@@ -222,6 +245,10 @@ void MatildaAudioProcessor::updateTempoFromPlayHead() {
                 if (bpm >= 20.0 && bpm <= 300.0)
                     markExternalTempo(bpm);
             }
+            if (auto playing = pos->getIsPlaying()) {
+                markHostTransportDetected();
+                juce::ignoreUnused(playing);
+            }
         }
     }
 }
@@ -286,6 +313,7 @@ void MatildaAudioProcessor::handleTransportMidi(const juce::MidiBuffer& incoming
         }
 
         if (msg.isMidiStart() || msg.isMidiContinue()) {
+            markHostTransportDetected();
             midiTransportRunning_.store(true);
             midiClockSampleCounter_ = 0;
             if (!sequencerArmed_.load()) {
@@ -298,6 +326,7 @@ void MatildaAudioProcessor::handleTransportMidi(const juce::MidiBuffer& incoming
         }
 
         if (msg.isMidiStop()) {
+            markHostTransportDetected();
             midiTransportRunning_.store(false);
             if (sequencerArmed_.load() || sequencerStepping_.load())
                 setSequencerRunning(false);
@@ -317,8 +346,9 @@ void MatildaAudioProcessor::processSequencer(juce::MidiBuffer& midi, int numSamp
     const bool armed = sequencerArmed_.load();
     const bool hostSync = !isStandalone && syncHostTransport_.load();
     const bool hostActive = hostPlaying || midiTransportRunning_.load();
+    const bool hostOpaque = hostSync && hostOpaqueFallback_.load();
 
-    if (hostSync) {
+    if (hostSync && !hostOpaque) {
         if (hostActive && !hostWasPlaying_) {
             if (!armed)
                 setSequencerRunning(true);
@@ -334,14 +364,16 @@ void MatildaAudioProcessor::processSequencer(juce::MidiBuffer& midi, int numSamp
         cancelBeatQuantizedStart();
         requestBeatQuantizedStart();
     }
-    hostWasPlaying_ = hostSync ? hostActive : hostPlaying;
+    hostWasPlaying_ = (hostSync && !hostOpaque) ? hostActive : hostPlaying;
 
     // Standalone+IAC: when sync is on, MIDI clock drives steps (see handleTransportMidi).
     if (isStandalone && followExternalTransport_.load() && armed)
         return;
 
     bool shouldRun = false;
-    if (hostSync) {
+    if (hostOpaque) {
+        shouldRun = armed;
+    } else if (hostSync) {
         shouldRun = hostActive;
     } else if (isStandalone || patch_.playMode == matilda::PlayMode::Note) {
         shouldRun = armed;
@@ -357,6 +389,12 @@ void MatildaAudioProcessor::processSequencer(juce::MidiBuffer& midi, int numSamp
             sequencerWasRunning_ = false;
         }
         return;
+    }
+
+    // FL Wrapper / opaque host: no playhead or MIDI Start — run internal clock immediately when armed.
+    if (hostOpaque && armed && !sequencerStepping_.load() && !pendingBeatStart_) {
+        beginSequencerOnBeat(midi, 0);
+        sampleClock_ = 0.0;
     }
 
     if (pendingBeatStart_) {
@@ -381,7 +419,7 @@ void MatildaAudioProcessor::processSequencer(juce::MidiBuffer& midi, int numSamp
         return;
 
     const bool syncViaMidi = (isStandalone && followExternalTransport_.load())
-                          || (!isStandalone && syncHostTransport_.load());
+                          || (!isStandalone && syncHostTransport_.load() && !hostOpaqueFallback_.load());
     if (useExternalMidiClock_ && syncViaMidi)
         return;
 
@@ -431,6 +469,8 @@ void MatildaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
     state.setProperty("followExternalTransport", followExternalTransport_.load(), nullptr);
     state.setProperty("syncHostTransport", syncHostTransport_.load(), nullptr);
     state.setProperty("userBpm", userBpm_, nullptr);
+    state.setProperty("editorUiScale", static_cast<double>(editorUiScale_), nullptr);
+    state.setProperty("editorShellCollapsed", editorShellCollapsed_, nullptr);
     if (auto xml = state.createXml())
         copyXmlToBinary(*xml, destData);
 }
@@ -442,6 +482,8 @@ void MatildaAudioProcessor::setStateInformation(const void* data, int sizeInByte
         followExternalTransport_.store(static_cast<bool>(vt.getProperty("followExternalTransport", false)));
         syncHostTransport_.store(static_cast<bool>(vt.getProperty("syncHostTransport", true)));
         setUserBpm(static_cast<double>(vt.getProperty("userBpm", kFallbackBpm)));
+        setEditorUiScale(static_cast<float>(static_cast<double>(vt.getProperty("editorUiScale", matilda::ui::kUiScaleDefault))));
+        setEditorShellCollapsed(static_cast<bool>(vt.getProperty("editorShellCollapsed", false)));
         if (json.isNotEmpty())
             applyPatchJson(json);
         else {

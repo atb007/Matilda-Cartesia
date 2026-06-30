@@ -23,6 +23,7 @@ public:
 
     void setCollapsed(bool collapsed, bool animate = true);
     std::function<void(juce::Point<int> viewportSize)> onViewportSizeChanged;
+    std::function<void(bool collapsed)> onCollapsedChanged;
 
     HeroCanvas& hero() { return hero_; }
     MatildaShellPanel& shell() { return shell_; }

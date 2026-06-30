@@ -46,11 +46,13 @@ MatildaAudioProcessorEditor::MatildaAudioProcessorEditor(MatildaAudioProcessor& 
         const auto sz = devWindowSize(matilda::ui::kDevView);
         setSize(sz.x, sz.y);
     } else {
+        uiScaleFactor_ = processor_.editorUiScale();
         frame_.setPreviewScale(matilda::ui::effectivePreviewScale(uiScaleFactor_));
         const auto sz = matilda::ui::viewportPixelSize(kExpandedW, uiScaleFactor_);
         setSize(sz.x, sz.y);
         setResizable(true, false);
         updateResizeLimits();
+        frame_.setCollapsed(processor_.editorShellCollapsed(), false);
     }
 
     bpmLabel_.setFont(juce::FontOptions(11.f));
@@ -80,6 +82,7 @@ MatildaAudioProcessorEditor::MatildaAudioProcessorEditor(MatildaAudioProcessor& 
         layoutResizeGrips();
         suppressHostResizeSync_ = false;
     };
+    frame_.onCollapsedChanged = [this](bool) { persistEditorLayout(); };
     frame_.shell().applyDevView(matilda::ui::kDevView);
     if (matilda::ui::devIsolatedModule())
         frame_.hero().setVisible(false);
@@ -103,6 +106,7 @@ MatildaAudioProcessorEditor::MatildaAudioProcessorEditor(MatildaAudioProcessor& 
 }
 
 MatildaAudioProcessorEditor::~MatildaAudioProcessorEditor() {
+    persistEditorLayout();
     processor_.removeChangeListener(this);
     setLookAndFeel(nullptr);
 }
@@ -245,6 +249,14 @@ void MatildaAudioProcessorEditor::continueGripResize(juce::Point<int> screenMous
 
     uiScaleFactor_ = factor;
     applyUiScale();
+    persistEditorLayout();
+}
+
+void MatildaAudioProcessorEditor::persistEditorLayout() {
+    if (matilda::ui::devIsolatedModule())
+        return;
+    processor_.setEditorUiScale(uiScaleFactor_);
+    processor_.setEditorShellCollapsed(frame_.isCollapsed());
 }
 
 juce::Point<int> MatildaAudioProcessorEditor::intendedEditorSize() const {

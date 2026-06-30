@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "Engine/SequencerEngine.h"
 #include "Engine/PatchStore.h"
+#include "UiScale.h"
 
 class MatildaAudioProcessor : public juce::AudioProcessor,
                               public juce::ChangeBroadcaster,
@@ -58,6 +59,11 @@ public:
     /** Reload patch from JSON string (preset import / host restore). */
     void applyPatchJson(const juce::String& json);
 
+    [[nodiscard]] float editorUiScale() const { return editorUiScale_; }
+    void setEditorUiScale(float factor);
+    [[nodiscard]] bool editorShellCollapsed() const { return editorShellCollapsed_; }
+    void setEditorShellCollapsed(bool collapsed);
+
 private:
     matilda::PatchState patch_;
     matilda::SequencerEngine engine_;
@@ -67,6 +73,11 @@ private:
     std::atomic<bool> panicRequested_{false};
     std::atomic<bool> followExternalTransport_{false};
     std::atomic<bool> syncHostTransport_{true};
+    std::atomic<bool> hostTransportEverDetected_{false};
+    std::atomic<bool> hostOpaqueFallback_{false};
+
+    float editorUiScale_ = matilda::ui::kUiScaleDefault;
+    bool editorShellCollapsed_ = false;
 
     double sampleRate_ = 44100.0;
     double sampleClock_ = 0.0;
@@ -115,6 +126,7 @@ private:
     void processSequencer(juce::MidiBuffer& midi, int numSamples);
     void loadStartupPreset();
     void notifyTransportChanged();
+    void markHostTransportDetected();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MatildaAudioProcessor)
 };
