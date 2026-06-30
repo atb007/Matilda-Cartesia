@@ -97,10 +97,12 @@ GarageBand does **not** reliably host MIDI-effect plugins in-track — use **Sta
 
 ### FL Studio (BlueARP-style routing)
 
-Same **VST3 MIDI-FX** binary — no separate codebase:
+Matilda is a **VST3 MIDI effect** (like BlueARP) — it generates MIDI; a **synth in the same Fruity Wrapper** renders audio.
 
-1. **Patcher** — Matilda → generator, wire green MIDI cables; or
-2. **Fruity Wrapper** — Matilda Settings → output port *N*; synth input port *N* (use ports 11+; see BlueARP manual).
+1. **Fruity Wrapper** — load Matilda in slot 1, your synth (e.g. Sytrus, 3xOsc) in slot 2. Wire Matilda **MIDI output port N** → synth **MIDI input port N** (ports **11+**; see BlueARP manual). Press **Play** on FL transport (DAW Sync is on by default).
+2. **Patcher** — Matilda → generator, wire green MIDI cables to the synth module.
+
+If silent: confirm DAW Sync (top-right toggle) is **on**, FL transport is **playing**, and MIDI ports between wrapper plugins are connected.
 
 Install: `build/Matilda_artefacts/Release/VST3/Matilda.vst3` → `C:\Program Files\Common Files\VST3\` (Windows) or `~/Library/Audio/Plug-Ins/VST3/` (macOS)
 

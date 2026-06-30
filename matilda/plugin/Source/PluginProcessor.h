@@ -22,8 +22,8 @@ public:
     const juce::String getName() const override { return JucePlugin_Name; }
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return true; }
-    bool isMidiEffect() const override { return false; }
-    bool isSynth() const { return true; }
+    bool isMidiEffect() const override { return true; }
+    bool isSynth() const { return false; }
     double getTailLengthSeconds() const override { return 0.0; }
 
     int getNumPrograms() override { return 1; }
@@ -78,6 +78,7 @@ private:
     bool hostWasPlaying_ = false;
     bool pendingBeatStart_ = false;
     bool pendingMidiBeatStart_ = false;
+    std::atomic<bool> midiTransportRunning_{false};
     double pendingStartSampleCountdown_ = 0.0;
     int64_t standaloneTransportSamples_ = 0;
 
@@ -110,7 +111,7 @@ private:
     void sendNoteOff(juce::MidiBuffer& midi, int note, int samplePos);
     void emitStepNote(juce::MidiBuffer& midi, int samplePos);
     void advanceSequencerStep(juce::MidiBuffer& midi, int samplePos);
-    void handleIncomingMidi(const juce::MidiBuffer& incoming, juce::MidiBuffer& outgoing);
+    void handleTransportMidi(const juce::MidiBuffer& incoming, juce::MidiBuffer& outgoing);
     void processSequencer(juce::MidiBuffer& midi, int numSamples);
     void loadStartupPreset();
     void notifyTransportChanged();

@@ -91,7 +91,6 @@ inline void applyTextureTint(juce::Image& img, const juce::Image& texture, const
     if (!img.isValid() || img.getWidth() <= 1)
         return;
 
-    juce::Image::BitmapData data(img, juce::Image::BitmapData::readWrite);
     const int w = img.getWidth();
     const int h = img.getHeight();
     const float invW = 1.f / static_cast<float>(w - 1);
@@ -99,17 +98,18 @@ inline void applyTextureTint(juce::Image& img, const juce::Image& texture, const
 
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
-            auto* px = reinterpret_cast<juce::PixelARGB*>(data.getPixelPointer(x, y));
+            const auto src = img.getPixelAt(x, y);
             const float shapeA =
-                juce::jmax(static_cast<float>(px->getAlpha()), static_cast<float>(px->getRed()),
-                           static_cast<float>(px->getGreen()), static_cast<float>(px->getBlue())) /
-                255.f;
+                juce::jmax(src.getFloatRed(), src.getFloatGreen(), src.getFloatBlue(), src.getFloatAlpha());
             if (shapeA <= 0.f)
                 continue;
 
             const float envelopeA = envelopeAlphaAt(texture, static_cast<float>(x) * invW, layout);
             const float alpha = envelopeA * shapeA;
-            px->setARGB(static_cast<uint8_t>(alpha * 255.f), greyByte, greyByte, greyByte);
+            img.setPixelAt(x, y, juce::Colour::fromFloatRGBA(
+                                        static_cast<float>(greyByte) / 255.f,
+                                        static_cast<float>(greyByte) / 255.f,
+                                        static_cast<float>(greyByte) / 255.f, alpha));
         }
     }
 }
