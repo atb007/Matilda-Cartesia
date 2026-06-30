@@ -364,4 +364,10 @@ void MatildaAudioProcessorEditor::resized() {
 
     layoutChromeOverlays();
     layoutResizeGrips();
+
+    // Keep footer chrome above the resize grips so the editable BPM field stays clickable.
+    if (!devIsolatedModule()) {
+        bpmLabel_.toFront(false);
+        syncToggle_.toFront(false);
+    }
 }

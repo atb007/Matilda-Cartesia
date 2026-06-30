@@ -87,7 +87,7 @@ private:
 
     bool useExternalMidiClock_ = false;
     int midiClockAccumulator_ = 0;
-    int midiClockSampleCounter_ = 0;
+    int64_t lastClockSamplePos_ = -1;
 
     static constexpr int kMidiChannel = 1;
     static constexpr int kMaxTicksPerBlock = 1;

@@ -27,6 +27,9 @@ void MatildaAudioProcessor::applyPatchJson(const juce::String& json) {
 
 void MatildaAudioProcessor::setFollowExternalTransport(bool enabled) {
     followExternalTransport_.store(enabled);
+    lastClockSamplePos_ = -1; // restart clock-interval tracking on toggle
+    if (!enabled)
+        externalTempoHoldBlocks_ = 0; // release tempo hold so manual BPM applies immediately
     notifyTransportChanged();
 }
 
@@ -57,6 +60,7 @@ void MatildaAudioProcessor::setSequencerRunning(bool running) {
         sampleClock_ = 0.0;
         useExternalMidiClock_ = false;
         midiClockAccumulator_ = 0;
+        lastClockSamplePos_ = -1;
         panicRequested_.store(true);
     } else {
         activeNote_ = -1;
@@ -226,21 +230,35 @@ void MatildaAudioProcessor::updateTempoFromMidiClockInterval(int samplesSinceLas
     if (samplesSinceLastClock <= 0 || sampleRate_ <= 0.0)
         return;
 
+    // MIDI clock is 24 pulses per quarter-note: bpm = 60 / (secondsPerClock * 24).
     const double secondsPerClock = static_cast<double>(samplesSinceLastClock) / sampleRate_;
-    if (secondsPerClock <= 0.0)
-        return;
-
     const double estimated = 60.0 / (secondsPerClock * 24.0);
-    if (estimated >= 20.0 && estimated <= 300.0)
-        markExternalTempo(bpm_ * 0.65 + estimated * 0.35);
+    if (estimated < 20.0 || estimated > 300.0)
+        return; // out-of-range: dropped/extra clock or jitter spike — ignore this one
+
+    // Sample-accurate now, so a light EMA is enough to settle transport jitter.
+    const double smoothed = (externalTempoHoldBlocks_ > 0) ? (bpm_ * 0.7 + estimated * 0.3)
+                                                           : estimated;
+    markExternalTempo(smoothed);
 }
 
 void MatildaAudioProcessor::scanIncomingMidiForTempo(const juce::MidiBuffer& incoming) {
+    // Only derive tempo from external clock while the user is following the host.
+    // When sync is off we ignore clock entirely so the manual BPM field works.
+    if (!followExternalTransport_.load())
+        return;
+
     for (const auto metadata : incoming) {
-        if (metadata.getMessage().isMidiClock()) {
-            updateTempoFromMidiClockInterval(midiClockSampleCounter_);
-            midiClockSampleCounter_ = 0;
-        }
+        if (!metadata.getMessage().isMidiClock())
+            continue;
+
+        // standaloneTransportSamples_ is the running sample index at the start of this
+        // block (it is advanced after this scan), so add the in-block offset for a
+        // sample-accurate clock timestamp.
+        const int64_t clockPos = standaloneTransportSamples_ + metadata.samplePosition;
+        if (lastClockSamplePos_ >= 0)
+            updateTempoFromMidiClockInterval(static_cast<int>(clockPos - lastClockSamplePos_));
+        lastClockSamplePos_ = clockPos;
     }
 }
 
@@ -283,7 +301,7 @@ void MatildaAudioProcessor::handleIncomingMidi(const juce::MidiBuffer& incoming,
         }
 
         if (msg.isMidiStart() || msg.isMidiContinue()) {
-            midiClockSampleCounter_ = 0;
+            lastClockSamplePos_ = -1;
             if (!sequencerArmed_.load()) {
                 sampleClock_ = 0.0;
                 activeNote_ = -1;
@@ -328,9 +346,16 @@ void MatildaAudioProcessor::processSequencer(juce::MidiBuffer& midi, int numSamp
     }
     hostWasPlaying_ = hostPlaying;
 
-    // GridWalker parity — Standalone+IAC: when sync is on, MIDI clock drives steps.
-    if (isStandalone && followExternalTransport_.load() && armed)
-        return;
+    // GridWalker parity — Standalone+IAC: when sync is on AND clock is actually arriving,
+    // MIDI clock drives steps (handled in handleIncomingMidi). If clock stalls for >0.5s
+    // we fall through to the internal clock so the sequencer never freezes on a dead port.
+    if (isStandalone && followExternalTransport_.load() && armed) {
+        const bool clockActive = lastClockSamplePos_ >= 0
+            && (standaloneTransportSamples_ - lastClockSamplePos_)
+                   < static_cast<int64_t>(sampleRate_ * 0.5);
+        if (clockActive)
+            return;
+    }
 
     bool shouldRun = false;
     if (isStandalone || patch_.playMode == matilda::PlayMode::Note) {
@@ -387,7 +412,6 @@ void MatildaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     juce::MidiBuffer incoming;
     incoming.swapWith(midi);
 
-    midiClockSampleCounter_ += buffer.getNumSamples();
     scanIncomingMidiForTempo(incoming);
     updateTempoFromPlayHead();
 
