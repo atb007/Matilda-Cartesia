@@ -1,4 +1,5 @@
 #include "TransportBar.h"
+#include "../ClickFeedbackDrawing.h"
 #include "../FiligreeDrawing.h"
 #include "../GlassDropdownDrawing.h"
 #include "../MatildaFonts.h"
@@ -52,7 +53,7 @@ void drawSectionHeader(juce::Graphics& g, const juce::Image& ornLeft, const juce
     const float ornY = row.getY() + (row.getHeight() - ornH) * 0.5f + 2.f * scale;
 
     drawImage(g, ornLeft, {row.getX(), ornY, ornW, ornH});
-    drawImageFlipped180ScaleX(g, ornRight, {row.getRight() - ornW, ornY, ornW, ornH});
+    drawImageFlippedHorizontal(g, ornRight, {row.getRight() - ornW, ornY, ornW, ornH});
 
     g.setFont(matilda::fonts::supermercadoOne(kLabelFs * scale));
     g.setColour(juce::Colours::white.withAlpha(0.7f));
@@ -107,6 +108,7 @@ public:
         const auto bounds = getLocalBounds().toFloat();
         const float bleed = kPlayFrameBleed * owner_.designScale();
         const auto core = bounds.reduced(bleed);
+        matilda::ui::paintWithPressScale(g, core, pressed_, 0.94f);
         const auto frame = matilda::images::transportPlayFrame();
         const auto glass = matilda::images::transportGlassBg();
         const auto playIcon = matilda::images::transportPlayIcon();
@@ -129,6 +131,16 @@ public:
     }
 
     void mouseDown(const juce::MouseEvent&) override {
+        pressed_ = true;
+        repaint();
+    }
+
+    void mouseUp(const juce::MouseEvent&) override {
+        const bool wasPressed = pressed_;
+        pressed_ = false;
+        repaint();
+        if (!wasPressed)
+            return;
         if (owner_.playing_) {
             if (owner_.onStop)
                 owner_.onStop();
@@ -136,8 +148,21 @@ public:
             owner_.onPlay();
     }
 
+    void mouseEnter(const juce::MouseEvent&) override {
+        setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    }
+
+    void mouseExit(const juce::MouseEvent&) override {
+        if (pressed_) {
+            pressed_ = false;
+            repaint();
+        }
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+    }
+
 private:
     TransportBar& owner_;
+    bool pressed_ = false;
 };
 
 class TransportBar::SettingRow : public juce::Component {
@@ -404,22 +429,8 @@ TransportBar::TransportBar(matilda::PatchState& patch, MatildaLookAndFeel& laf)
     setPaintingIsUnclipped(true);
 
     bgTextureImg_ = matilda::images::movementBgTexture();
-
-    Layout filigreeLayout;
-    filigreeLayout.filigreeW = kFiligreeW;
-    filigreeLayout.filigreeLeft = kFiligreeTopLeft;
-    filigreeLayout.textureW = kTitleTextureW;
-    filigreeLayout.textureLeft = kTitleTextureLeft;
-    filigreeLayout.alphaScale = kTitleFiligreeAlphaScale;
-    filigreeLayout.grey = kTitleFiligreeGrey;
-
-    const int filigreeW2x = juce::roundToInt(kFiligreeW * 2.f);
-    const int filigreeH2x = juce::roundToInt(kFiligreeH * 2.f);
-    filigreeTopImg_ = rasterizeSvg(BinaryData::movementfiligreetop_svg, BinaryData::movementfiligreetop_svgSize,
-                                  filigreeW2x, filigreeH2x, bgTextureImg_, filigreeLayout);
-    filigreeBottomImg_ = rasterizeSvg(BinaryData::movementfiligreebottom_svg,
-                                       BinaryData::movementfiligreebottom_svgSize, filigreeW2x, filigreeH2x,
-                                       bgTextureImg_, filigreeLayout);
+    filigreeTop_ = matilda::ui::filigree::loadSvgDrawable(BinaryData::transporttitlefiligree_svg,
+                                                          BinaryData::transporttitlefiligree_svgSize);
 
     sectionOrnLeftImg_ = rasterizePlainSvg(BinaryData::transportornamentclockleft_svg,
                                            BinaryData::transportornamentclockleft_svgSize,
@@ -571,9 +582,11 @@ void TransportBar::handleGlobalMouseDown(const juce::MouseEvent& e) {
 void TransportBar::paint(juce::Graphics& g) {
     const float s = designScale();
 
-    drawImage(g, filigreeTopImg_, designRect(kFiligreeTopLeft, 0.f, kFiligreeW, kFiligreeH));
+    if (filigreeTop_)
+        drawDrawableInRect(g, *filigreeTop_, designRect(kFiligreeTopLeft, 0.f, kFiligreeW, kFiligreeH));
     drawImage(g, bgTextureImg_, designRect(kTitleTextureLeft, kTitleTextureY, kTitleTextureW, kTitleTextureH));
-    drawImageFlippedY(g, filigreeBottomImg_, designRect(kFiligreeTopLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
+    if (filigreeTop_)
+        drawDrawableFlippedVertical(g, *filigreeTop_, designRect(kFiligreeTopLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
     drawNeonTitle(g, "Global Settings", designRect(0.f, kTitleCenterY - kTitleFs * 0.5f, kBaseW, kTitleFs), s);
 
     const float playModeHeaderY = kColTop + kPlaySize + kColGap;

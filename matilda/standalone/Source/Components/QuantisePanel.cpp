@@ -367,21 +367,10 @@ QuantisePanel::QuantisePanel(matilda::PatchState& patch, MatildaLookAndFeel& laf
     setPaintingIsUnclipped(true);
 
     bgTextureImg_ = matilda::images::movementBgTexture();
-    matilda::ui::filigree::Layout filigreeLayout;
-    filigreeLayout.filigreeW = kFiligreeW;
-    filigreeLayout.filigreeLeft = kFiligreeCentreLeft;
-    filigreeLayout.textureW = kTitleTextureW;
-    filigreeLayout.textureLeft = kTitleTextureLeft;
-    filigreeLayout.alphaScale = kTitleFiligreeAlphaScale;
-    filigreeLayout.grey = kTitleFiligreeGrey;
-    const int filigreeW2x = juce::roundToInt(kFiligreeW * 2.f);
-    const int filigreeH2x = juce::roundToInt(kFiligreeH * 2.f);
-    filigreeTopImg_ = matilda::ui::filigree::rasterizeSvg(BinaryData::movementfiligreetop_svg,
-                                                            BinaryData::movementfiligreetop_svgSize, filigreeW2x,
-                                                            filigreeH2x, bgTextureImg_, filigreeLayout);
-    filigreeBottomImg_ = matilda::ui::filigree::rasterizeSvg(BinaryData::movementfiligreebottom_svg,
-                                                              BinaryData::movementfiligreebottom_svgSize, filigreeW2x,
-                                                              filigreeH2x, bgTextureImg_, filigreeLayout);
+    filigreeTop_ = matilda::ui::filigree::loadSvgDrawable(BinaryData::scaletitlefiligreetop_svg,
+                                                          BinaryData::scaletitlefiligreetop_svgSize);
+    filigreeBottom_ = matilda::ui::filigree::loadSvgDrawable(BinaryData::scaletitlefiligreebottom_svg,
+                                                             BinaryData::scaletitlefiligreebottom_svgSize);
     minMaxOrnLeftImg_ = rasterizeSvg(BinaryData::scaleminmaxornamentleft_svg,
                                      BinaryData::scaleminmaxornamentleft_svgSize, 120, 40);
     minMaxOrnRightImg_ = rasterizeSvg(BinaryData::scaleminmaxornamentright_svg,
@@ -656,12 +645,14 @@ void QuantisePanel::paintMinMaxConnectors(juce::Graphics& g) const {
 
 void QuantisePanel::paint(juce::Graphics& g) {
     const float s = designScale();
-    matilda::ui::filigree::drawImage(g, filigreeTopImg_,
-                                     designRect(kFiligreeCentreLeft, kFiligreeTop, kFiligreeW, kFiligreeH));
+    if (filigreeTop_)
+        matilda::ui::filigree::drawDrawableInRect(g, *filigreeTop_,
+                                                  designRect(kFiligreeCentreLeft, kFiligreeTop, kFiligreeW, kFiligreeH));
     matilda::ui::filigree::drawImage(g, bgTextureImg_,
                                      designRect(kTitleTextureLeft, kTitleTextureY, kTitleTextureW, kTitleTextureH));
-    matilda::ui::filigree::drawImageFlippedY(
-        g, filigreeBottomImg_, designRect(kFiligreeCentreLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
+    if (filigreeTop_)
+        matilda::ui::filigree::drawDrawableFlippedVertical(
+            g, *filigreeTop_, designRect(kFiligreeCentreLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
     drawNeonTitle(g, "Quantise Scale", designRect(0.f, kTitleCenterY - kTitleFs * 0.5f, kBaseW, kTitleFs), s);
     paintMinMaxHeader(g);
 }

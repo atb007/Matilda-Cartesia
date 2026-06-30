@@ -29,8 +29,8 @@ private:
     MatildaLookAndFeel& laf_;
     MenuId openMenu_ = MenuId::None;
 
-    juce::Image filigreeTopImg_;
-    juce::Image filigreeBottomImg_;
+    std::unique_ptr<juce::Drawable> filigreeTop_;
+    std::unique_ptr<juce::Drawable> filigreeBottom_;
     juce::Image bgTextureImg_;
     juce::Image minMaxOrnLeftImg_;
     juce::Image minMaxOrnRightImg_;

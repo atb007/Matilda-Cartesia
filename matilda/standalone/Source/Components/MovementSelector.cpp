@@ -1,13 +1,16 @@
 #include "MovementSelector.h"
 #include "BinaryData.h"
+#include "../FiligreeDrawing.h"
 #include "../GlassDropdownDrawing.h"
 #include "../MatildaFonts.h"
+#include "../MatildaImages.h"
 #include "../MovementLayout.h"
 #include "../ReactShellLayout.h"
 
 namespace {
 
 using namespace matilda::movement;
+using namespace matilda::ui::filigree;
 
 constexpr float kDdW = 316.f;
 constexpr float kDdPadY = 22.f;
@@ -15,127 +18,6 @@ constexpr float kDdItemFs = matilda::ui::glass::kDdItemFs;
 constexpr float kDdItemGap = 11.f;
 constexpr float kDdLineGap = 15.f;
 constexpr float kDdClose = 18.f;
-
-/**
- * Tint filigree from the movement bg-texture strip so ornaments match the title deco.
- * JUCE SVG linearGradient is unreliable — rasterize shape mask, sample texture in post.
- */
-juce::String prepareFiligreeSvgForRaster(juce::String svg) {
-    for (;;) {
-        const int defsStart = svg.indexOf("<defs>");
-        if (defsStart < 0)
-            break;
-        const int defsEnd = svg.indexOf(defsStart, "</defs>");
-        if (defsEnd < 0)
-            break;
-        svg = svg.replaceSection(defsStart, defsEnd - defsStart + 7, "");
-    }
-
-    for (;;) {
-        const int start = svg.indexOf("fill=\"url(#");
-        if (start < 0)
-            break;
-        const int end = svg.indexOf(start, "\")");
-        if (end < 0)
-            break;
-        svg = svg.replaceSection(start, end - start + 2, "fill=\"#FFFFFF\"");
-    }
-
-    svg = svg.replace(" fill-opacity=\"0.2\"", "");
-    svg = svg.replace("fill-opacity=\"0.2\" ", "");
-    return svg;
-}
-
-juce::Colour sampleBgTextureAtDesignX(const juce::Image& texture, float designX) {
-    if (!texture.isValid())
-        return juce::Colours::transparentBlack;
-
-    const float textureT = juce::jlimit(0.f, 1.f, (designX - kTextureLeft) / kTextureW);
-    const int x = juce::roundToInt(textureT * static_cast<float>(texture.getWidth() - 1));
-    const int y = texture.getHeight() / 2;
-    return texture.getPixelAt(x, y);
-}
-
-juce::Colour filigreeTintFromTexture(const juce::Image& texture, float filigreeT) {
-    const float filigreeLeft = (kBaseW - kFiligreeW) * 0.5f;
-    const float designX = filigreeLeft + filigreeT * kFiligreeW;
-    const float textureT = (designX - kTextureLeft) / kTextureW;
-    const float wingT = (kFiligreeW - kTextureW) * 0.5f / kFiligreeW;
-
-    if (textureT >= 0.f && textureT <= 1.f)
-        return sampleBgTextureAtDesignX(texture, designX);
-
-    const auto edge = sampleBgTextureAtDesignX(texture, textureT < 0.f ? kTextureLeft : kTextureRight);
-    if (textureT < 0.f) {
-        const float wing = juce::jlimit(0.f, 1.f, filigreeT / wingT);
-        return edge.withAlpha(edge.getFloatAlpha() * wing);
-    }
-
-    const float wing = juce::jlimit(0.f, 1.f, (1.f - filigreeT) / wingT);
-    return edge.withAlpha(edge.getFloatAlpha() * wing);
-}
-
-void applyFiligreeTextureTint(juce::Image& img, const juce::Image& texture) {
-    if (!img.isValid() || img.getWidth() <= 1)
-        return;
-
-    juce::Image::BitmapData data(img, juce::Image::BitmapData::readWrite);
-    const int w = img.getWidth();
-    const int h = img.getHeight();
-    const float invW = 1.f / static_cast<float>(w - 1);
-    const float grey = static_cast<float>(kFiligreeGrey) / 255.f;
-
-    for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x) {
-            auto* px = data.getPixelPointer(x, y);
-            const float shapeA = static_cast<float>(px[3]) / 255.f;
-            if (shapeA <= 0.f)
-                continue;
-
-            // Texture supplies horizontal fade only; colour stays muted so text stays focal.
-            const float envelopeA =
-                filigreeTintFromTexture(texture, static_cast<float>(x) * invW).getFloatAlpha() * kFiligreeAlphaScale;
-            const float alpha = envelopeA * shapeA;
-            px[0] = static_cast<uint8_t>(grey * 255.f);
-            px[1] = px[0];
-            px[2] = px[0];
-            px[3] = static_cast<uint8_t>(alpha * 255.f);
-        }
-    }
-}
-
-juce::Image rasterizeFiligreeSvg(const char* data, int size, int width, int height, const juce::Image& textureTint) {
-    const auto flat = prepareFiligreeSvgForRaster(juce::String::fromUTF8(data, static_cast<size_t>(size)));
-    const auto xml = juce::parseXML(flat);
-    if (!xml)
-        return {};
-    const auto drawable = juce::Drawable::createFromSVG(*xml);
-    if (!drawable)
-        return {};
-
-    juce::Image img(juce::Image::ARGB, width, height, true);
-    juce::Graphics g(img);
-    g.fillAll(juce::Colours::transparentBlack);
-    drawable->drawWithin(g, juce::Rectangle<float>(0.f, 0.f, static_cast<float>(width), static_cast<float>(height)),
-                         juce::RectanglePlacement::stretchToFit, 1.f);
-    applyFiligreeTextureTint(img, textureTint);
-    return img;
-}
-
-void drawImage(juce::Graphics& g, const juce::Image& img, juce::Rectangle<float> dest) {
-    if (img.isValid())
-        g.drawImage(img, dest, juce::RectanglePlacement::stretchToFit);
-}
-
-/** React: bottom filigree uses scaleY(-1) at bottom — flip at draw time, not in bitmap cache. */
-void drawImageFlippedY(juce::Graphics& g, const juce::Image& img, juce::Rectangle<float> dest) {
-    if (!img.isValid())
-        return;
-    g.saveState();
-    g.addTransform(juce::AffineTransform::scale(1.f, -1.f, dest.getCentreX(), dest.getCentreY()));
-    g.drawImage(img, dest, juce::RectanglePlacement::stretchToFit);
-    g.restoreState();
-}
 
 void drawMovementArrow(juce::Graphics& g, juce::Rectangle<float> bounds, bool left, bool hover) {
     const auto top = hover ? juce::Colour(0xfff8f8f8) : juce::Colour(0xffececec);
@@ -376,17 +258,11 @@ MovementSelector::MovementSelector(matilda::PatchState& patch, MatildaLookAndFee
     setOpaque(false);
     setPaintingIsUnclipped(true);
 
-    bgTextureImg_ = juce::ImageCache::getFromMemory(BinaryData::movementbgtexture2xpng_png,
-                                                      BinaryData::movementbgtexture2xpng_pngSize);
-
-    const int filigreeW2x = juce::roundToInt(kFiligreeW * 2.f);
-    const int filigreeH2x = juce::roundToInt(kFiligreeH * 2.f);
-
-    filigreeTopImg_ = rasterizeFiligreeSvg(BinaryData::movementfiligreetop_svg, BinaryData::movementfiligreetop_svgSize,
-                                           filigreeW2x, filigreeH2x, bgTextureImg_);
-    filigreeBottomImg_ = rasterizeFiligreeSvg(BinaryData::movementfiligreebottom_svg,
-                                              BinaryData::movementfiligreebottom_svgSize, filigreeW2x, filigreeH2x,
-                                              bgTextureImg_);
+    bgTextureImg_ = matilda::images::movementBgTexture();
+    filigreeTop_ = matilda::ui::filigree::loadSvgDrawable(BinaryData::movementfiligreetop_svg,
+                                                          BinaryData::movementfiligreetop_svgSize);
+    filigreeBottom_ = matilda::ui::filigree::loadSvgDrawable(BinaryData::movementfiligreebottom_svg,
+                                                             BinaryData::movementfiligreebottom_svgSize);
 
     prev_ = std::make_unique<ArrowButton>(true, [this] { cycleMode(-1); });
     next_ = std::make_unique<ArrowButton>(false, [this] { cycleMode(1); });
@@ -521,14 +397,18 @@ void MovementSelector::paint(juce::Graphics& g) {
 
     const auto filigreeDest =
         designRectAt((kBaseW - kFiligreeW) * 0.5f, 0.f, kFiligreeW, kFiligreeH, s, origin);
-    drawImage(g, filigreeTopImg_, filigreeDest);
+    if (filigreeTop_)
+        drawDrawableInRect(g, *filigreeTop_, filigreeDest);
 
     const auto textureDest = designRectAt(kTextureLeft, kTextureY, kTextureW, kTextureH, s, origin);
     drawImage(g, bgTextureImg_, textureDest);
 
     const auto filigreeBottomDest =
         designRectAt((kBaseW - kFiligreeW) * 0.5f, kBaseH - kFiligreeH, kFiligreeW, kFiligreeH, s, origin);
-    drawImageFlippedY(g, filigreeBottomImg_, filigreeBottomDest);
+    if (filigreeBottom_)
+        drawDrawableFlippedVertical(g, *filigreeBottom_, filigreeBottomDest);
+    else if (filigreeTop_)
+        drawDrawableFlippedVertical(g, *filigreeTop_, filigreeBottomDest);
 }
 
 void MovementSelector::resized() {
