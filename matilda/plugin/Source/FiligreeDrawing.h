@@ -181,12 +181,22 @@ inline void drawDrawableInRect(juce::Graphics& g, const juce::Drawable& drawable
     drawable.drawWithin(g, dest, juce::RectanglePlacement::stretchToFit, 1.f);
 }
 
-/** Figma bottom filigree — rotate(180deg) scaleX(-1). */
-inline void drawDrawableFlipped180ScaleX(juce::Graphics& g, const juce::Drawable& drawable,
-                                         juce::Rectangle<float> dest) {
+/** Bottom title filigree — Figma rotate(180deg) scaleX(-1) ≡ vertical mirror (scaleY(-1)). */
+inline void drawDrawableFlippedVertical(juce::Graphics& g, const juce::Drawable& drawable,
+                                        juce::Rectangle<float> dest) {
     g.saveState();
-    g.addTransform(juce::AffineTransform::scale(-1.f, -1.f, dest.getCentreX(), dest.getCentreY()));
+    g.addTransform(juce::AffineTransform::scale(1.f, -1.f, dest.getCentreX(), dest.getCentreY()));
     drawable.drawWithin(g, dest, juce::RectanglePlacement::stretchToFit, 1.f);
+    g.restoreState();
+}
+
+/** Right section ornament — Figma scaleY(-1) rotate(180deg) ≡ horizontal mirror (scaleX(-1)). */
+inline void drawImageFlippedHorizontal(juce::Graphics& g, const juce::Image& img, juce::Rectangle<float> dest) {
+    if (!img.isValid())
+        return;
+    g.saveState();
+    g.addTransform(juce::AffineTransform::scale(-1.f, 1.f, dest.getCentreX(), dest.getCentreY()));
+    g.drawImage(img, dest, juce::RectanglePlacement::stretchToFit);
     g.restoreState();
 }
 

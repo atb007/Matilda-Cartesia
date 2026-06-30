@@ -53,7 +53,7 @@ void drawSectionHeader(juce::Graphics& g, const juce::Image& ornLeft, const juce
     const float ornY = row.getY() + (row.getHeight() - ornH) * 0.5f + 2.f * scale;
 
     drawImage(g, ornLeft, {row.getX(), ornY, ornW, ornH});
-    drawImageFlipped180ScaleX(g, ornRight, {row.getRight() - ornW, ornY, ornW, ornH});
+    drawImageFlippedHorizontal(g, ornRight, {row.getRight() - ornW, ornY, ornW, ornH});
 
     g.setFont(matilda::fonts::supermercadoOne(kLabelFs * scale));
     g.setColour(juce::Colours::white.withAlpha(0.7f));
@@ -611,7 +611,7 @@ void TransportBar::paint(juce::Graphics& g) {
         drawDrawableInRect(g, *filigreeTop_, designRect(kFiligreeTopLeft, 0.f, kFiligreeW, kFiligreeH));
     drawImage(g, bgTextureImg_, designRect(kTitleTextureLeft, kTitleTextureY, kTitleTextureW, kTitleTextureH));
     if (filigreeTop_)
-        drawDrawableFlipped180ScaleX(g, *filigreeTop_, designRect(kFiligreeTopLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
+        drawDrawableFlippedVertical(g, *filigreeTop_, designRect(kFiligreeTopLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
     drawNeonTitle(g, "Global Settings", designRect(0.f, kTitleCenterY - kTitleFs * 0.5f, kBaseW, kTitleFs), s);
 
     const float playModeHeaderY = kColTop + kPlaySize + kColGap;

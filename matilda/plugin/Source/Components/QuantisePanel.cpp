@@ -650,11 +650,8 @@ void QuantisePanel::paint(juce::Graphics& g) {
                                                   designRect(kFiligreeCentreLeft, kFiligreeTop, kFiligreeW, kFiligreeH));
     matilda::ui::filigree::drawImage(g, bgTextureImg_,
                                      designRect(kTitleTextureLeft, kTitleTextureY, kTitleTextureW, kTitleTextureH));
-    if (filigreeBottom_)
-        matilda::ui::filigree::drawDrawableInRect(
-            g, *filigreeBottom_, designRect(kFiligreeCentreLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
-    else if (filigreeTop_)
-        matilda::ui::filigree::drawDrawableFlipped180ScaleX(
+    if (filigreeTop_)
+        matilda::ui::filigree::drawDrawableFlippedVertical(
             g, *filigreeTop_, designRect(kFiligreeCentreLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
     drawNeonTitle(g, "Quantise Scale", designRect(0.f, kTitleCenterY - kTitleFs * 0.5f, kBaseW, kTitleFs), s);
     paintMinMaxHeader(g);

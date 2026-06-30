@@ -406,9 +406,9 @@ void MovementSelector::paint(juce::Graphics& g) {
     const auto filigreeBottomDest =
         designRectAt((kBaseW - kFiligreeW) * 0.5f, kBaseH - kFiligreeH, kFiligreeW, kFiligreeH, s, origin);
     if (filigreeBottom_)
-        drawDrawableInRect(g, *filigreeBottom_, filigreeBottomDest);
+        drawDrawableFlippedVertical(g, *filigreeBottom_, filigreeBottomDest);
     else if (filigreeTop_)
-        drawDrawableFlipped180ScaleX(g, *filigreeTop_, filigreeBottomDest);
+        drawDrawableFlippedVertical(g, *filigreeTop_, filigreeBottomDest);
 }
 
 void MovementSelector::resized() {

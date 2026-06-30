@@ -44,10 +44,10 @@ Universal binary (Apple Silicon + Intel).
 ## Cut a new release (maintainers)
 
 ```bash
-git tag v1.0.6
-git push origin v1.0.6
+git tag v1.0.7
+git push origin v1.0.7
 ```
 
-Latest release: **[v1.0.6](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.6)** — FL opaque-host clock fallback (sound in Wrapper), native SVG filigree parity, UI scale/collapse persistence.
+Latest release: **[v1.0.7](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.7)** — filigree orientation fixes (bottom vines + section ornaments mirror correctly).
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.
