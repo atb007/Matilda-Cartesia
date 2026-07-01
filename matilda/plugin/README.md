@@ -1,6 +1,8 @@
-# Matilda — JUCE plugin (VST3 / AU / Standalone)
+# Matilda — JUCE plugin (VST3 / AU)
 
 MIDI arp / grid sequencer for macOS and Windows DAWs. Builds on the Cartesia engine (Patch v2, sequential layers, movement modes, trigger probability, jitter).
+
+> **Standalone app** is built from a separate codebase: [`../standalone/`](../standalone/README.md) (v1.0.9+). This dir builds **VST3 + AU only**.
 
 ## Download pre-built plugins
 
@@ -10,7 +12,9 @@ MIDI arp / grid sequencer for macOS and Windows DAWs. Builds on the Cartesia eng
 |-----|-----|
 | `Matilda-Windows-vst3.zip` | FL Studio / Windows — copy `Matilda.vst3` to `C:\Program Files\Common Files\VST3\` |
 | `Matilda-macOS-vst3.zip` | macOS DAWs — copy to `~/Library/Audio/Plug-Ins/VST3/` |
-| `*-standalone.zip` | Standalone app (no DAW) |
+| `Matilda-*-standalone.zip` | Standalone app — see [`../standalone/README.md`](../standalone/README.md) |
+
+Latest: **[v1.0.9](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.9)**
 
 See `releases/README.md` for CI workflow details.
 
@@ -28,9 +32,10 @@ cmake --build build --config Release -j4
 
 | Format | Path |
 |--------|------|
-| **Standalone** | `build/Matilda_artefacts/Release/Standalone/Matilda.app` |
 | **VST3** | `build/Matilda_artefacts/Release/VST3/Matilda.vst3` |
 | **AU** | `build/Matilda_artefacts/Release/AU/Matilda.component` |
+
+Standalone: build from [`../standalone/`](../standalone/README.md).
 
 Install for DAW scanning (optional):
 
@@ -43,44 +48,9 @@ Rescan plugins in Logic / Ableton / Reaper after copying.
 
 ---
 
-## Quick test — Standalone + IAC → GarageBand (recommended)
+## Quick test — Standalone + IAC → GarageBand
 
-**Matilda and GarageBand are two separate apps** — same pattern as GridWalker. A MIDI clip on a GB track does **not** feed Matilda; it plays the instrument directly.
-
-```text
-Matilda.app  --MIDI OUT-->  IAC Bus 1  --MIDI IN-->  GarageBand instrument track
-```
-
-### One-time setup
-
-1. **Audio MIDI Setup** → IAC Driver → *Device is online*
-2. **GarageBand** → Settings → Audio/MIDI → enable **IAC Driver Bus 1**
-3. **Matilda.app** → **Options → MIDI Output → IAC Driver Bus 1**
-
-### Each session
-
-1. **Match tempo:** GarageBand does **not** send MIDI clock or tempo to external apps — there is no setting for it in GB Preferences. **Double-click the BPM** in Matilda’s footer and set it to your project tempo (e.g. `60`).
-2. Leave **Sync GB transport** **off** (GarageBand cannot drive external transport either).
-3. GarageBand: software instrument track, **arm** it, press **Play** on GB transport (optional — for monitoring).
-4. Matilda: press the **play gem** (Global Settings, bottom-left).
-5. Footer status should show `tick=` increasing (e.g. `step=3 tick=12 · L1 · C lydian`).
-
-| Symptom | Fix |
-|---------|-----|
-| BPM stuck at 120 | **Double-click footer BPM** → enter your GB project tempo |
-| `tick=0` not moving | Press **play inside Matilda**; turn **Sync GB transport** off |
-| GB clip plays but no grid | Mute the clip — Matilda sends its own MIDI |
-| Still silent | Confirm IAC in both apps; try a different GB instrument |
-
-### External MIDI transport sync (Logic / Ableton / Reaper only)
-
-GarageBand **cannot** be a MIDI clock master. For DAWs that support it:
-
-1. Enable **Sync external transport** in Matilda’s footer.
-2. DAW MIDI preferences → enable **MIDI clock** on the IAC bus.
-3. Matilda → Options → **MIDI Input** → same IAC bus.
-
-BPM then follows the host playhead (in-plugin) or incoming MIDI clock (standalone + IAC).
+The Standalone app lives in [`../standalone/`](../standalone/README.md). Same IAC pattern as below — GB cannot send tempo; match BPM manually.
 
 ---
 
@@ -93,18 +63,36 @@ Load **Matilda** as a **MIDI effect** before an instrument (VST3 or AU).
 | **Note** (default preset) | Matilda play gem armed — internal clock at host BPM |
 | **Transport** | DAW transport playing **and** Matilda play gem armed |
 
-GarageBand does **not** reliably host MIDI-effect plugins in-track — use **Standalone + IAC** above instead.
+GarageBand does **not** reliably host MIDI-effect plugins in-track — use **Standalone + IAC** instead.
 
-### FL Studio (BlueARP-style routing)
+### FL Studio — routing status (Jul 2026)
 
-Matilda is a **VST3 MIDI effect** (like BlueARP) — it generates MIDI; a **synth in the same Fruity Wrapper** renders audio.
+| Method | FL version tested | Status | Notes |
+|--------|-------------------|--------|-------|
+| **Virtual MIDI port** (plugin **MIDI Out** selector) | 20.0.1 build 451 | ✅ **Validated** | Reliable on all FL versions; see below |
+| **Standalone + loopMIDI** (two-port clock + notes) | 20.0.1 | ✅ **Validated** | See [`../standalone/README.md`](../standalone/README.md) |
+| **Fruity Wrapper internal ports** (Matilda out *N* → synth in *N*) | 20.0.1 | ❌ **Failed** | VST3 MIDI output not forwarded between wrapper plugins |
+| **Fruity Wrapper / Patcher** | FL 21+ (newer) | ⬜ **Not yet tested** | May work if Image-Line improved VST3 MIDI-out routing |
 
-1. **Fruity Wrapper** — load Matilda in slot 1, your synth (e.g. Sytrus, 3xOsc) in slot 2. Wire Matilda **MIDI output port N** → synth **MIDI input port N** (ports **11+**; see BlueARP manual). Press **Play** on FL transport (DAW Sync is on by default).
-2. **Patcher** — Matilda → generator, wire green MIDI cables to the synth module.
+#### Recommended: virtual MIDI port (v1.0.8+)
 
-If silent: confirm DAW Sync (top-right toggle) is **on**, FL transport is **playing**, and MIDI ports between wrapper plugins are connected.
+FL Studio 20.x does not reliably forward VST3 **MIDI output** from one wrapper plugin to another. Matilda mirrors the Standalone workaround: stream notes to an OS-level virtual port.
 
-Install: `build/Matilda_artefacts/Release/VST3/Matilda.vst3` → `C:\Program Files\Common Files\VST3\` (Windows) or `~/Library/Audio/Plug-Ins/VST3/` (macOS)
+1. **Windows:** [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html) — create e.g. `Matilda-Notes`.
+   **macOS:** *Audio MIDI Setup → IAC Driver* — add a port.
+2. Load Matilda VST3. In the plugin window, set **MIDI Out** (bottom-left) to that port.
+3. On your synth channel: **MIDI Input** → same port (FL: assign port number on Input list; synth channel must match).
+4. Press play — Matilda's arp reaches the synth.
+
+The selected port is saved with the project.
+
+#### Alternative: Fruity Wrapper internal ports (BlueARP-style)
+
+Same VST3 binary — load Matilda + synth in one **Fruity Wrapper**, wire output port *N* → synth input port *N* (ports 11+ per BlueARP manual). **Not confirmed on FL 20.0.1.** Retest on a newer FL Studio before relying on this path.
+
+**Patcher:** Matilda → generator, green MIDI cables to synth module — also pending verification on newer FL.
+
+Install: `Matilda.vst3` → `C:\Program Files\Common Files\VST3\` (Windows) or `~/Library/Audio/Plug-Ins/VST3/` (macOS)
 
 ### Windows / VST3 UI (Jun 2026)
 

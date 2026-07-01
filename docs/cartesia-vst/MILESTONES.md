@@ -212,7 +212,7 @@ Wire transport, playhead, layer scheduler, quantise scale resolution, and preset
 | Default preset load (`default.layer1.json`) | ✅ |
 | Scale/tonic/min/max → knob note label re-resolution | ✅ |
 | JUCE — scale-aware MIDI + playhead step tracking | ✅ |
-| JUCE — transport / tempo / host sync | 🔄 GB standalone ✅; in-DAW matrix pending |
+| JUCE — transport / tempo / host sync | 🔄 GB standalone ✅; FL loopMIDI ✅; in-DAW matrix pending |
 | JUCE — full UI port from `cartesia-vst-ui` (hero, glass shell) | ✅ M8b frozen |
 | Preset save/load in JUCE + web | ⬜ |
 | Web Audio / Web MIDI preview output | ⬜ |
@@ -360,7 +360,7 @@ First end-to-end MIDI playback path validated. GarageBand exposed hard platform 
 | Transport gating (GridWalker parity) | ✅ | Standalone sync off = Matilda play; sync on = external MIDI clock steps |
 | Host playhead BPM (in-plugin) | ✅ | Logic / Ableton / Reaper / FL / Bitwig when loaded as MIDI effect |
 | Manual BPM (standalone footer) | ✅ | Double-click footer BPM; persisted in plugin state |
-| MIDI clock BPM estimate | ✅ | When a DAW sends clock on IAC input |
+| MIDI clock BPM estimate | ✅ | When a DAW sends clock on IAC/loopMIDI input (v1.0.9: sample-accurate) |
 | `play_mode` in preset JSON | ✅ | `note` \| `transport` parsed/saved |
 | Debug footer (standalone) | ✅ | `step=` / `tick=` / layer / scale + BPM + sync toggle |
 | Git repo on GitHub | ✅ | `origin/main` — HTTPS remote |
@@ -421,21 +421,64 @@ Default: `followExternalTransport_ = false` (GB-safe). `userBpm_` defaults to 12
 
 **Key files:** `SequencerEngine.cpp/h`, `GemCell.cpp/h`, `KnobDrawing.h`
 
-**FL Studio / BlueARP routing:** No separate codebase — VST3 MIDI-FX + host port wiring (see `BLUEARP-ENHANCEMENTS.md`, `ARCHITECTURE.md`).
+**FL Studio / BlueARP routing:** Virtual MIDI ports validated on FL 20.0.1 (Jul 2026). Fruity Wrapper internal ports failed on same version; retest on FL 21+ pending. See [Integration milestones (Jul 2026)](#integration-milestones-jul-2026) and `matilda/plugin/README.md`.
 
 ---
 
-## DAW compatibility — test matrix (not yet run)
+## Integration milestones (Jul 2026)
 
-Use this checklist before freezing host architecture. Build outputs: VST3 + AU + Standalone (`matilda/plugin/README.md`).
+Major end-to-end validation on **FL Studio 20.0.1 (build 451, 64-bit, Windows 11 + loopMIDI)**.
+
+### ✅ Virtual-port routing — production path
+
+| Setup | What was tested | Result |
+|-------|-----------------|--------|
+| **Standalone + loopMIDI (two ports)** | Port A: FL master sync → Matilda input. Port B: Matilda notes → FL synth channel | ✅ Notes audible, transport sync, BPM tracks DAW (v1.0.9 clock fix) |
+| **VST3 + loopMIDI (MIDI Out selector)** | Matilda plugin → virtual port → synth channel input port | ✅ Notes audible; bypasses FL's broken VST3 MIDI-out plumbing |
+
+**Why virtual ports work:** FL 20.x does not forward VST3 **MIDI output** between Fruity Wrapper plugins. OS-level virtual ports (loopMIDI / IAC) sit outside FL's internal MIDI router — same pattern that made Standalone + GarageBand work.
+
+**Shipped in:** v1.0.8 (plugin direct MIDI out) · v1.0.9 (standalone clock sync + UI QOL)
+
+**Docs:** `matilda/plugin/README.md` · `matilda/standalone/README.md` · `matilda/plugin/releases/v1.0.8-notes.md` · `v1.0.9-notes.md`
+
+### ⬜ Fruity Wrapper internal ports — pending on newer FL
+
+BlueARP-style wiring (Matilda output port *N* → synth input port *N* in the same Fruity Wrapper, or Patcher green MIDI cables) was **attempted on FL 20.0.1 and did not produce audio**. Not yet retested on **FL Studio 21+** where Image-Line may have improved VST3 MIDI-out handling.
+
+**Test script when a newer FL is available:**
+
+1. Load Matilda VST3 + synth in one Fruity Wrapper (no virtual port).
+2. Matilda Settings → output port *N*; synth → input port *N* (use 11+).
+3. FL transport play + Matilda play gem → confirm synth receives notes.
+4. Compare against virtual-port path (should be equivalent if wrapper routing works).
+5. Record FL version + build number in this table.
+
+### Standalone codebase split (Jun–Jul 2026)
+
+| Piece | Status |
+|-------|--------|
+| `matilda/standalone/` forked from v1.0.2 audio base | ✅ |
+| Plugin builds VST3/AU only; standalone builds Standalone only | ✅ |
+| Forward-port filigree + resize persistence (no DAW-sync UI) | ✅ v1.0.9 |
+| Sample-accurate MIDI clock tempo sync | ✅ v1.0.9 |
+
+---
+
+## DAW compatibility — test matrix
+
+Use this checklist before freezing host architecture. Build outputs: VST3 + AU from `matilda/plugin/`; Standalone from `matilda/standalone/`.
 
 | DAW | Load as | Transport sync | Auto BPM | MIDI out to instrument | Priority | Status |
 |-----|---------|----------------|----------|------------------------|----------|--------|
-| **GarageBand** | Standalone + IAC | ❌ external master | Manual BPM | ✅ | P0 (done) | ✅ smoke-tested |
+| **GarageBand** | Standalone + IAC | ❌ external master | Manual BPM | ✅ virtual port | P0 | ✅ smoke-tested |
+| **FL Studio 20.0.1** | Standalone + loopMIDI (2 ports) | ✅ MIDI clock | ✅ v1.0.9+ | ✅ virtual port | P0 | ✅ validated Jul 2026 |
+| **FL Studio 20.0.1** | VST3 + loopMIDI (MIDI Out) | Host playhead | Host playhead | ✅ virtual port | P0 | ✅ validated Jul 2026 |
+| **FL Studio 20.0.1** | VST3 Fruity Wrapper ports | Host playhead | Host playhead | ❌ wrapper ports | P1 | ❌ failed — retest FL 21+ |
+| **FL Studio 21+** | VST3 Fruity Wrapper / Patcher | ? | Host playhead | ? internal ports | P1 | ⬜ not yet tested |
 | **Logic Pro** | AU MIDI effect | ? | Host playhead | In-chain | P1 | ⬜ |
 | **Ableton Live** | VST3 MIDI effect | ? | Host playhead | In-chain | P1 | ⬜ |
 | **Bitwig** | VST3 / CLAP? | ? | Host playhead | In-chain | P1 | ⬜ |
-| **FL Studio** | VST3 MIDI effect | Host playhead | Fruity Wrapper ports or Patcher | P1 | 🔄 UI smoke-tested Win (Jun 25) |
 | **Reaper** | VST3 / AU | ? | Host playhead | In-chain | P2 | ⬜ |
 
 **Per-DAW test script (copy for each row):**
@@ -477,5 +520,5 @@ Not decided — keep flexible until P1 DAW matrix is complete.
 
 ---
 
-*Milestones v1 · pairs with `SPEC.md` and `FIGMA-CHECKLIST.md` · M8b final Jun 11, 2026 · host + engine QOL Jun 18, 2026*
+*Milestones v1 · pairs with `SPEC.md` and `FIGMA-CHECKLIST.md` · M8b final Jun 11, 2026 · host + engine QOL Jun 18, 2026 · FL virtual-port integration Jul 2026*
 

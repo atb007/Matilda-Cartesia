@@ -1,161 +1,119 @@
-# Matilda — Standalone app (macOS) — separate known-good codebase
+# Matilda — Standalone app (macOS / Windows)
 
-> **This is the Standalone-only codebase.** It was forked from the plugin tree at **v1.0.2**
-> (`c89d537`) — the last build before the DAW-coupling / host-passthrough changes (v1.0.3+)
-> that broke standalone audio/MIDI behaviour. It is intentionally kept independent from
-> `matilda/plugin/` so the macOS standalone app stays stable while the VST3/AU plugin
-> evolves separately.
+> **Standalone-only codebase** (`matilda/standalone/`). Forked from the plugin tree at **v1.0.2** for a stable audio/MIDI engine, then forward-ported with UI QOL (filigree, resize persistence, DAW clock sync) through **v1.0.9**.
 >
-> - **This dir (`matilda/standalone/`)** builds **Standalone only** (`Matilda.app`).
+> - **This dir** builds **Standalone only** (`Matilda.app` / `Matilda.exe`).
 > - **`matilda/plugin/`** builds **VST3 + AU only**.
-> - Build: `cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --target Matilda_Standalone`
-> - Output: `build/Matilda_artefacts/Release/Standalone/Matilda.app`
->
-> Do **not** port the plugin's transport-sync / FL fallback logic back into this tree —
-> that coupling is exactly what this fork avoids.
+> - Latest release: **[v1.0.9](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.9)**
 
-MIDI arp / grid sequencer for macOS. Builds on the Cartesia engine (Patch v2, sequential layers, movement modes, trigger probability, jitter).
+MIDI arp / grid sequencer. Cartesia engine (Patch v2, sequential layers, movement modes, trigger probability, jitter).
 
-## Download pre-built plugins
+## Download
 
 **GitHub Releases:** [github.com/atb007/Matilda-Cartesia/releases](https://github.com/atb007/Matilda-Cartesia/releases)
 
 | Zip | Use |
 |-----|-----|
-| `Matilda-Windows-vst3.zip` | FL Studio / Windows — copy `Matilda.vst3` to `C:\Program Files\Common Files\VST3\` |
-| `Matilda-macOS-vst3.zip` | macOS DAWs — copy to `~/Library/Audio/Plug-Ins/VST3/` |
-| `*-standalone.zip` | Standalone app (no DAW) |
+| `Matilda-Windows-standalone.zip` | Windows — run `Matilda.exe` |
+| `Matilda-macOS-standalone.zip` | macOS — open `Matilda.app` |
 
-See `releases/README.md` for CI workflow details.
+See [`../plugin/releases/README.md`](../plugin/releases/README.md) for CI workflow details.
 
 ## Build locally
 
 Requires CMake 3.22+ and a C++17 compiler. JUCE is taken from `../../gridwalker/JUCE` when present.
 
 ```bash
-cd matilda/plugin
+cd matilda/standalone
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release -j4
 ```
 
-### Outputs
-
-| Format | Path |
-|--------|------|
-| **Standalone** | `build/Matilda_artefacts/Release/Standalone/Matilda.app` |
-| **VST3** | `build/Matilda_artefacts/Release/VST3/Matilda.vst3` |
-| **AU** | `build/Matilda_artefacts/Release/AU/Matilda.component` |
-
-Install for DAW scanning (optional):
-
-```bash
-cp -R build/Matilda_artefacts/Release/VST3/Matilda.vst3 ~/Library/Audio/Plug-Ins/VST3/
-cp -R build/Matilda_artefacts/Release/AU/Matilda.component ~/Library/Audio/Plug-Ins/Components/
-```
-
-Rescan plugins in Logic / Ableton / Reaper after copying.
+**Output:** `build/Matilda_artefacts/Release/Standalone/Matilda.app` (macOS) or `Matilda.exe` (Windows)
 
 ---
 
-## Quick test — Standalone + IAC → GarageBand (recommended)
-
-**Matilda and GarageBand are two separate apps** — same pattern as GridWalker. A MIDI clip on a GB track does **not** feed Matilda; it plays the instrument directly.
+## Quick test — macOS Standalone + IAC → GarageBand
 
 ```text
 Matilda.app  --MIDI OUT-->  IAC Bus 1  --MIDI IN-->  GarageBand instrument track
 ```
 
-### One-time setup
+GarageBand cannot send MIDI clock or tempo to external apps — **double-click footer BPM** to match your project tempo. Leave **Sync external transport** off.
 
-1. **Audio MIDI Setup** → IAC Driver → *Device is online*
-2. **GarageBand** → Settings → Audio/MIDI → enable **IAC Driver Bus 1**
-3. **Matilda.app** → **Options → MIDI Output → IAC Driver Bus 1**
+See [plugin/README.md](../plugin/README.md) for the full GB setup table.
+
+---
+
+## FL Studio + loopMIDI — two-port wiring (validated Jul 2026)
+
+Use **two separate virtual MIDI ports** so clock and notes flow in opposite directions without feedback.
+
+```text
+Port A (clock):   FL Studio  --FL-Sync-->       Matilda  (MIDI input)
+Port B (notes):   Matilda    --Matilda-Notes-->  FL Studio --> synth channel
+```
+
+### One-time setup (Windows)
+
+1. Install [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html). Create two ports, e.g. **`FL-Sync`** and **`Matilda-Notes`**.
+2. **FL Studio → Options → MIDI settings**
+   - **Output** list → select **`FL-Sync`** → enable → tick **Send master sync**
+   - **Options menu** → enable **Enable MIDI master sync** (global switch)
+   - **Input** list → select **`Matilda-Notes`** → enable → assign a **port number** (e.g. `5`)
+3. **Matilda standalone → Options**
+   - **MIDI Input** → enable **`FL-Sync`**
+   - **MIDI Output** → select **`Matilda-Notes`**
+4. Footer → turn **Sync external transport** **ON**.
+5. On your **synth channel** in FL: set its **MIDI input port** to the **same number** as step 2 (e.g. `5`).
 
 ### Each session
 
-1. **Match tempo:** GarageBand does **not** send MIDI clock or tempo to external apps — there is no setting for it in GB Preferences. **Double-click the BPM** in Matilda’s footer and set it to your project tempo (e.g. `60`).
-2. Leave **Sync GB transport** **off** (GarageBand cannot drive external transport either).
-3. GarageBand: software instrument track, **arm** it, press **Play** on GB transport (optional — for monitoring).
-4. Matilda: press the **play gem** (Global Settings, bottom-left).
-5. Footer status should show `tick=` increasing (e.g. `step=3 tick=12 · L1 · C lydian`).
+1. Press **Play in FL** (clock only streams while transport is rolling).
+2. Press **play gem** in Matilda (or let FL Start/Stop drive it when sync is on).
+3. Footer BPM should track FL tempo within ~1 s. Change FL tempo while playing to confirm.
 
 | Symptom | Fix |
 |---------|-----|
-| BPM stuck at 120 | **Double-click footer BPM** → enter your GB project tempo |
-| `tick=0` not moving | Press **play inside Matilda**; turn **Sync GB transport** off |
-| GB clip plays but no grid | Mute the clip — Matilda sends its own MIDI |
-| Still silent | Confirm IAC in both apps; try a different GB instrument |
+| Notes but wrong tempo | Port A: confirm FL-Sync is Matilda **input** + master sync enabled + FL is **playing** |
+| Tempo stuck at 120 | Upgrade to **v1.0.9+** (sample-accurate clock fix); confirm clock arrives (MIDI-OX on FL-Sync) |
+| Silent synth | Port B: synth channel input port must match Matilda-Notes port number in FL Input list |
+| Playhead stops when sync off | Expected — internal clock needs play gem; or turn sync back on for DAW-driven steps |
 
-### External MIDI transport sync (Logic / Ableton / Reaper only)
+### Manual BPM fallback
 
-GarageBand **cannot** be a MIDI clock master. For DAWs that support it:
-
-1. Enable **Sync external transport** in Matilda’s footer.
-2. DAW MIDI preferences → enable **MIDI clock** on the IAC bus.
-3. Matilda → Options → **MIDI Input** → same IAC bus.
-
-BPM then follows the host playhead (in-plugin) or incoming MIDI clock (standalone + IAC).
+Turn **Sync external transport OFF**, click the footer **BPM** label, type your tempo. Notes still route via Port B.
 
 ---
 
-## Plugin in a DAW (FL Studio, Logic, Reaper)
+## External MIDI transport sync (Logic / Ableton / Reaper / FL)
 
-Load **Matilda** as a **MIDI effect** before an instrument (VST3 or AU).
+For DAWs that send MIDI clock:
 
-| Play mode | When the grid steps |
-|-----------|---------------------|
-| **Note** (default preset) | Matilda play gem armed — internal clock at host BPM |
-| **Transport** | DAW transport playing **and** Matilda play gem armed |
+1. Enable **Sync external transport** in Matilda's footer.
+2. DAW → send master sync on a virtual port (IAC / loopMIDI).
+3. Matilda → Options → **MIDI Input** → same port.
 
-GarageBand does **not** reliably host MIDI-effect plugins in-track — use **Standalone + IAC** above instead.
-
-### FL Studio (BlueARP-style routing)
-
-Same **VST3 MIDI-FX** binary — no separate codebase:
-
-1. **Patcher** — Matilda → generator, wire green MIDI cables; or
-2. **Fruity Wrapper** — Matilda Settings → output port *N*; synth input port *N* (use ports 11+; see BlueARP manual).
-
-Install: `build/Matilda_artefacts/Release/VST3/Matilda.vst3` → `C:\Program Files\Common Files\VST3\` (Windows) or `~/Library/Audio/Plug-Ins/VST3/` (macOS)
-
-### Windows / VST3 UI (Jun 2026)
-
-| Topic | Detail |
-|-------|--------|
-| **Default size** | Expanded **2376×1805** design px at **0.52 × 0.9** ≈ **1112×845** logical px |
-| **User resize** | Drag any **corner or edge** (8 grips) — scale factor **0.7…1.0** |
-| **Host oversize** | If FL Studio / Fruity Wrapper leaves empty space right of the UI, starfield wallpaper fills it (`HeroBackdropDrawing`) |
-| **Chevron** | `collapse-toggle-expanded@2x.png` / `collapse-toggle-collapsed@2x.png` — re-export to `cartesia-vst-ui/public/assets/` then rebuild |
-| **Title filigree** | Module titles (Quantize Scale, Global Settings, etc.) live in fixed design-space shell — not stretched when host resizes |
-| **Not in VST3** | Footer BPM label, sync toggle, debug status (Standalone sandbox only) |
-
-After replacing chevron PNGs: `cmake --build build --config Release` (re-embeds `MatildaAssets`).
+BPM follows incoming MIDI clock (v1.0.9+: sample-accurate). Steps can follow MIDI Start/Stop/Clock when sync is on.
 
 ---
 
-## Gem knob / scale quantisation
+## What's in this codebase vs `matilda/plugin/`
 
-| Behaviour | Detail |
-|-----------|--------|
-| Note list | All in-scale pitches from **Min** tonic through **Max**, ascending |
-| Knob 0% | Matches Min picker (e.g. C#4) |
-| Knob 100% | Highest in-scale note in window |
-| Scroll / drag | Sequential steps; **stops** at ends (no wrap) |
-| Scale change | All cells re-snap to quantised set |
+| Feature | Standalone (`matilda/standalone/`) | Plugin (`matilda/plugin/`) |
+|---------|-------------------------------------|----------------------------|
+| Stable v1.0.2 audio engine base | ✅ | Evolves with DAW integration |
+| Footer BPM + sync toggle | ✅ | Hidden in VST3 (host provides tempo) |
+| DAW clock sync over IAC/loopMIDI | ✅ v1.0.9 | Host playhead BPM in-plugin |
+| Direct MIDI-out device selector | ❌ (use Options → MIDI Output) | ✅ v1.0.8+ (loopMIDI workaround) |
+| Filigree / UI scale persistence | ✅ v1.0.9 | ✅ v1.0.7+ |
 
-Arp start is **beat-quantized** — first step waits for next downbeat (DAW playhead or internal clock).
-
----
-
-## Presets
-
-Default patch is embedded from `matilda/presets/default.layer1.json` (Lydian layer 1 grid). Host save/restore uses the same JSON schema as the Python engine (`cartesia/model.py`).
+Do **not** port the plugin's opaque-host transport fallback or VST MIDI-out UI back into this tree without review — keep standalone audio behaviour stable.
 
 ---
 
 ## Docs
 
+- [MILESTONES.md](../../docs/cartesia-vst/MILESTONES.md) — DAW test matrix + integration log
 - [SPEC.md](../../docs/cartesia-vst/SPEC.md) — product + engine behaviour
-- [BLUEARP-ENHANCEMENTS.md](../../docs/cartesia-vst/BLUEARP-ENHANCEMENTS.md) — future features backlog (from BlueARP manual)
-- [ARCHITECTURE.md](../../docs/cartesia-vst/ARCHITECTURE.md) — repo map
-- React UI reference: `cartesia-vst-ui/` (Figma shell — port in progress)
+- [plugin/README.md](../plugin/README.md) — VST3/AU + FL virtual-port plugin routing

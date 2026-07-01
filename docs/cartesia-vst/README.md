@@ -9,6 +9,7 @@
 |-------|-------|
 | **M1–M8b** UI prototype | ✅ Complete (Jun 11, 2026) |
 | **M9** Engine / JUCE link | 🔄 In progress |
+| **FL Studio integration** | ✅ Virtual-port routing validated (Jul 2026) — see [MILESTONES.md](./MILESTONES.md#integration-milestones-jul-2026) |
 | **Rive hero animation** | ⬜ Future — noted in `MILESTONES.md` |
 
 ## Documents

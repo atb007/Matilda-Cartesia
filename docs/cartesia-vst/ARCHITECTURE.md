@@ -15,7 +15,8 @@ Ideas/
 │   │   ├── figma/README.md     # Figma node IDs + export rules
 │   │   └── ui/                 # Exported SVG/PNG from design
 │   ├── presets/                # JSON v2 patches
-│   └── plugin/                 # JUCE VST3/AU/Standalone (Phase 0)
+│   ├── plugin/                 # JUCE VST3 + AU
+│   └── standalone/             # JUCE Standalone only (stable audio base)
 ├── cartesia/                   # Python engine + isobar bridge
 │   ├── model.py                # Patch v2 schema
 │   ├── engine.py               # Step sequencer logic
@@ -73,18 +74,28 @@ MatildaPluginFrame (0.52 × uiScaleFactor; default factor 0.9)
 └─────────────────────────────────────────┘
 ```
 
-### Host deployment modes (Jun 2026)
+### Host deployment modes (Jul 2026)
 
-Matilda ships three binaries from one codebase: **Standalone**, **VST3**, **AU**. Host behaviour is not uniform — see [MILESTONES.md — Host / transport integration](./MILESTONES.md#host--transport-integration-matildaplugin--jun-1718-2026).
+Matilda ships **four release binaries** from two codebases:
 
-| Deployment | Best for | Tempo | Transport |
-|------------|----------|-------|-----------|
-| **Standalone + IAC** | GarageBand (no in-track MIDI FX) | Manual BPM or MIDI clock from DAW | Matilda play gem; optional external sync |
-| **In-DAW plugin** | Logic, Ableton, Bitwig, FL Studio, Reaper | Host playhead BPM | `play_mode`: note or transport |
+| Binary | Built from | Formats |
+|--------|------------|---------|
+| Plugin | `matilda/plugin/` | VST3, AU |
+| Standalone | `matilda/standalone/` | `.app` / `.exe` |
 
-**GarageBand constraint:** GB receives MIDI from Matilda via IAC but cannot send MIDI clock or project tempo to external apps. Do not assume auto-BPM sync with GB.
+Host behaviour is not uniform — see [MILESTONES.md — Host / transport integration](./MILESTONES.md#host--transport-integration-matildaplugin--jun-1718-2026) and [Integration milestones (Jul 2026)](./MILESTONES.md#integration-milestones-jul-2026).
 
-**Next gate:** Run the [DAW compatibility test matrix](./MILESTONES.md#daw-compatibility--test-matrix-not-yet-run) before locking transport architecture.
+| Deployment | Best for | Tempo | MIDI to instrument |
+|------------|----------|-------|---------------------|
+| **Standalone + IAC/loopMIDI** | GarageBand; FL two-port setup | Manual BPM or MIDI clock from DAW | Virtual port (Matilda → DAW → synth) |
+| **VST3 in-DAW** | Logic, Ableton, Bitwig, FL | Host playhead BPM | In-chain or virtual port (FL 20.x) |
+| **VST3 + virtual MIDI out** | FL Studio 20.x (validated) | Host playhead | loopMIDI/IAC bypasses broken wrapper routing |
+
+**GarageBand constraint:** GB receives MIDI from Matilda via IAC but cannot send MIDI clock or project tempo to external apps.
+
+**FL Studio 20.0.1 constraint:** VST3 MIDI output is **not** forwarded between Fruity Wrapper plugins — use **virtual MIDI port** (plugin v1.0.8+ **MIDI Out** selector) or **Standalone + loopMIDI**. Fruity Wrapper internal ports remain **untested on newer FL Studio**.
+
+**Next gate:** VST3 Fruity Wrapper routing on **FL 21+**; remaining rows in the [DAW compatibility test matrix](./MILESTONES.md#daw-compatibility--test-matrix).
 
 ### Pitch quantisation (Jun 2026)
 
@@ -147,7 +158,7 @@ Each layer maintains its own `PathState` (step index, ping-pong direction, rando
 | **3** | Layers 2–4 sequential + edit-while-playing |
 | Phase | Deliverable |
 |-------|-------------|
-| **4** | External chrome wiring · play on transport | 🔄 GB standalone ✅; beat-quantized start ✅; knob quantise ✅; multi-DAW matrix pending |
+| **4** | External chrome wiring · play on transport | 🔄 GB standalone ✅; FL virtual-port ✅; beat-quantized start ✅; knob quantise ✅; FL wrapper on newer FL ⬜ |
 | **B** | XYZ clock divisions · polyphony · randomize modal |
 | **UI+** | Rive hero animation · state machine wired to transport/playback (deferred) |
 
@@ -172,4 +183,4 @@ New binary name: **Matilda** (avoid Cartesia trademark in shipping build).
 
 ---
 
-*Architecture v1 · UI prototype M8b complete Jun 2026 · host integration notes Jun 18, 2026*
+*Architecture v1 · UI prototype M8b complete Jun 2026 · host integration notes Jul 2026*

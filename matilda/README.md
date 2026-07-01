@@ -13,11 +13,13 @@ Product UI codename from Figma: **Matilda**.
 | [ARCHITECTURE.md](../docs/cartesia-vst/ARCHITECTURE.md) | Repo layout, phases, module map |
 | [FIGMA-CHECKLIST.md](../docs/cartesia-vst/FIGMA-CHECKLIST.md) | Component handoff checklist |
 
-### Current focus (Jun 18, 2026)
+### Current focus (Jul 2026)
 
-- **Done:** UI shell (M1–M8b), transport/BPM, beat-quantized start, scale-quantised gem knobs, VST3/AU/Standalone builds
+- **Done:** UI shell (M1–M8b), VST3/AU + Standalone builds, beat-quantized start, scale-quantised gem knobs
+- **Done:** **FL Studio + virtual MIDI ports** — Standalone two-port wiring (clock + notes) and VST3 direct MIDI-out (v1.0.8+) validated on **FL Studio 20.0.1**
 - **GarageBand:** Standalone + IAC + manual BPM (no host tempo sync)
-- **Next:** DAW test matrix — FL Studio, Logic, Ableton, Bitwig ([MILESTONES.md](../docs/cartesia-vst/MILESTONES.md))
+- **Next:** VST3 **Fruity Wrapper internal port** routing on a **newer FL Studio** build (not yet tested; failed on FL 20.0.1)
+- Full matrix: [MILESTONES.md](../docs/cartesia-vst/MILESTONES.md)
 
 ## Figma
 
@@ -31,10 +33,12 @@ matilda/
   assets/figma/     Export manifest + links
   assets/ui/        Raster/SVG from Figma handoff
   presets/          JSON patches
-  plugin/           JUCE target (Phase 0 — evolves from gridwalker/)
+  plugin/           JUCE VST3 + AU (evolves with DAW integration)
+  standalone/       JUCE Standalone only (stable audio base + UI QOL)
 cartesia/           Python engine prototype (isobar MIDI)
 docs/cartesia-vst/  Spec + design docs
 gridwalker/         Legacy sandbox (being superseded by matilda/plugin)
+cartesia-vst-ui/    React UI prototype (Figma shell reference)
 ```
 
 ## Quick start (Python prototype)
@@ -43,7 +47,7 @@ gridwalker/         Legacy sandbox (being superseded by matilda/plugin)
 python3 live_cartesia.py examples/cartesia/default.preset.json --dry-run
 ```
 
-Engine schema aligns with `cartesia/model.py`. JUCE plugin: see **[plugin/README.md](plugin/README.md)** for build + Standalone/IAC/DAW testing.
+Engine schema aligns with `cartesia/model.py`. JUCE builds: **[plugin/README.md](plugin/README.md)** (VST3/AU) · **[standalone/README.md](standalone/README.md)** (Standalone app).
 
 ## v1 scope
 
