@@ -25,6 +25,9 @@ dist-ssr/
 *.xcodeproj/
 *.xcworkspace/
 
+# Rive native runtime (built locally via matilda/standalone/scripts/build_rive_native.sh)
+matilda/standalone/third_party/
+
 # Pre-built plugin drops (use GitHub Releases instead)
 matilda/plugin/releases/**/Matilda.vst3/
 matilda/plugin/releases/**/*.zip

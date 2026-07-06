@@ -5,7 +5,7 @@
 
 namespace matilda::ui {
 
-/** Starfield wallpaper — aspect-cover fill (fills host oversize voids in VST3). */
+/** Starfield wallpaper — aspect-cover fill, centered (fills host oversize voids in VST3). */
 inline void paintHeroBackdropCover(juce::Graphics& g, juce::Rectangle<int> bounds) {
     const auto bg = matilda::images::heroBackground();
     if (!bg.isValid()) {
@@ -24,6 +24,11 @@ inline void paintHeroBackdropCover(juce::Graphics& g, juce::Rectangle<int> bound
 
     dest.setCentre(bounds.toFloat().getCentre());
     g.drawImage(bg, dest);
+}
+
+/** Hero canvas starfield — same center-anchored cover as host backdrop. */
+inline void paintHeroCanvasBackground(juce::Graphics& g, juce::Rectangle<float> bounds) {
+    paintHeroBackdropCover(g, bounds.toNearestInt());
 }
 
 } // namespace matilda::ui

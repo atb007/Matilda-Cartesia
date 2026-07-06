@@ -7,6 +7,23 @@ project(MatildaStandalone VERSION 1.0.9 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# macOS standalone — native Rive hero (Metal GPU default, CG CPU fallback).
+if(APPLE)
+    option(MATILDA_RIVE_HERO "Enable native Rive hero portrait (macOS standalone)" ON)
+    set(MATILDA_RIVE_BACKEND "metal" CACHE STRING "Rive renderer backend: metal (GPU) or cg (CPU fallback)")
+    set_property(CACHE MATILDA_RIVE_BACKEND PROPERTY STRINGS metal cg)
+else()
+    set(MATILDA_RIVE_HERO OFF CACHE BOOL "" FORCE)
+    set(MATILDA_RIVE_BACKEND "cg" CACHE STRING "" FORCE)
+endif()
+
+if(MATILDA_RIVE_HERO AND NOT APPLE)
+    message(FATAL_ERROR "MATILDA_RIVE_HERO is supported on macOS standalone builds only.")
+endif()
+
+set(MATILDA_RIVE_RUNTIME_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/rive-runtime")
+set(MATILDA_RIVE_LIB_DIR "${MATILDA_RIVE_RUNTIME_DIR}/matilda/out/release")
+
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../gridwalker/JUCE/CMakeLists.txt")
     add_subdirectory(../../gridwalker/JUCE JUCE)
 else()
@@ -25,6 +42,7 @@ juce_add_plugin(Matilda
     PLUGIN_CODE Mtld
     FORMATS Standalone
     PRODUCT_NAME "Matilda"
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/assets/matilda-app-icon.png"
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT TRUE
@@ -34,8 +52,7 @@ juce_add_plugin(Matilda
 
 juce_generate_juce_header(Matilda)
 
-juce_add_binary_data(MatildaAssets
-    SOURCES
+set(MATILDA_ASSET_SOURCES
         # VCV Cartesia panel (source of visual truth)
         ../assets/ui/cartesia/Cartesia-dark.svg
         ../assets/ui/cartesia/DejaVuSansMono.ttf
@@ -117,6 +134,14 @@ juce_add_binary_data(MatildaAssets
         ../presets/default.layer1.json
 )
 
+if(MATILDA_RIVE_HERO)
+    list(APPEND MATILDA_ASSET_SOURCES
+        ../../cartesia-vst-ui/public/assets/matilda-cartesia-v2.riv
+    )
+endif()
+
+juce_add_binary_data(MatildaAssets SOURCES ${MATILDA_ASSET_SOURCES})
+
 target_sources(Matilda
     PRIVATE
         Source/PluginProcessor.cpp
@@ -146,21 +171,104 @@ target_sources(Matilda
         Source/Engine/PatchStore.cpp
 )
 
+if(MATILDA_RIVE_HERO)
+    target_sources(Matilda PRIVATE Source/Rive/RiveHeroRenderer.cpp)
+    if(MATILDA_RIVE_BACKEND STREQUAL "metal")
+        target_sources(Matilda PRIVATE
+            Source/Rive/RiveHeroBackendMetal.mm
+            Source/Rive/RiveHeroMetalCore.mm
+            Source/Rive/RiveHeroMetalView.mm
+        )
+        set_source_files_properties(
+            Source/Rive/RiveHeroBackendMetal.mm
+            Source/Rive/RiveHeroMetalCore.mm
+            Source/Rive/RiveHeroMetalView.mm
+            PROPERTIES COMPILE_FLAGS "-x objective-c++")
+    else()
+        target_sources(Matilda PRIVATE Source/Rive/RiveHeroBackendCG.cpp)
+    endif()
+endif()
+
 target_compile_definitions(Matilda
     PRIVATE
-        JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
         JUCE_DISPLAY_SPLASH_SCREEN=0
 )
+
+if(MATILDA_RIVE_HERO)
+    target_compile_definitions(Matilda PRIVATE MATILDA_RIVE_HERO=1 JUCE_WEB_BROWSER=0)
+    if(MATILDA_RIVE_BACKEND STREQUAL "metal")
+        target_compile_definitions(Matilda PRIVATE MATILDA_RIVE_BACKEND_METAL=1)
+    endif()
+    if(NOT EXISTS "${MATILDA_RIVE_LIB_DIR}/librive.a")
+        message(FATAL_ERROR
+            "MATILDA_RIVE_HERO requires prebuilt Rive libraries.\n"
+            "Run: MATILDA_RIVE_BACKEND=${MATILDA_RIVE_BACKEND} matilda/standalone/scripts/build_rive_native.sh")
+    endif()
+
+    set(MATILDA_RIVE_INCLUDES
+        "${MATILDA_RIVE_RUNTIME_DIR}/include"
+        "${MATILDA_RIVE_RUNTIME_DIR}/decoders/include"
+    )
+    if(MATILDA_RIVE_BACKEND STREQUAL "metal")
+        list(APPEND MATILDA_RIVE_INCLUDES "${MATILDA_RIVE_RUNTIME_DIR}/renderer/include")
+        if(NOT EXISTS "${MATILDA_RIVE_LIB_DIR}/librive_pls_renderer.a")
+            message(FATAL_ERROR
+                "Metal backend requires librive_pls_renderer.a.\n"
+                "Run: MATILDA_RIVE_BACKEND=metal matilda/standalone/scripts/build_rive_native.sh\n"
+                "If build fails, install Xcode Metal Toolchain:\n"
+                "  xcodebuild -downloadComponent MetalToolchain")
+        endif()
+    else()
+        list(APPEND MATILDA_RIVE_INCLUDES "${MATILDA_RIVE_RUNTIME_DIR}/cg_renderer/include")
+        if(NOT EXISTS "${MATILDA_RIVE_LIB_DIR}/librive_cg_renderer.a")
+            message(FATAL_ERROR
+                "CG backend requires librive_cg_renderer.a.\n"
+                "Run: MATILDA_RIVE_BACKEND=cg matilda/standalone/scripts/build_rive_native.sh")
+        endif()
+    endif()
+    target_include_directories(Matilda PRIVATE ${MATILDA_RIVE_INCLUDES})
+    target_compile_definitions(Matilda PRIVATE WITH_RIVE_TEXT WITH_RIVE_LAYOUT WITH_RIVE_SCRIPTING)
+else()
+    target_compile_definitions(Matilda PRIVATE JUCE_WEB_BROWSER=0)
+endif()
 
 target_link_libraries(Matilda
     PRIVATE
         MatildaAssets
         juce::juce_audio_utils
         juce::juce_audio_processors
+        juce::juce_gui_extra
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+if(MATILDA_RIVE_HERO)
+    set(MATILDA_RIVE_LIBS
+        "-Wl,-force_load,${MATILDA_RIVE_LIB_DIR}/librive_decoders.a"
+        "-Wl,-force_load,${MATILDA_RIVE_LIB_DIR}/librive.a"
+        "${MATILDA_RIVE_LIB_DIR}/librive_harfbuzz.a"
+        "${MATILDA_RIVE_LIB_DIR}/librive_sheenbidi.a"
+        "${MATILDA_RIVE_LIB_DIR}/librive_yoga.a"
+        "${MATILDA_RIVE_LIB_DIR}/libminiaudio.a"
+        "${MATILDA_RIVE_LIB_DIR}/libluau_vm.a"
+        "${MATILDA_RIVE_LIB_DIR}/liblibpng.a"
+        "${MATILDA_RIVE_LIB_DIR}/liblibjpeg.a"
+        "${MATILDA_RIVE_LIB_DIR}/liblibwebp.a"
+        "${MATILDA_RIVE_LIB_DIR}/libzlib.a"
+        "-framework ApplicationServices"
+        "-framework CoreFoundation"
+    )
+    if(MATILDA_RIVE_BACKEND STREQUAL "metal")
+        list(PREPEND MATILDA_RIVE_LIBS "-Wl,-force_load,${MATILDA_RIVE_LIB_DIR}/librive_pls_renderer.a")
+        list(APPEND MATILDA_RIVE_LIBS "-framework Metal" "-framework QuartzCore")
+    else()
+        list(PREPEND MATILDA_RIVE_LIBS "-Wl,-force_load,${MATILDA_RIVE_LIB_DIR}/librive_cg_renderer.a")
+        list(APPEND MATILDA_RIVE_LIBS
+            "-framework CoreGraphics" "-framework CoreText" "-framework ImageIO")
+    endif()
+    target_link_libraries(Matilda PRIVATE ${MATILDA_RIVE_LIBS})
+endif()

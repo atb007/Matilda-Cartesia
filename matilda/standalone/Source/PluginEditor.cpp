@@ -8,6 +8,14 @@
 
 namespace {
 
+int countActiveLayers(const matilda::PatchState& patch) {
+    int count = 0;
+    for (const auto& layer : patch.layers)
+        if (layer.active)
+            ++count;
+    return count;
+}
+
 juce::Point<int> devWindowSize(matilda::ui::DevView view) {
     using namespace matilda::react;
     using namespace matilda::ui;
@@ -67,6 +75,7 @@ MatildaAudioProcessorEditor::MatildaAudioProcessorEditor(MatildaAudioProcessor& 
     syncToggle_.onClick = [this] {
         processor_.setFollowExternalTransport(syncToggle_.getToggleState());
     };
+    syncToggle_.setMouseCursor(juce::MouseCursor::PointingHandCursor);
 
     const bool showSandboxChrome = processor_.isStandaloneWrapper() && !matilda::ui::devIsolatedModule();
     syncToggle_.setVisible(showSandboxChrome);
@@ -122,6 +131,11 @@ void MatildaAudioProcessorEditor::refreshAll() {
     syncToggle_.setToggleState(processor_.followExternalTransport(), juce::dontSendNotification);
     updateStatusLine();
     layoutChromeOverlays();
+    syncHeroRiveBindings();
+}
+
+void MatildaAudioProcessorEditor::syncHeroRiveBindings() {
+    frame_.hero().setActiveLayerCount(countActiveLayers(processor_.patch()));
 }
 
 void MatildaAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster*) {
@@ -132,12 +146,15 @@ void MatildaAudioProcessorEditor::bindCallbacks() {
     transport_.onPlay = [this] {
         processor_.setSequencerRunning(true);
         transport_.setPlaying(true);
+        syncHeroRiveBindings();
+        frame_.hero().setPlaying(true);
         if (auto* h = juce::StandalonePluginHolder::getInstance())
             h->startPlaying();
     };
     transport_.onStop = [this] {
         processor_.setSequencerRunning(false);
         transport_.setPlaying(false);
+        frame_.hero().setPlaying(false);
     };
 
     quantise_.onChanged = [this] {
@@ -145,7 +162,11 @@ void MatildaAudioProcessorEditor::bindCallbacks() {
         grid_.refresh();
     };
 
-    overview_.onLayerActivated = [this](int) { grid_.refresh(); overview_.refresh(); };
+    overview_.onLayerActivated = [this](int) {
+        grid_.refresh();
+        overview_.refresh();
+        syncHeroRiveBindings();
+    };
     overview_.onLayerSelected = [this](int layer) {
         processor_.patch().selectedLayer = layer;
         grid_.setLayer(layer);
@@ -196,9 +217,14 @@ void MatildaAudioProcessorEditor::timerCallback() {
         if (auto* h = juce::StandalonePluginHolder::getInstance())
             h->startPlaying();
     }
+
+    const bool transportChanged = running != lastTransportRunning_;
     lastTransportRunning_ = running;
 
     transport_.setPlaying(running);
+    if (transportChanged)
+        syncHeroRiveBindings();
+    frame_.hero().setPlaying(running);
     updateStatusLine();
 }
 
@@ -320,8 +346,7 @@ void MatildaAudioProcessorEditor::layoutResizeGrips() {
     }
 
     for (auto& grip : resizeGrips_) {
-        if (matilda::ui::isCornerGrip(grip.gripId()))
-            grip.toFront(false);
+        grip.toFront(false);
     }
 }
 
@@ -363,11 +388,9 @@ void MatildaAudioProcessorEditor::resized() {
     }
 
     layoutChromeOverlays();
-    layoutResizeGrips();
-
-    // Keep footer chrome above the resize grips so the editable BPM field stays clickable.
     if (!devIsolatedModule()) {
-        bpmLabel_.toFront(false);
         syncToggle_.toFront(false);
+        bpmLabel_.toFront(false);
     }
+    layoutResizeGrips();
 }

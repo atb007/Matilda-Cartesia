@@ -32,24 +32,52 @@ private:
     public:
         ContentPanel(HeroCanvas& hero, MatildaShellPanel& shell) : hero_(hero), shell_(shell) {
             addAndMakeVisible(hero_);
+#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+            addAndMakeVisible(heroWordmark_);
+            heroWordmark_.setInterceptsMouseClicks(false, false);
+            heroWordmark_.setOpaque(false);
+            hero_.onRiveOverlayChanged = [this] { syncContentStackOrder(); };
+#endif
             addAndMakeVisible(shell_);
+            shell_.setOpaque(true);
         }
 
         void layoutContent(float previewScale, bool showHero) {
             using namespace matilda::react;
             hero_.setVisible(showHero);
+#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+            heroWordmark_.setVisible(showHero);
+#endif
             if (!showHero) {
                 shell_.setBounds(getLocalBounds());
                 return;
             }
 
-            hero_.setBounds(0, 0, sx(kExpandedW, previewScale), sx(kFrameH, previewScale));
+            const int heroW = sx(kExpandedW, previewScale);
+            const int heroH = sx(kFrameH, previewScale);
+            hero_.setBounds(0, 0, heroW, heroH);
+#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+            heroWordmark_.setBounds(0, 0, heroW, heroH);
+#endif
             shell_.setBounds(sx(kShellLeft, previewScale), sx(kShellTop, previewScale),
                              sx(kShellW, previewScale), sx(kShellH, previewScale));
+            syncContentStackOrder();
+        }
+
+        void syncContentStackOrder() {
+#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+            if (auto* overlay = hero_.riveOverlayComponent())
+                overlay->toFront(false);
+            heroWordmark_.toFront(false);
+#endif
+            shell_.toFront(false);
         }
 
     private:
         HeroCanvas& hero_;
+#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+        HeroWordmark heroWordmark_;
+#endif
         MatildaShellPanel& shell_;
     };
 

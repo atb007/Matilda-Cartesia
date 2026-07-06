@@ -71,3 +71,12 @@ void LayerCrystalBar::mouseDown(const juce::MouseEvent& e) {
         onLayerSelected(layer);
     repaint();
 }
+
+void LayerCrystalBar::mouseMove(const juce::MouseEvent& e) {
+    setMouseCursor(hitTestCrystal(e.getPosition()) >= 0 ? juce::MouseCursor::PointingHandCursor
+                                                        : juce::MouseCursor::NormalCursor);
+}
+
+void LayerCrystalBar::mouseExit(const juce::MouseEvent&) {
+    setMouseCursor(juce::MouseCursor::NormalCursor);
+}

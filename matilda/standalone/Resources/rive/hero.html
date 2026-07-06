@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: transparent;
+        width: 100%;
+        height: 100%;
+      }
+      #rive-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="rive-canvas"></canvas>
+    <script src="rive.js"></script>
+    <script>
+      let riveInstance = null;
+      let streakVisibleProp = null;
+      let pendingPlaying = false;
+
+      function resizeRive() {
+        if (!riveInstance) return;
+        const canvas = document.getElementById("rive-canvas");
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.max(1, Math.floor(canvas.clientWidth * dpr));
+        canvas.height = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+        riveInstance.resizeDrawingSurfaceToCanvas();
+      }
+
+      window.setPlaying = function (playing) {
+        pendingPlaying = !!playing;
+        if (streakVisibleProp) streakVisibleProp.value = pendingPlaying;
+      };
+
+      async function init() {
+        const response = await fetch("matilda-cartesia.riv");
+        const buffer = await response.arrayBuffer();
+        riveInstance = new rive.Rive({
+          canvas: document.getElementById("rive-canvas"),
+          buffer,
+          artboard: "Artboard",
+          autoplay: true,
+          autoBind: false,
+          onLoad: () => {
+            const vm = riveInstance.viewModelByName("HairStreaksTrimControl");
+            const inst = vm.defaultInstance();
+            riveInstance.bindViewModelInstance(inst);
+            streakVisibleProp = inst.boolean("streakVisible");
+            streakVisibleProp.value = pendingPlaying;
+            resizeRive();
+            window.__matildaRiveReady = true;
+          },
+          layout: new rive.Layout({
+            fit: rive.Fit.Cover,
+            alignment: rive.Alignment.Center,
+          }),
+        });
+        resizeRive();
+      }
+
+      window.addEventListener("resize", resizeRive);
+      init();
+    </script>
+  </body>
+</html>

@@ -1,11 +1,14 @@
 #include "MovementSelector.h"
 #include "BinaryData.h"
+#include "../ClickFeedbackDrawing.h"
 #include "../FiligreeDrawing.h"
 #include "../GlassDropdownDrawing.h"
 #include "../MatildaFonts.h"
 #include "../MatildaImages.h"
 #include "../MovementLayout.h"
 #include "../ReactShellLayout.h"
+
+#include <algorithm>
 
 namespace {
 
@@ -62,25 +65,40 @@ public:
     }
 
     void paint(juce::Graphics& g) override {
-        drawMovementArrow(g, getLocalBounds().toFloat(), left_, hover_);
+        const auto bounds = getLocalBounds().toFloat();
+        matilda::ui::paintWithPressScale(g, bounds, pressed_, 0.92f);
+        drawMovementArrow(g, bounds, left_, hover_);
     }
 
     void mouseEnter(const juce::MouseEvent&) override {
         hover_ = true;
+        setMouseCursor(juce::MouseCursor::PointingHandCursor);
         repaint();
     }
     void mouseExit(const juce::MouseEvent&) override {
         hover_ = false;
-        repaint();
+        if (pressed_) {
+            pressed_ = false;
+            repaint();
+        }
+        setMouseCursor(juce::MouseCursor::NormalCursor);
     }
     void mouseDown(const juce::MouseEvent&) override {
-        if (onClick_)
+        pressed_ = true;
+        repaint();
+    }
+    void mouseUp(const juce::MouseEvent& e) override {
+        const bool wasPressed = pressed_;
+        pressed_ = false;
+        repaint();
+        if (wasPressed && e.mouseWasClicked() && onClick_)
             onClick_();
     }
 
 private:
     bool left_;
     bool hover_ = false;
+    bool pressed_ = false;
     std::function<void()> onClick_;
 };
 
@@ -96,13 +114,35 @@ public:
     }
 
     void paint(juce::Graphics& g) override {
-        drawNeonLabel(g, text, getLocalBounds().toFloat(), scale_);
+        const auto bounds = getLocalBounds().toFloat();
+        matilda::ui::paintWithPressScale(g, bounds, pressed_, 0.97f);
+        drawNeonLabel(g, text, bounds, scale_);
     }
 
     void mouseDown(const juce::MouseEvent&) override {
-        if (onClick)
+        pressed_ = true;
+        repaint();
+    }
+    void mouseUp(const juce::MouseEvent& e) override {
+        const bool wasPressed = pressed_;
+        pressed_ = false;
+        repaint();
+        if (wasPressed && e.mouseWasClicked() && onClick)
             onClick();
     }
+    void mouseEnter(const juce::MouseEvent&) override {
+        setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    }
+    void mouseExit(const juce::MouseEvent&) override {
+        if (pressed_) {
+            pressed_ = false;
+            repaint();
+        }
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+    }
+
+private:
+    bool pressed_ = false;
 };
 
 class MovementSelector::GlassDropdown : public juce::Component {
@@ -183,6 +223,16 @@ public:
             closeHover_ = hover;
             repaint();
         }
+
+        const bool overItem =
+            std::any_of(itemBounds_.begin(), itemBounds_.end(),
+                        [&](const juce::Rectangle<int>& b) { return b.contains(e.getPosition()); });
+        setMouseCursor(overItem || hover ? juce::MouseCursor::PointingHandCursor
+                                         : juce::MouseCursor::NormalCursor);
+    }
+
+    void mouseExit(const juce::MouseEvent&) override {
+        setMouseCursor(juce::MouseCursor::NormalCursor);
     }
 
     static int dropdownHeight(float scale) {

@@ -30,4 +30,8 @@ private:
     void paint(juce::Graphics& g) override;
     void resized() override;
     void mouseDown(const juce::MouseEvent& e) override;
+    void mouseMove(const juce::MouseEvent& e) override;
+    void mouseExit(const juce::MouseEvent& e) override;
+
+    [[nodiscard]] bool isOverInteractive(juce::Point<int> pos) const;
 };

@@ -195,3 +195,26 @@ void LayerOverview::mouseDown(const juce::MouseEvent& e) {
         return;
     }
 }
+
+bool LayerOverview::isOverInteractive(juce::Point<int> pos) const {
+    for (int layer = 1; layer < kLayerCount; ++layer) {
+        if (toggleHitBounds_[static_cast<size_t>(layer)].contains(pos))
+            return true;
+    }
+    for (int layer = 0; layer < kLayerCount; ++layer) {
+        if (!patch_.layers[static_cast<size_t>(layer)].active)
+            continue;
+        if (layerHitBounds_[static_cast<size_t>(layer)].contains(pos))
+            return true;
+    }
+    return false;
+}
+
+void LayerOverview::mouseMove(const juce::MouseEvent& e) {
+    setMouseCursor(isOverInteractive(e.getPosition()) ? juce::MouseCursor::PointingHandCursor
+                                                      : juce::MouseCursor::NormalCursor);
+}
+
+void LayerOverview::mouseExit(const juce::MouseEvent&) {
+    setMouseCursor(juce::MouseCursor::NormalCursor);
+}

@@ -10,12 +10,17 @@ namespace matilda::react {
 
 // ── Plugin frame (MatildaPluginFrame.tsx · heroLayout.ts) ───────────────────
 inline constexpr float kFrameH = 1805.f;
-inline constexpr float kExpandedW = 2376.f;
+/** Original Figma expanded width — Rive/mask coords stay relative to this scale base. */
+inline constexpr float kExpandedWBase = 2376.f;
+/** Expanded-only left growth (macOS standalone). Collapsed width unchanged. */
+inline constexpr float kExpandedLeftExpandRatio = 0.10f;
+inline constexpr float kExpandedW = kExpandedWBase * (1.f + kExpandedLeftExpandRatio);
 inline constexpr float kCollapsedW = 1515.f;
 inline constexpr float kHeroPanelW = kExpandedW - kCollapsedW;
-inline constexpr float kShellLeft = 886.f;   // EXPANDED_W - SHELL_W - SHELL_RIGHT_GUTTER
-inline constexpr float kShellTop = 50.f;
+inline constexpr float kShellW = 1405.f;
 inline constexpr float kShellRightGutter = 85.f;
+inline constexpr float kShellLeft = kExpandedW - kShellW - kShellRightGutter;
+inline constexpr float kShellTop = 50.f;
 inline constexpr float kPreviewScale = 0.52f; // 100% user scale (see UiScale.h)
 inline constexpr int kCollapseMs = 380;
 
@@ -41,16 +46,18 @@ inline constexpr float kHeroPortraitLeft = -895.32f;
 inline constexpr float kHeroPortraitTop = -47.48f;
 inline constexpr float kHeroPortraitW = 1905.46f;
 inline constexpr float kHeroPortraitH = 1716.41f;
-inline constexpr float kHeroLabelLeft = 109.f;
-inline constexpr float kHeroLabelTop = 1449.f;
 inline constexpr float kHeroLabelW = 480.f;
+/** Wordmark — right-pinned; distance from right edge preserved when expanded width grows. */
+inline constexpr float kHeroLabelLeftBase = 109.f;
+inline constexpr float kHeroLabelRightGutter = kExpandedWBase - kHeroLabelLeftBase - kHeroLabelW;
+inline constexpr float kHeroLabelLeft = kExpandedW - kHeroLabelRightGutter - kHeroLabelW;
+inline constexpr float kHeroLabelTop = 1449.f;
 inline constexpr float kHeroTitleFs = 180.f;
 inline constexpr float kHeroTitleLineH = 120.7f;
 inline constexpr float kHeroSubtitleFs = 60.f;
 inline constexpr float kHeroSubtitleGap = 21.f;
 
 // ── Control shell (shellLayout.ts) ──────────────────────────────────────────
-inline constexpr float kShellW = 1405.f;
 inline constexpr float kShellH = 1737.f;
 
 inline constexpr float kFrameOverlayLeft = 0.f;
