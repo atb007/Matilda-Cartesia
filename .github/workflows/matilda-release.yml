@@ -57,7 +57,7 @@ jobs:
         run: >
           cmake -B build
           -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          -DCMAKE_OSX_ARCHITECTURES=arm64
 
       - name: Build standalone
         working-directory: matilda/standalone
@@ -159,8 +159,8 @@ jobs:
 
             ### macOS
             - **VST3:** unzip `Matilda-macOS-vst3.zip` → copy `Matilda.vst3` to `~/Library/Audio/Plug-Ins/VST3/`
-            - **Standalone:** unzip `Matilda-macOS-standalone.zip` → open `Matilda.app`
-            - Universal binary (Apple Silicon + Intel)
+            - **Standalone:** unzip `Matilda-macOS-standalone.zip` → open `Matilda.app` (Apple Silicon / arm64)
+            - Universal binary (Apple Silicon + Intel) for **VST3 only**
 
             ### Windows (FL Studio, etc.)
             - **VST3:** unzip `Matilda-Windows-vst3.zip` → copy `Matilda.vst3` to `C:\Program Files\Common Files\VST3\`
