@@ -6,7 +6,7 @@
 
 namespace matilda::transport {
 
-inline constexpr int kDdMaxVisibleClockItems = 6;
+inline constexpr int kDdMaxVisibleClockItems = 4;
 
 inline juce::String playModeLabel(PlayMode mode) {
     return mode == PlayMode::Transport ? "Transport" : "Note";

@@ -83,16 +83,13 @@ void drawChevron(juce::Graphics& g, juce::Rectangle<float> b, bool up) {
     g.fillPath(tri);
 }
 
-float itemStride(float s) {
-    return kDdItemFs * s * 1.25f + kDdLineGap * s + 1.f + kDdItemGap * s;
+float itemStride(float) {
+    return matilda::ui::glass::ddItemScrollStrideScreen();
 }
 
 int menuHeight(int n, float s) {
     const int v = juce::jmin(n, kDdMaxVisibleItems);
-    if (v <= 0)
-        return juce::roundToInt(kDdPadY * s * 2.f);
-    const float block = kDdItemFs * s * 1.25f + kDdLineGap * s + 1.f;
-    return juce::roundToInt(kDdPadY * s * 2.f + block * v + kDdItemGap * s * (v - 1));
+    return matilda::ui::glass::ddMenuHeightScreen(v, s, kDdPadY);
 }
 
 const juce::StringArray& pitches() {
@@ -285,7 +282,9 @@ private:
 
 class QuantisePanel::GlassMenu : public juce::Component {
 public:
-    explicit GlassMenu(QuantisePanel& o) : owner(o) {}
+    explicit GlassMenu(QuantisePanel& o) : owner(o) {
+        setPaintingIsUnclipped(true);
+    }
     QuantisePanel& owner;
     MenuId menuId = MenuId::None;
     int selectedIndex = 0;
@@ -318,22 +317,33 @@ public:
             juce::Colours::white.withAlpha(0.85f));
         const float itemW = b.getWidth() * 0.86f;
         const float itemX = b.getX() + (b.getWidth() - itemW) * 0.5f;
-        const float listTop = b.getY() + kDdPadY * scale_;
-        const float listBottom = b.getBottom() - kDdPadY * scale_;
-        const float stride = itemStride(scale_);
+        const float vertPad = matilda::ui::glass::ddMenuVertPadScreen(kDdPadY, scale_);
+        const float listTop = b.getY() + vertPad;
+        const float listBottom = b.getBottom() - vertPad;
+        const float scrollStride = matilda::ui::glass::ddItemScrollStrideScreen();
+        const float textH = matilda::ui::glass::ddItemTextHeightScreen();
         g.saveState();
         g.reduceClipRegion(juce::Rectangle<int>(juce::roundToInt(itemX), juce::roundToInt(listTop),
                                                 juce::roundToInt(itemW), juce::roundToInt(listBottom - listTop)));
-        g.setFont(matilda::fonts::kodeMonoBold(kDdItemFs * scale_));
-        float y = listTop - scrollOffset * stride;
+        g.setFont(matilda::fonts::kodeMonoBold(matilda::ui::glass::kDdItemScreenFs));
+        float y = listTop - static_cast<float>(scrollOffset) * scrollStride;
         for (int i = 0; i < items.size(); ++i) {
-            const float th = kDdItemFs * scale_ * 1.25f;
-            const auto tb = juce::Rectangle<float>(itemX, y, itemW, th);
-            if (tb.getBottom() >= listTop && tb.getY() <= listBottom) {
-                g.setColour(i == selectedIndex ? juce::Colours::white : juce::Colours::white.withAlpha(0.65f));
+            const auto tb = juce::Rectangle<float>(itemX, y, itemW, textH);
+            const bool inView = tb.getBottom() >= listTop && tb.getY() <= listBottom;
+            if (inView) {
+                const bool selected = i == selectedIndex;
+                g.setColour(selected ? juce::Colours::white : juce::Colours::white.withAlpha(0.65f));
                 g.drawText(items[i], tb.toNearestInt(), juce::Justification::centred, false);
+                if (selected) {
+                    g.setColour(juce::Colour(0x7310ffcf));
+                    g.drawText(items[i], tb.translated(0.f, 1.f).toNearestInt(), juce::Justification::centred, false);
+                }
             }
-            y += th + kDdLineGap * scale_ + 1.f + kDdItemGap * scale_;
+            if (inView && i + 1 < items.size()) {
+                const float lineY = y + textH + matilda::ui::glass::kDdItemScreenLineGap;
+                matilda::ui::glass::drawHairline(g, juce::Rectangle<float>(itemX, lineY, itemW, 1.f));
+            }
+            matilda::ui::glass::advanceDropdownItemY(y, i, items.size());
         }
         g.restoreState();
     }
@@ -406,12 +416,13 @@ private:
         itemBounds_.clear();
         const float itemW = b.getWidth() * 0.86f;
         const float itemX = b.getX() + (b.getWidth() - itemW) * 0.5f;
-        float y = b.getY() + kDdPadY * scale_;
-        const int vis = juce::jmin(items.size(), kDdMaxVisibleItems);
-        for (int i = 0; i < vis; ++i) {
-            const float th = kDdItemFs * scale_ * 1.25f;
-            itemBounds_.add({juce::roundToInt(itemX), juce::roundToInt(y), juce::roundToInt(itemW), juce::roundToInt(th)});
-            y += itemStride(scale_);
+        float y = b.getY() + matilda::ui::glass::ddMenuVertPadScreen(kDdPadY, scale_);
+        const int vis = juce::jmin(items.size() - scrollOffset, kDdMaxVisibleItems);
+        const float textH = matilda::ui::glass::ddItemTextHeightScreen();
+        for (int vi = 0; vi < vis; ++vi) {
+            const int i = scrollOffset + vi;
+            itemBounds_.add({juce::roundToInt(itemX), juce::roundToInt(y), juce::roundToInt(itemW), juce::roundToInt(textH)});
+            matilda::ui::glass::advanceDropdownItemY(y, i, items.size());
         }
     }
 
@@ -607,7 +618,8 @@ void QuantisePanel::showMenu(MenuId menu, juce::Component* anchor) {
         }
 
         const auto rowScreen = anchor->localAreaToGlobal(anchor->getLocalBounds());
-        const int ddW = juce::roundToInt(kDdW * s);
+        const int minW = juce::roundToInt(kDdW * s);
+        const int ddW = matilda::ui::glass::ddMenuWidthForItems(glassMenu_->items, minW);
         const int ddH = GlassMenu::heightFor(glassMenu_->items.size(), s);
         const int ddX = rowScreen.getCentreX() - ddW / 2;
         const int ddY = rowScreen.getBottom() + juce::roundToInt((menu == MenuId::Scale ? 4 : 35) * s);

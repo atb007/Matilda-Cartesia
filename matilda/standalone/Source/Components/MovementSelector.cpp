@@ -147,6 +147,8 @@ private:
 
 class MovementSelector::GlassDropdown : public juce::Component {
 public:
+    GlassDropdown() { setPaintingIsUnclipped(true); }
+
     std::function<void(int index)> onSelect;
     std::function<void()> onClose;
     int selectedIndex = 0;
@@ -177,13 +179,14 @@ public:
 
         const float itemW = bounds.getWidth() * 0.83f;
         const float itemX = bounds.getX() + (bounds.getWidth() - itemW) * 0.5f;
-        float y = bounds.getY() + kDdPadY * scale_;
+        const float vertPad = matilda::ui::glass::ddMenuVertPadScreen(kDdPadY, scale_);
+        float y = bounds.getY() + vertPad;
 
         const auto& items = MovementSelector::modeMenuLabels();
-        g.setFont(matilda::fonts::kodeMonoBold(kDdItemFs * scale_));
+        const float textH = matilda::ui::glass::ddItemTextHeightScreen();
+        g.setFont(matilda::fonts::kodeMonoBold(matilda::ui::glass::kDdItemScreenFs));
 
         for (int i = 0; i < items.size(); ++i) {
-            const float textH = kDdItemFs * scale_ * 1.25f;
             const auto textBounds = juce::Rectangle<float>(itemX, y, itemW, textH);
             const bool selected = i == selectedIndex;
 
@@ -191,13 +194,15 @@ public:
             g.drawText(items[i], textBounds.toNearestInt(), juce::Justification::centred, false);
             if (selected) {
                 g.setColour(juce::Colour(0x7310ffcf));
-                g.drawText(items[i], textBounds.translated(0.f, 1.f * scale_).toNearestInt(),
+                g.drawText(items[i], textBounds.translated(0.f, 1.f).toNearestInt(),
                            juce::Justification::centred, false);
             }
 
-            y += textH + kDdLineGap * scale_;
-            matilda::ui::glass::drawHairline(g, juce::Rectangle<float>(itemX, y, itemW, 1.f));
-            y += 1.f + kDdItemGap * scale_;
+            if (i + 1 < items.size()) {
+                const float lineY = y + textH + matilda::ui::glass::kDdItemScreenLineGap;
+                matilda::ui::glass::drawHairline(g, juce::Rectangle<float>(itemX, lineY, itemW, 1.f));
+            }
+            matilda::ui::glass::advanceDropdownItemY(y, i, static_cast<int>(items.size()));
         }
     }
 
@@ -236,8 +241,7 @@ public:
     }
 
     static int dropdownHeight(float scale) {
-        const float itemBlock = kDdItemFs * scale * 1.25f + kDdLineGap * scale + 1.f;
-        return juce::roundToInt(kDdPadY * scale * 2.f + itemBlock * 6.f + kDdItemGap * scale * 5.f);
+        return matilda::ui::glass::ddMenuHeightScreen(6, scale, kDdPadY);
     }
 
 private:
@@ -257,12 +261,14 @@ private:
         itemBounds_.clear();
         const float itemW = bounds.getWidth() * 0.83f;
         const float itemX = bounds.getX() + (bounds.getWidth() - itemW) * 0.5f;
-        float y = bounds.getY() + kDdPadY * scale_;
-        for (int i = 0; i < 6; ++i) {
-            const float textH = kDdItemFs * scale_ * 1.25f;
+        const float vertPad = matilda::ui::glass::ddMenuVertPadScreen(kDdPadY, scale_);
+        float y = bounds.getY() + vertPad;
+        const float textH = matilda::ui::glass::ddItemTextHeightScreen();
+        const auto& items = MovementSelector::modeMenuLabels();
+        for (int i = 0; i < items.size(); ++i) {
             itemBounds_.add(juce::Rectangle<int>(juce::roundToInt(itemX), juce::roundToInt(y),
                                                 juce::roundToInt(itemW), juce::roundToInt(textH)));
-            y += textH + kDdLineGap * scale_ + 1.f + kDdItemGap * scale_;
+            matilda::ui::glass::advanceDropdownItemY(y, i, items.size());
         }
     }
 
@@ -405,7 +411,9 @@ void MovementSelector::showMenu(bool show) {
             patch_.layers[static_cast<size_t>(patch_.selectedLayer)].movement);
 
         const auto modeScreen = localAreaToGlobal(getLocalBounds());
-        const int ddW = juce::roundToInt(kDdW * s);
+        const int minW = juce::roundToInt(kDdW * s);
+        const int ddW =
+            matilda::ui::glass::ddMenuWidthForItems(MovementSelector::modeMenuLabels(), minW);
         const int ddH = GlassDropdown::dropdownHeight(s);
         const int ddX = modeScreen.getCentreX() - ddW / 2;
         const int ddY = modeScreen.getBottom() + juce::roundToInt(4.f * s);

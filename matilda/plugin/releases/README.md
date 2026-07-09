@@ -44,10 +44,10 @@ Universal binary (Apple Silicon + Intel).
 ## Cut a new release (maintainers)
 
 ```bash
-git tag v1.0.9
-git push origin v1.0.9
+git tag v1.0.10
+git push origin v1.0.10
 ```
 
-Latest release: **[v1.0.9](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.9)** — Standalone: DAW BPM sync over MIDI clock (sample-accurate) + reliable manual BPM, plus forward-ported filigree/UI fixes and window-state persistence.
+Latest release: **[v1.0.10](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.10)** — Standalone: macOS native Rive v2 hero + glass dropdown UI polish (fixed label size, frame, spacing, scale highlight). VST3/AU plugin unchanged from v1.0.9.
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.
