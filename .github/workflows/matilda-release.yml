@@ -45,8 +45,11 @@ jobs:
       - name: Build Rive native runtime (macOS standalone hero)
         working-directory: matilda/standalone
         run: |
-          git clone --depth 1 --branch runtime-v0.1.148 \
-            https://github.com/rive-app/rive-runtime.git third_party/rive-runtime
+          RIVE_PIN="$(tr -d '[:space:]' < RIVE_RUNTIME_PIN)"
+          git clone https://github.com/rive-app/rive-runtime.git third_party/rive-runtime
+          cd third_party/rive-runtime
+          git checkout "$RIVE_PIN"
+          cd ../..
           MATILDA_RIVE_BACKEND=metal ./scripts/build_rive_native.sh
 
       - name: Configure standalone

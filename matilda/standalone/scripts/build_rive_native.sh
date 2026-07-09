@@ -7,12 +7,30 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RIVE_MATILDA_DIR="$SCRIPT_DIR/../third_party/rive-runtime/matilda"
-RIVE_BUILD_SH="$SCRIPT_DIR/../third_party/rive-runtime/build/build_rive.sh"
+STANDALONE_DIR="$SCRIPT_DIR/.."
+RIVE_RUNTIME_DIR="$STANDALONE_DIR/third_party/rive-runtime"
+RIVE_MATILDA_DIR="$RIVE_RUNTIME_DIR/matilda"
+RIVE_BUILD_SH="$RIVE_RUNTIME_DIR/build/build_rive.sh"
+RIVE_OVERLAY_SRC="$STANDALONE_DIR/rive-build/matilda/premake5.lua"
+RIVE_PIN_FILE="$STANDALONE_DIR/RIVE_RUNTIME_PIN"
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
     echo "Matilda native Rive build is macOS-only." >&2
     exit 1
+fi
+
+if [[ ! -x "$RIVE_BUILD_SH" ]]; then
+    echo "rive-runtime not found. Clone and checkout the pinned revision:" >&2
+    echo "  git clone https://github.com/rive-app/rive-runtime.git $RIVE_RUNTIME_DIR" >&2
+    if [[ -f "$RIVE_PIN_FILE" ]]; then
+        echo "  cd $RIVE_RUNTIME_DIR && git checkout $(tr -d '[:space:]' < \"$RIVE_PIN_FILE\")" >&2
+    fi
+    exit 1
+fi
+
+mkdir -p "$RIVE_MATILDA_DIR"
+if [[ ! -f "$RIVE_MATILDA_DIR/premake5.lua" ]]; then
+    cp "$RIVE_OVERLAY_SRC" "$RIVE_MATILDA_DIR/premake5.lua"
 fi
 
 BACKEND="${MATILDA_RIVE_BACKEND:-metal}"
