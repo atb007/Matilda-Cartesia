@@ -47,6 +47,9 @@ else
 fi
 export MATILDA_RIVE_BACKEND="$BACKEND"
 export RIVE_PREMAKE_ARGS="--with_rive_text --with_rive_layout --with_rive_scripting"
+if [[ "$OS_NAME" == MINGW* || "$OS_NAME" == MSYS* || "$OS_NAME" == CYGWIN* ]]; then
+    export RIVE_PREMAKE_ARGS="${RIVE_PREMAKE_ARGS} --windows_runtime=dynamic_release"
+fi
 if [[ "$BACKEND" == "metal" ]]; then
     export RIVE_PREMAKE_ARGS="${RIVE_PREMAKE_ARGS} --with_objc_exceptions"
 fi

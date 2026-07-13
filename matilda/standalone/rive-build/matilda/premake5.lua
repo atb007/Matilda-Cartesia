@@ -13,10 +13,7 @@ dofile('../build/rive_build_config.lua')
 
 RIVE_RUNTIME_DIR = path.getabsolute('..')
 
--- Match JUCE/CMake on Windows (/MD) — rive defaults to /MT for static libs.
-filter { 'system:windows' }
-    staticruntime 'Off'
-filter {}
+-- Match JUCE/CMake on Windows (/MD) via --windows_runtime=dynamic_release in build scripts.
 
 dofile(RIVE_RUNTIME_DIR .. '/premake5_v2.lua')
 dofile(RIVE_RUNTIME_DIR .. '/decoders/premake5_v2.lua')

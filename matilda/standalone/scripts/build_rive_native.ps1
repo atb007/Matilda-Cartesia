@@ -37,7 +37,7 @@ if (-not $env:MATILDA_RIVE_BACKEND -or $env:MATILDA_RIVE_BACKEND -eq '') {
 }
 $Backend = $env:MATILDA_RIVE_BACKEND
 
-$env:RIVE_PREMAKE_ARGS = '--with_rive_text --with_rive_layout --with_rive_scripting'
+$env:RIVE_PREMAKE_ARGS = '--with_rive_text --with_rive_layout --with_rive_scripting --windows_runtime=dynamic_release'
 
 Push-Location $RiveMatildaDir
 try {
