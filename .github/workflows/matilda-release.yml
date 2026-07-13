@@ -23,14 +23,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure
+      # Rive native libs — shared by macOS plugin + standalone heroes.
+      - name: Build Rive native runtime (macOS)
+        working-directory: matilda/standalone
+        run: |
+          RIVE_PIN="$(tr -d '[:space:]' < RIVE_RUNTIME_PIN)"
+          git clone https://github.com/rive-app/rive-runtime.git third_party/rive-runtime
+          cd third_party/rive-runtime
+          git checkout "$RIVE_PIN"
+          cd ../..
+          MATILDA_RIVE_BACKEND=metal ./scripts/build_rive_native.sh
+
+      - name: Configure plugin
         working-directory: matilda/plugin
         run: >
           cmake -B build
           -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          -DCMAKE_OSX_ARCHITECTURES=arm64
 
-      - name: Build
+      - name: Build plugin
         working-directory: matilda/plugin
         run: cmake --build build --config Release -j$(sysctl -n hw.ncpu)
 
@@ -42,16 +53,6 @@ jobs:
             Matilda-macOS-vst3.zip
 
       # Standalone is built from the separate matilda/standalone codebase (stable v1.0.2 base).
-      - name: Build Rive native runtime (macOS standalone hero)
-        working-directory: matilda/standalone
-        run: |
-          RIVE_PIN="$(tr -d '[:space:]' < RIVE_RUNTIME_PIN)"
-          git clone https://github.com/rive-app/rive-runtime.git third_party/rive-runtime
-          cd third_party/rive-runtime
-          git checkout "$RIVE_PIN"
-          cd ../..
-          MATILDA_RIVE_BACKEND=metal ./scripts/build_rive_native.sh
-
       - name: Configure standalone
         working-directory: matilda/standalone
         run: >
@@ -84,6 +85,18 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Build Rive native runtime (Windows)
+        working-directory: matilda/standalone
+        shell: pwsh
+        run: |
+          $RIVE_PIN = (Get-Content RIVE_RUNTIME_PIN -Raw).Trim()
+          git clone https://github.com/rive-app/rive-runtime.git third_party/rive-runtime
+          Set-Location third_party/rive-runtime
+          git checkout $RIVE_PIN
+          Set-Location ../..
+          $env:MATILDA_RIVE_BACKEND = 'd3d'
+          ./scripts/build_rive_native.ps1
 
       - name: Configure
         working-directory: matilda/plugin

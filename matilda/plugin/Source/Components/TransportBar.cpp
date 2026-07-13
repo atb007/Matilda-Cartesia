@@ -8,6 +8,8 @@
 #include "../TransportLayout.h"
 #include "BinaryData.h"
 
+#include <algorithm>
+
 namespace {
 
 using namespace matilda::transport;
@@ -79,21 +81,9 @@ juce::Rectangle<float> glassInsetRect(juce::Rectangle<float> outer) {
             outer.getHeight() * (1.f - kGlassInsetTop - kGlassInsetBottom)};
 }
 
-float itemBlockHeight(float scale) {
-    return kDdItemFs * scale * 1.25f + kDdLineGap * scale + 1.f;
-}
-
-float itemStride(float scale) {
-    return itemBlockHeight(scale) + kDdItemGap * scale;
-}
-
 int menuHeightForItems(int itemCount, float scale) {
     const int visible = juce::jmin(itemCount, kDdMaxVisibleClockItems);
-    if (visible <= 0)
-        return juce::roundToInt(kDdPadY * scale * 2.f);
-    const float block = itemBlockHeight(scale);
-    return juce::roundToInt(kDdPadY * scale * 2.f + block * static_cast<float>(visible)
-                            + kDdItemGap * scale * static_cast<float>(visible - 1));
+    return matilda::ui::glass::ddMenuHeightScreen(visible, scale, kDdPadY);
 }
 
 } // namespace
@@ -195,6 +185,7 @@ public:
     void paint(juce::Graphics& g) override {
         const auto bounds = getLocalBounds().toFloat();
         const float s = owner_.designScale();
+        matilda::ui::paintWithPressScale(g, bounds, pressed_, 0.97f);
 
         matilda::ui::glass::drawInlinePickerBox(g, bounds, s);
 
@@ -213,13 +204,15 @@ public:
     }
 
     void mouseDown(const juce::MouseEvent& e) override {
+        pressed_ = true;
+        repaint();
+
         const auto pos = e.getPosition().toFloat();
         const float s = owner_.designScale();
         const float chevronBlock = kChevronW * s + kChevronGap * s + 4.f * s;
         const auto bounds = getLocalBounds().toFloat();
 
         if (pos.x >= bounds.getRight() - chevronBlock) {
-            const float chevronH = 4.5f * s;
             const float chevronMidY = bounds.getCentreY();
             if (pos.y < chevronMidY) {
                 if (menuId_ == MenuId::PlayMode)
@@ -238,15 +231,37 @@ public:
         owner_.showMenu(owner_.openMenu_ == menuId_ ? MenuId::None : menuId_);
     }
 
+    void mouseUp(const juce::MouseEvent&) override {
+        if (pressed_) {
+            pressed_ = false;
+            repaint();
+        }
+    }
+
+    void mouseEnter(const juce::MouseEvent&) override {
+        setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    }
+
+    void mouseExit(const juce::MouseEvent&) override {
+        if (pressed_) {
+            pressed_ = false;
+            repaint();
+        }
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+    }
+
 private:
     TransportBar& owner_;
     MenuId menuId_;
     juce::String label_;
+    bool pressed_ = false;
 };
 
 class TransportBar::GlassMenu : public juce::Component {
 public:
-    explicit GlassMenu(TransportBar& o) : owner(o) {}
+    explicit GlassMenu(TransportBar& o) : owner(o) {
+        setPaintingIsUnclipped(true);
+    }
 
     TransportBar& owner;
     MenuId menuId = MenuId::None;
@@ -286,33 +301,36 @@ public:
 
         const float itemW = bounds.getWidth() * 0.86f;
         const float itemX = bounds.getX() + (bounds.getWidth() - itemW) * 0.5f;
-        const float listTop = bounds.getY() + kDdPadY * scale_;
-        const float listBottom = bounds.getBottom() - kDdPadY * scale_;
-        const float stride = itemStride(scale_);
+        const float vertPad = matilda::ui::glass::ddMenuVertPadScreen(kDdPadY, scale_);
+        const float listTop = bounds.getY() + vertPad;
+        const float listBottom = bounds.getBottom() - vertPad;
+        const float scrollStride = matilda::ui::glass::ddItemScrollStrideScreen();
+        const float textH = matilda::ui::glass::ddItemTextHeightScreen();
 
         g.saveState();
         g.reduceClipRegion(juce::Rectangle<int>(juce::roundToInt(itemX), juce::roundToInt(listTop),
                                                 juce::roundToInt(itemW), juce::roundToInt(listBottom - listTop)));
-        g.setFont(matilda::fonts::kodeMonoBold(kDdItemFs * scale_));
+        g.setFont(matilda::fonts::kodeMonoBold(matilda::ui::glass::kDdItemScreenFs));
 
-        float y = listTop - static_cast<float>(scrollOffset) * stride;
+        float y = listTop - static_cast<float>(scrollOffset) * scrollStride;
         for (int i = 0; i < items.size(); ++i) {
-            const float textH = kDdItemFs * scale_ * 1.25f;
             const auto textBounds = juce::Rectangle<float>(itemX, y, itemW, textH);
-            if (textBounds.getBottom() >= listTop && textBounds.getY() <= listBottom) {
+            const bool inView = textBounds.getBottom() >= listTop && textBounds.getY() <= listBottom;
+            if (inView) {
                 const bool selected = i == selectedIndex;
                 g.setColour(selected ? juce::Colours::white : juce::Colours::white.withAlpha(0.65f));
                 g.drawText(items[i], textBounds.toNearestInt(), juce::Justification::centred, false);
                 if (selected) {
                     g.setColour(juce::Colour(0x7310ffcf));
-                    g.drawText(items[i], textBounds.translated(0.f, 1.f * scale_).toNearestInt(),
+                    g.drawText(items[i], textBounds.translated(0.f, 1.f).toNearestInt(),
                                juce::Justification::centred, false);
                 }
             }
-            y += textH + kDdLineGap * scale_;
-            if (textBounds.getBottom() >= listTop && textBounds.getY() <= listBottom)
-                matilda::ui::glass::drawHairline(g, juce::Rectangle<float>(itemX, y, itemW, 1.f));
-            y += 1.f + kDdItemGap * scale_;
+            if (inView && i + 1 < items.size()) {
+                const float lineY = y + textH + matilda::ui::glass::kDdItemScreenLineGap;
+                matilda::ui::glass::drawHairline(g, juce::Rectangle<float>(itemX, lineY, itemW, 1.f));
+            }
+            matilda::ui::glass::advanceDropdownItemY(y, i, items.size());
         }
         g.restoreState();
 
@@ -361,6 +379,12 @@ public:
             repaint();
         }
 
+        const bool overItem =
+            std::any_of(itemBounds_.begin(), itemBounds_.end(),
+                        [&](const juce::Rectangle<int>& b) { return b.contains(e.getPosition()); });
+        setMouseCursor(overItem || hover ? juce::MouseCursor::PointingHandCursor
+                                         : juce::MouseCursor::NormalCursor);
+
         if (items.size() > kDdMaxVisibleClockItems) {
             const auto bounds = getLocalBounds().toFloat();
             const float listTop = bounds.getY() + kDdPadY * scale_;
@@ -372,6 +396,10 @@ public:
                 repaint();
             }
         }
+    }
+
+    void mouseExit(const juce::MouseEvent&) override {
+        setMouseCursor(juce::MouseCursor::NormalCursor);
     }
 
     void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails& wheel) override {
@@ -408,15 +436,16 @@ private:
         itemBounds_.clear();
         const float itemW = bounds.getWidth() * 0.86f;
         const float itemX = bounds.getX() + (bounds.getWidth() - itemW) * 0.5f;
-        const float listTop = bounds.getY() + kDdPadY * scale_;
-        const float stride = itemStride(scale_);
+        const float vertPad = matilda::ui::glass::ddMenuVertPadScreen(kDdPadY, scale_);
+        const float listTop = bounds.getY() + vertPad;
+        const float textH = matilda::ui::glass::ddItemTextHeightScreen();
         float y = listTop;
-        const int visible = juce::jmin(items.size(), kDdMaxVisibleClockItems);
-        for (int i = 0; i < visible; ++i) {
-            const float textH = kDdItemFs * scale_ * 1.25f;
+        const int visible = juce::jmin(items.size() - scrollOffset, kDdMaxVisibleClockItems);
+        for (int vi = 0; vi < visible; ++vi) {
+            const int i = scrollOffset + vi;
             itemBounds_.add(juce::Rectangle<int>(juce::roundToInt(itemX), juce::roundToInt(y),
                                                 juce::roundToInt(itemW), juce::roundToInt(textH)));
-            y += stride;
+            matilda::ui::glass::advanceDropdownItemY(y, i, items.size());
         }
     }
 
@@ -558,7 +587,8 @@ void TransportBar::showMenu(MenuId menu) {
         }
 
         const auto rowScreen = row->localAreaToGlobal(row->getLocalBounds());
-        const int ddW = juce::roundToInt(kDdW * s);
+        const int minW = juce::roundToInt(kDdW * s);
+        const int ddW = matilda::ui::glass::ddMenuWidthForItems(glassMenu_->items, minW);
         const int ddH = GlassMenu::menuHeight(glassMenu_->items.size(), s);
         const int ddX = rowScreen.getCentreX() - ddW / 2;
         const int ddY = rowScreen.getBottom() + juce::roundToInt(6.f * s);

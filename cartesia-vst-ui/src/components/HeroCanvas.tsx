@@ -1,15 +1,35 @@
 import { EXPANDED_W, FRAME_H, HERO, HERO_MAIN_LEFT } from "../heroLayout";
 import { AURORA } from "../auroraConfig";
+import { enableRiveHero } from "../featureFlags";
+import {
+  RIVE_PORTRAIT_CONTENT_SCALE,
+  RIVE_PORTRAIT_HEIGHT_SCALE,
+  RIVE_PORTRAIT_OFFSET_X,
+  RIVE_PORTRAIT_OFFSET_Y,
+} from "../riveConfig";
 import { cartesiaVersionLabel } from "../pluginVersion";
 import { AuroraShader } from "./AuroraShader";
+import { MatildaRivePortrait } from "./MatildaRivePortrait";
+
+type Props = {
+  /** Transport play state — drives Rive boolean bind when Rive hero is enabled. */
+  playing?: boolean;
+};
 
 /**
  * Starfield bg, masked Matilda portrait, wordmark.
  * Clipped by the collapsing viewport — no independent slide animation.
  */
-export function HeroCanvas() {
+export function HeroCanvas({ playing = false }: Props) {
+  const riveHero = enableRiveHero();
   const portraitInMaskLeft = HERO.portrait.left - HERO.mask.left;
   const portraitInMaskTop = HERO.portrait.top - HERO.mask.top;
+  const portraitBaseHeight = HERO.portrait.height * RIVE_PORTRAIT_HEIGHT_SCALE;
+  const portraitHeight = portraitBaseHeight * RIVE_PORTRAIT_CONTENT_SCALE;
+  const portraitTopInMask =
+    portraitInMaskTop +
+    RIVE_PORTRAIT_OFFSET_Y +
+    portraitBaseHeight * (1 - RIVE_PORTRAIT_CONTENT_SCALE);
 
   return (
     <>
@@ -74,18 +94,30 @@ export function HeroCanvas() {
             maskRepeat: "no-repeat",
           }}
         >
-          <img
-            alt=""
-            src="/assets/matilda-portrait-v2.png"
-            style={{
-              position: "absolute",
-              left: portraitInMaskLeft,
-              top: portraitInMaskTop,
-              width: HERO.portrait.width,
-              height: HERO.portrait.height * 1.1634,
-              maxWidth: "none",
-            }}
-          />
+          {riveHero ? (
+            <MatildaRivePortrait
+              playing={playing}
+              style={{
+                left: portraitInMaskLeft + RIVE_PORTRAIT_OFFSET_X,
+                top: portraitTopInMask,
+                width: HERO.portrait.width * RIVE_PORTRAIT_CONTENT_SCALE,
+                height: portraitHeight,
+              }}
+            />
+          ) : (
+            <img
+              alt=""
+              src="/assets/matilda-portrait-v2.png"
+              style={{
+                position: "absolute",
+                left: portraitInMaskLeft,
+                top: portraitInMaskTop,
+                width: HERO.portrait.width,
+                height: HERO.portrait.height * 1.1634,
+                maxWidth: "none",
+              }}
+            />
+          )}
         </div>
 
         <div

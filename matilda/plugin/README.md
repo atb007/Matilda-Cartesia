@@ -56,7 +56,7 @@ The Standalone app lives in [`../standalone/`](../standalone/README.md). Same IA
 
 ## Plugin in a DAW (FL Studio, Logic, Reaper)
 
-Load **Matilda** as a **MIDI effect** before an instrument (VST3 or AU).
+Load **Matilda** as a **silent instrument** in FL Fruity Wrapper (slot 1) or as a MIDI processor before a synth in other DAWs (VST3 or AU).
 
 | Play mode | When the grid steps |
 |-----------|---------------------|
@@ -69,12 +69,23 @@ GarageBand does **not** reliably host MIDI-effect plugins in-track — use **Sta
 
 | Method | FL version tested | Status | Notes |
 |--------|-------------------|--------|-------|
-| **Virtual MIDI port** (plugin **MIDI Out** selector) | 20.0.1 build 451 | ✅ **Validated** | Reliable on all FL versions; see below |
+| **Fruity Wrapper internal ports** (Matilda out *N* → synth in *N*) | **25.1.4** build 4951 | ✅ **Validated** (v1.0.11+) | Requires silent-instrument registration; set **MIDI Out → (None)** |
+| **Virtual MIDI port** (plugin **MIDI Out** selector) | 20.0.1 build 451 | ✅ **Validated** | FL 20.x fallback when wrapper ports fail |
 | **Standalone + loopMIDI** (two-port clock + notes) | 20.0.1 | ✅ **Validated** | See [`../standalone/README.md`](../standalone/README.md) |
-| **Fruity Wrapper internal ports** (Matilda out *N* → synth in *N*) | 20.0.1 | ❌ **Failed** | VST3 MIDI output not forwarded between wrapper plugins |
-| **Fruity Wrapper / Patcher** | FL 21+ (newer) | ⬜ **Not yet tested** | May work if Image-Line improved VST3 MIDI-out routing |
+| **Fruity Wrapper internal ports** | 20.0.1 | ❌ **Failed** | VST3 MIDI output not forwarded between wrapper plugins |
 
-#### Recommended: virtual MIDI port (v1.0.8+)
+#### Recommended: Fruity Wrapper (FL 21+, v1.0.11+)
+
+BlueARP-style wiring — sound, meters, step lanes, and armed MIDI recording stay on the **channel's mixer insert** (not master).
+
+1. Channel rack → **Fruity Wrapper** (generator).
+2. Slot 1: **Matilda** · Slot 2: synth (3xOsc, Sytrus, etc.).
+3. Wrapper settings: Matilda **MIDI output port N** → synth **MIDI input port N** (matching number ≥ 11).
+4. Matilda plugin window: **MIDI Out → (None)** — critical; a virtual port steals routing to master.
+5. Route wrapper channel to a **mixer insert** (not master).
+6. Press Play — channel meter + step rack should show activity; arm record to capture generated MIDI.
+
+#### Fallback: virtual MIDI port (FL 20.x, v1.0.8+)
 
 FL Studio 20.x does not reliably forward VST3 **MIDI output** from one wrapper plugin to another. Matilda mirrors the Standalone workaround: stream notes to an OS-level virtual port.
 
@@ -84,13 +95,11 @@ FL Studio 20.x does not reliably forward VST3 **MIDI output** from one wrapper p
 3. On your synth channel: **MIDI Input** → same port (FL: assign port number on Input list; synth channel must match).
 4. Press play — Matilda's arp reaches the synth.
 
-The selected port is saved with the project.
+The selected port is saved with the project. Use only when wrapper internal ports fail.
 
-#### Alternative: Fruity Wrapper internal ports (BlueARP-style)
+#### Patcher
 
-Same VST3 binary — load Matilda + synth in one **Fruity Wrapper**, wire output port *N* → synth input port *N* (ports 11+ per BlueARP manual). **Not confirmed on FL 20.0.1.** Retest on a newer FL Studio before relying on this path.
-
-**Patcher:** Matilda → generator, green MIDI cables to synth module — also pending verification on newer FL.
+Matilda → generator inside Patcher, green MIDI cables to synth — same **MIDI Out → (None)** rule applies when routing inside the patch.
 
 Install: `Matilda.vst3` → `C:\Program Files\Common Files\VST3\` (Windows) or `~/Library/Audio/Plug-Ins/VST3/` (macOS)
 

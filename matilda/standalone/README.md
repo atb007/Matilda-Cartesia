@@ -1,10 +1,10 @@
 # Matilda — Standalone app (macOS / Windows)
 
-> **Standalone-only codebase** (`matilda/standalone/`). Forked from the plugin tree at **v1.0.2** for a stable audio/MIDI engine, then forward-ported with UI QOL (filigree, resize persistence, DAW clock sync) through **v1.0.10**.
+> **Standalone-only codebase** (`matilda/standalone/`). Forked from the plugin tree at **v1.0.2** for a stable audio/MIDI engine, then forward-ported with UI QOL (filigree, resize persistence, DAW clock sync, glass dropdown polish, macOS Rive hero) through **v1.0.11**.
 >
 > - **This dir** builds **Standalone only** (`Matilda.app` / `Matilda.exe`).
 > - **`matilda/plugin/`** builds **VST3 + AU only**.
-> - Latest release: **[v1.0.10](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.10)**
+> - Latest release: **v1.0.11** (pending tag)
 
 MIDI arp / grid sequencer. Cartesia engine (Patch v2, sequential layers, movement modes, trigger probability, jitter).
 

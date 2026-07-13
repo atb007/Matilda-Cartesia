@@ -1,4 +1,5 @@
 #include "QuantisePanel.h"
+#include "../ClickFeedbackDrawing.h"
 #include "../FiligreeDrawing.h"
 #include "../GlassDropdownDrawing.h"
 #include "../MatildaFonts.h"
@@ -6,6 +7,8 @@
 #include "../ScaleLayout.h"
 #include "../Engine/ScaleConfig.h"
 #include "BinaryData.h"
+
+#include <algorithm>
 
 namespace {
 
@@ -80,16 +83,13 @@ void drawChevron(juce::Graphics& g, juce::Rectangle<float> b, bool up) {
     g.fillPath(tri);
 }
 
-float itemStride(float s) {
-    return kDdItemFs * s * 1.25f + kDdLineGap * s + 1.f + kDdItemGap * s;
+float itemStride(float) {
+    return matilda::ui::glass::ddItemScrollStrideScreen();
 }
 
 int menuHeight(int n, float s) {
     const int v = juce::jmin(n, kDdMaxVisibleItems);
-    if (v <= 0)
-        return juce::roundToInt(kDdPadY * s * 2.f);
-    const float block = kDdItemFs * s * 1.25f + kDdLineGap * s + 1.f;
-    return juce::roundToInt(kDdPadY * s * 2.f + block * v + kDdItemGap * s * (v - 1));
+    return matilda::ui::glass::ddMenuHeightScreen(v, s, kDdPadY);
 }
 
 const juce::StringArray& pitches() {
@@ -119,6 +119,7 @@ public:
     void paint(juce::Graphics& g) override {
         const auto b = getLocalBounds().toFloat();
         const float s = owner_.designScale();
+        matilda::ui::paintWithPressScale(g, b, pressed_, 0.97f);
         if (variant_ == PickerVariant::Pill) {
             const float r = b.getHeight() * 0.5f;
             g.setColour(juce::Colour(0x17ddd8d8));
@@ -142,6 +143,9 @@ public:
     }
 
     void mouseDown(const juce::MouseEvent& e) override {
+        pressed_ = true;
+        repaint();
+
         const float s = owner_.designScale();
         const float chevBlock = kChevronW * s + kChevronGap * s + 8.f * s;
         if (e.x >= getWidth() - chevBlock) {
@@ -157,11 +161,31 @@ public:
         owner_.showMenu(owner_.openMenu_ == id_ ? MenuId::None : id_, this);
     }
 
+    void mouseUp(const juce::MouseEvent&) override {
+        if (pressed_) {
+            pressed_ = false;
+            repaint();
+        }
+    }
+
+    void mouseEnter(const juce::MouseEvent&) override {
+        setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    }
+
+    void mouseExit(const juce::MouseEvent&) override {
+        if (pressed_) {
+            pressed_ = false;
+            repaint();
+        }
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+    }
+
 private:
     QuantisePanel& owner_;
     MenuId id_;
     PickerVariant variant_;
     juce::String label_;
+    bool pressed_ = false;
 };
 
 class QuantisePanel::ScaleArrowButton : public juce::Component {
@@ -169,21 +193,48 @@ public:
     ScaleArrowButton(QuantisePanel& o, bool left) : owner_(o), left_(left) {}
     void paint(juce::Graphics& g) override {
         const auto b = getLocalBounds().toFloat();
+        matilda::ui::paintWithPressScale(g, b, pressed_, 0.92f);
         juce::Path p;
         if (left_)
             p.addTriangle(b.getRight(), b.getY(), b.getRight(), b.getBottom(), b.getX(), b.getCentreY());
         else
             p.addTriangle(b.getX(), b.getY(), b.getX(), b.getBottom(), b.getRight(), b.getCentreY());
-        juce::ColourGradient grad(juce::Colour(0xffececec), b.getTopLeft(), juce::Colour(0xff8d8d8d), b.getBottomLeft(),
-                                  false);
+        const float brighten = hover_ ? 0.12f : 0.f;
+        juce::ColourGradient grad(juce::Colour(0xffececec).brighter(brighten), b.getTopLeft(),
+                                  juce::Colour(0xff8d8d8d).brighter(brighten * 0.5f), b.getBottomLeft(), false);
         g.setGradientFill(grad);
         g.fillPath(p);
     }
-    void mouseDown(const juce::MouseEvent&) override { owner_.cycleScale(left_ ? -1 : 1); }
+    void mouseDown(const juce::MouseEvent&) override {
+        pressed_ = true;
+        repaint();
+    }
+    void mouseUp(const juce::MouseEvent& e) override {
+        const bool wasPressed = pressed_;
+        pressed_ = false;
+        repaint();
+        if (wasPressed && e.mouseWasClicked())
+            owner_.cycleScale(left_ ? -1 : 1);
+    }
+    void mouseEnter(const juce::MouseEvent&) override {
+        hover_ = true;
+        setMouseCursor(juce::MouseCursor::PointingHandCursor);
+        repaint();
+    }
+    void mouseExit(const juce::MouseEvent&) override {
+        hover_ = false;
+        if (pressed_) {
+            pressed_ = false;
+            repaint();
+        }
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+    }
 
 private:
     QuantisePanel& owner_;
     bool left_;
+    bool hover_ = false;
+    bool pressed_ = false;
 };
 
 class QuantisePanel::ScaleNameButton : public juce::Component {
@@ -195,22 +246,45 @@ public:
     }
     void paint(juce::Graphics& g) override {
         const float s = owner_.designScale();
+        const auto b = getLocalBounds().toFloat();
+        matilda::ui::paintWithPressScale(g, b, pressed_, 0.97f);
         g.setFont(matilda::fonts::kodeMonoBold(kScaleBarFs * s));
         g.setColour(juce::Colours::white);
         g.drawText(text_, getLocalBounds(), juce::Justification::centred, false);
     }
     void mouseDown(const juce::MouseEvent&) override {
-        owner_.showMenu(owner_.openMenu_ == MenuId::Scale ? MenuId::None : MenuId::Scale, this);
+        pressed_ = true;
+        repaint();
+    }
+    void mouseUp(const juce::MouseEvent& e) override {
+        const bool wasPressed = pressed_;
+        pressed_ = false;
+        repaint();
+        if (wasPressed && e.mouseWasClicked())
+            owner_.showMenu(owner_.openMenu_ == MenuId::Scale ? MenuId::None : MenuId::Scale, this);
+    }
+    void mouseEnter(const juce::MouseEvent&) override {
+        setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    }
+    void mouseExit(const juce::MouseEvent&) override {
+        if (pressed_) {
+            pressed_ = false;
+            repaint();
+        }
+        setMouseCursor(juce::MouseCursor::NormalCursor);
     }
 
 private:
     QuantisePanel& owner_;
     juce::String text_;
+    bool pressed_ = false;
 };
 
 class QuantisePanel::GlassMenu : public juce::Component {
 public:
-    explicit GlassMenu(QuantisePanel& o) : owner(o) {}
+    explicit GlassMenu(QuantisePanel& o) : owner(o) {
+        setPaintingIsUnclipped(true);
+    }
     QuantisePanel& owner;
     MenuId menuId = MenuId::None;
     int selectedIndex = 0;
@@ -243,22 +317,33 @@ public:
             juce::Colours::white.withAlpha(0.85f));
         const float itemW = b.getWidth() * 0.86f;
         const float itemX = b.getX() + (b.getWidth() - itemW) * 0.5f;
-        const float listTop = b.getY() + kDdPadY * scale_;
-        const float listBottom = b.getBottom() - kDdPadY * scale_;
-        const float stride = itemStride(scale_);
+        const float vertPad = matilda::ui::glass::ddMenuVertPadScreen(kDdPadY, scale_);
+        const float listTop = b.getY() + vertPad;
+        const float listBottom = b.getBottom() - vertPad;
+        const float scrollStride = matilda::ui::glass::ddItemScrollStrideScreen();
+        const float textH = matilda::ui::glass::ddItemTextHeightScreen();
         g.saveState();
         g.reduceClipRegion(juce::Rectangle<int>(juce::roundToInt(itemX), juce::roundToInt(listTop),
                                                 juce::roundToInt(itemW), juce::roundToInt(listBottom - listTop)));
-        g.setFont(matilda::fonts::kodeMonoBold(kDdItemFs * scale_));
-        float y = listTop - scrollOffset * stride;
+        g.setFont(matilda::fonts::kodeMonoBold(matilda::ui::glass::kDdItemScreenFs));
+        float y = listTop - static_cast<float>(scrollOffset) * scrollStride;
         for (int i = 0; i < items.size(); ++i) {
-            const float th = kDdItemFs * scale_ * 1.25f;
-            const auto tb = juce::Rectangle<float>(itemX, y, itemW, th);
-            if (tb.getBottom() >= listTop && tb.getY() <= listBottom) {
-                g.setColour(i == selectedIndex ? juce::Colours::white : juce::Colours::white.withAlpha(0.65f));
+            const auto tb = juce::Rectangle<float>(itemX, y, itemW, textH);
+            const bool inView = tb.getBottom() >= listTop && tb.getY() <= listBottom;
+            if (inView) {
+                const bool selected = i == selectedIndex;
+                g.setColour(selected ? juce::Colours::white : juce::Colours::white.withAlpha(0.65f));
                 g.drawText(items[i], tb.toNearestInt(), juce::Justification::centred, false);
+                if (selected) {
+                    g.setColour(juce::Colour(0x7310ffcf));
+                    g.drawText(items[i], tb.translated(0.f, 1.f).toNearestInt(), juce::Justification::centred, false);
+                }
             }
-            y += th + kDdLineGap * scale_ + 1.f + kDdItemGap * scale_;
+            if (inView && i + 1 < items.size()) {
+                const float lineY = y + textH + matilda::ui::glass::kDdItemScreenLineGap;
+                matilda::ui::glass::drawHairline(g, juce::Rectangle<float>(itemX, lineY, itemW, 1.f));
+            }
+            matilda::ui::glass::advanceDropdownItemY(y, i, items.size());
         }
         g.restoreState();
     }
@@ -293,6 +378,19 @@ public:
         }
     }
 
+    void mouseMove(const juce::MouseEvent& e) override {
+        const bool overItem =
+            std::any_of(itemBounds_.begin(), itemBounds_.end(),
+                        [&](const juce::Rectangle<int>& b) { return b.contains(e.getPosition()); });
+        const bool overClose = closeBounds_.contains(e.getPosition());
+        setMouseCursor(overItem || overClose ? juce::MouseCursor::PointingHandCursor
+                                             : juce::MouseCursor::NormalCursor);
+    }
+
+    void mouseExit(const juce::MouseEvent&) override {
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+    }
+
     void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails& w) override {
         if (items.size() <= kDdMaxVisibleItems)
             return;
@@ -318,12 +416,13 @@ private:
         itemBounds_.clear();
         const float itemW = b.getWidth() * 0.86f;
         const float itemX = b.getX() + (b.getWidth() - itemW) * 0.5f;
-        float y = b.getY() + kDdPadY * scale_;
-        const int vis = juce::jmin(items.size(), kDdMaxVisibleItems);
-        for (int i = 0; i < vis; ++i) {
-            const float th = kDdItemFs * scale_ * 1.25f;
-            itemBounds_.add({juce::roundToInt(itemX), juce::roundToInt(y), juce::roundToInt(itemW), juce::roundToInt(th)});
-            y += itemStride(scale_);
+        float y = b.getY() + matilda::ui::glass::ddMenuVertPadScreen(kDdPadY, scale_);
+        const int vis = juce::jmin(items.size() - scrollOffset, kDdMaxVisibleItems);
+        const float textH = matilda::ui::glass::ddItemTextHeightScreen();
+        for (int vi = 0; vi < vis; ++vi) {
+            const int i = scrollOffset + vi;
+            itemBounds_.add({juce::roundToInt(itemX), juce::roundToInt(y), juce::roundToInt(itemW), juce::roundToInt(textH)});
+            matilda::ui::glass::advanceDropdownItemY(y, i, items.size());
         }
     }
 
@@ -519,7 +618,8 @@ void QuantisePanel::showMenu(MenuId menu, juce::Component* anchor) {
         }
 
         const auto rowScreen = anchor->localAreaToGlobal(anchor->getLocalBounds());
-        const int ddW = juce::roundToInt(kDdW * s);
+        const int minW = juce::roundToInt(kDdW * s);
+        const int ddW = matilda::ui::glass::ddMenuWidthForItems(glassMenu_->items, minW);
         const int ddH = GlassMenu::heightFor(glassMenu_->items.size(), s);
         const int ddX = rowScreen.getCentreX() - ddW / 2;
         const int ddY = rowScreen.getBottom() + juce::roundToInt((menu == MenuId::Scale ? 4 : 35) * s);

@@ -5,16 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:standalone-mac-rive": "VITE_STANDALONE_MAC_RIVE=true vite",
     "build": "tsc -b && vite build",
+    "build:standalone-mac-rive": "VITE_STANDALONE_MAC_RIVE=true tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@rive-app/react-webgl2": "^4.29.3",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@rive-app/canvas": "^2.35.0",
     "@tailwindcss/vite": "^4.3.0",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",

@@ -47,6 +47,7 @@ private:
     void resized() override;
     void bindCallbacks();
     void refreshAll();
+    void syncHeroRiveBindings();
     void updateStatusLine();
     void applyBpmFromLabel();
     void layoutChromeOverlays();

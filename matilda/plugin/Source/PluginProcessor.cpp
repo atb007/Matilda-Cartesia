@@ -171,8 +171,12 @@ void MatildaAudioProcessor::sendBufferToMidiOutput(const juce::MidiBuffer& midi)
     const juce::ScopedTryLock stl(midiOutLock_);
     if (!stl.isLocked() || midiOut_ == nullptr || midi.isEmpty())
         return;
-    for (const auto metadata : midi)
-        midiOut_->sendMessageNow(metadata.getMessage());
+    // Only stream generated note data — never clock/transport passthrough (avoids master-bus bleed).
+    for (const auto metadata : midi) {
+        const auto msg = metadata.getMessage();
+        if (msg.isNoteOnOrOff() || msg.isAllNotesOff() || msg.isAllSoundOff())
+            midiOut_->sendMessageNow(msg);
+    }
 }
 
 void MatildaAudioProcessor::markHostTransportDetected() {
@@ -472,8 +476,16 @@ void MatildaAudioProcessor::processSequencer(juce::MidiBuffer& midi, int numSamp
 }
 
 void MatildaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) {
-    // MIDI-FX — no audio generation; downstream synth renders sound.
-    buffer.clear();
+    // Silent instrument — pass host/wrapper audio through so downstream synth audio reaches the
+    // channel's mixer insert (not master). Matilda itself generates no audio.
+    const int numInput = getTotalNumInputChannels();
+    const int numOutput = getTotalNumOutputChannels();
+    if (numInput <= 0) {
+        buffer.clear();
+    } else {
+        for (int ch = numInput; ch < numOutput; ++ch)
+            buffer.clear(ch, 0, buffer.getNumSamples());
+    }
 
     juce::MidiBuffer incoming;
     incoming.swapWith(midi);

@@ -8,6 +8,14 @@
 
 namespace {
 
+int countActiveLayers(const matilda::PatchState& patch) {
+    int count = 0;
+    for (const auto& layer : patch.layers)
+        if (layer.active)
+            ++count;
+    return juce::jmax(1, count);
+}
+
 juce::Point<int> devWindowSize(matilda::ui::DevView view) {
     using namespace matilda::react;
     using namespace matilda::ui;
@@ -79,8 +87,9 @@ MatildaAudioProcessorEditor::MatildaAudioProcessorEditor(MatildaAudioProcessor& 
     midiOutLabel_.setColour(juce::Label::textColourId, laf_.textMuted);
     midiOutLabel_.setJustificationType(juce::Justification::centredLeft);
     midiOutLabel_.setVisible(showMidiOut);
-    midiOutCombo_.setTooltip("Send Matilda's notes to a virtual MIDI port (e.g. loopMIDI / IAC), then set the "
-                             "same port as the synth channel's MIDI Input. Works in any DAW/FL version.");
+    midiOutCombo_.setTooltip("Optional fallback: stream notes to a virtual MIDI port (loopMIDI / IAC). "
+                             "Leave as (None) when using Fruity Wrapper internal ports — otherwise audio "
+                             "may route to master instead of this channel.");
     midiOutCombo_.setVisible(showMidiOut);
     refreshMidiOutList();
     midiOutCombo_.onChange = [this] { processor_.setMidiOutputByName(midiOutCombo_.getText()); };
@@ -140,6 +149,11 @@ void MatildaAudioProcessorEditor::refreshAll() {
     syncToggle_.setToggleState(processor_.followExternalTransport(), juce::dontSendNotification);
     updateStatusLine();
     layoutChromeOverlays();
+    syncHeroRiveBindings();
+}
+
+void MatildaAudioProcessorEditor::syncHeroRiveBindings() {
+    frame_.hero().setActiveLayerCount(countActiveLayers(processor_.patch()));
 }
 
 void MatildaAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster*) {
@@ -150,12 +164,15 @@ void MatildaAudioProcessorEditor::bindCallbacks() {
     transport_.onPlay = [this] {
         processor_.setSequencerRunning(true);
         transport_.setPlaying(true);
+        syncHeroRiveBindings();
+        frame_.hero().setPlaying(true);
         if (auto* h = juce::StandalonePluginHolder::getInstance())
             h->startPlaying();
     };
     transport_.onStop = [this] {
         processor_.setSequencerRunning(false);
         transport_.setPlaying(false);
+        frame_.hero().setPlaying(false);
     };
 
     quantise_.onChanged = [this] {
@@ -163,7 +180,11 @@ void MatildaAudioProcessorEditor::bindCallbacks() {
         grid_.refresh();
     };
 
-    overview_.onLayerActivated = [this](int) { grid_.refresh(); overview_.refresh(); };
+    overview_.onLayerActivated = [this](int) {
+        grid_.refresh();
+        overview_.refresh();
+        syncHeroRiveBindings();
+    };
     overview_.onLayerSelected = [this](int layer) {
         processor_.patch().selectedLayer = layer;
         grid_.setLayer(layer);
@@ -222,6 +243,9 @@ void MatildaAudioProcessorEditor::timerCallback() {
     lastTransportRunning_ = running;
 
     transport_.setPlaying(running);
+    frame_.hero().setPlaying(running);
+    if (running)
+        syncHeroRiveBindings();
     updateStatusLine();
 
     // Pick up virtual MIDI ports created after the editor opened (loopMIDI / IAC).

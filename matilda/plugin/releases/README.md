@@ -48,6 +48,6 @@ git tag v1.0.10
 git push origin v1.0.10
 ```
 
-Latest release: **[v1.0.10](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.10)** — Standalone: macOS native Rive v2 hero + glass dropdown UI polish (fixed label size, frame, spacing, scale highlight). VST3/AU plugin unchanged from v1.0.9.
+Latest release: **v1.0.11** (pending tag) — FL 25 Fruity Wrapper channel routing fix + v1.0.10 UI polish (dropdowns + macOS Rive hero) in plugin and standalone. Sync behaviour unchanged.
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.

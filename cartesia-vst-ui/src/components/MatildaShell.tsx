@@ -7,7 +7,7 @@ import { SHELL_FRAME_H, SHELL_H, SHELL_W } from "../shellLayout";
 import { ShellFrameOverlay } from "./ShellFrameOverlay";
 import { ShellGlassBedding } from "./ShellGlassBedding";
 import { TransportChrome } from "./TransportChrome";
-import { useMatildaEngine } from "../hooks/useMatildaEngine";
+import { useMatildaEngine, type MatildaEngineState } from "../hooks/useMatildaEngine";
 
 /**
  * M8 + M9 — Control-panel shell wired to Cartesia engine.
@@ -31,10 +31,18 @@ type Props = {
   embedded?: boolean;
   /** Host DAW sync — play gem shows link icon when true. */
   dawSync?: boolean;
+  /** Shared engine state (required when hero Rive bind shares play transport). */
+  engine?: MatildaEngineState;
 };
 
-export function MatildaShell({ scale = 0.78, embedded = false, dawSync: dawSyncProp }: Props) {
-  const engine = useMatildaEngine();
+export function MatildaShell({
+  scale = 0.78,
+  embedded = false,
+  dawSync: dawSyncProp,
+  engine: engineProp,
+}: Props) {
+  const internalEngine = useMatildaEngine();
+  const engine = engineProp ?? internalEngine;
   const {
     patch,
     playing,

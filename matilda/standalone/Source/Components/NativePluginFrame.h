@@ -32,7 +32,7 @@ private:
     public:
         ContentPanel(HeroCanvas& hero, MatildaShellPanel& shell) : hero_(hero), shell_(shell) {
             addAndMakeVisible(hero_);
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
             addAndMakeVisible(heroWordmark_);
             heroWordmark_.setInterceptsMouseClicks(false, false);
             heroWordmark_.setOpaque(false);
@@ -45,7 +45,7 @@ private:
         void layoutContent(float previewScale, bool showHero) {
             using namespace matilda::react;
             hero_.setVisible(showHero);
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
             heroWordmark_.setVisible(showHero);
 #endif
             if (!showHero) {
@@ -56,7 +56,7 @@ private:
             const int heroW = sx(kExpandedW, previewScale);
             const int heroH = sx(kFrameH, previewScale);
             hero_.setBounds(0, 0, heroW, heroH);
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
             heroWordmark_.setBounds(0, 0, heroW, heroH);
 #endif
             shell_.setBounds(sx(kShellLeft, previewScale), sx(kShellTop, previewScale),
@@ -65,7 +65,7 @@ private:
         }
 
         void syncContentStackOrder() {
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
             if (auto* overlay = hero_.riveOverlayComponent())
                 overlay->toFront(false);
             heroWordmark_.toFront(false);
@@ -75,7 +75,7 @@ private:
 
     private:
         HeroCanvas& hero_;
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
         HeroWordmark heroWordmark_;
 #endif
         MatildaShellPanel& shell_;

@@ -2,12 +2,12 @@
 
 #include <JuceHeader.h>
 
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
 #include "../Rive/RiveHeroRenderer.h"
 #endif
 
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
-/** Wordmark overlay — sibling above HeroCanvas so it wins over native Metal NSView. */
+#if defined(MATILDA_RIVE_HERO)
+/** Wordmark overlay — sibling above HeroCanvas so it wins over native GPU overlay. */
 class HeroWordmark : public juce::Component {
 public:
     HeroWordmark() { setInterceptsMouseClicks(false, false); }
@@ -17,7 +17,7 @@ public:
 
 /** Starfield + masked portrait + wordmark — React HeroCanvas.tsx parity. */
 class HeroCanvas : public juce::Component
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__) && !defined(MATILDA_RIVE_BACKEND_METAL)
+#if defined(MATILDA_RIVE_HERO) && !defined(MATILDA_RIVE_BACKEND_GPU)
     ,
                   private juce::Timer
 #endif
@@ -29,19 +29,19 @@ public:
     void setPlaying(bool playing);
     void setActiveLayerCount(int count);
 
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
-    /** Metal NSView overlay — re-front after shell/wordmark stack sync. */
+#if defined(MATILDA_RIVE_HERO)
+    /** Native GPU overlay — re-front after shell/wordmark stack sync. */
     juce::Component* riveOverlayComponent();
-    /** ContentPanel uses this to keep shell above native Metal after overlay attach. */
+    /** ContentPanel uses this to keep shell above native GPU after overlay attach. */
     std::function<void()> onRiveOverlayChanged;
 #endif
 
 private:
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
     void ensureRiveLoaded();
     void updatePortraitLayout();
     void repaintPortraitArea();
-#if !defined(MATILDA_RIVE_BACKEND_METAL)
+#if !defined(MATILDA_RIVE_BACKEND_GPU)
     void timerCallback() override;
     void syncRiveTimer();
     [[nodiscard]] bool shouldDrawCgRiveFrame() const;

@@ -442,15 +442,17 @@ Major end-to-end validation on **FL Studio 20.0.1 (build 451, 64-bit, Windows 11
 
 **Docs:** `matilda/plugin/README.md` · `matilda/standalone/README.md` · `matilda/plugin/releases/v1.0.8-notes.md` · `v1.0.9-notes.md`
 
-### ⬜ Fruity Wrapper internal ports — pending on newer FL
+### ✅ Fruity Wrapper internal ports — validated on FL 25 (v1.0.11)
 
-BlueARP-style wiring (Matilda output port *N* → synth input port *N* in the same Fruity Wrapper, or Patcher green MIDI cables) was **attempted on FL 20.0.1 and did not produce audio**. Not yet retested on **FL Studio 21+** where Image-Line may have improved VST3 MIDI-out handling.
+BlueARP-style wiring (Matilda output port *N* → synth input port *N* in the same Fruity Wrapper) **works on FL Studio 25.1.4** when Matilda registers as a **silent instrument** (not MIDI-FX). v1.0.5–v1.0.10 MIDI-FX registration caused audio/MIDI to land on **master** only — channel meters, step lanes, and armed recording were empty.
 
-**Test script when a newer FL is available:**
+**Required setup (v1.0.11+):**
 
-1. Load Matilda VST3 + synth in one Fruity Wrapper (no virtual port).
+1. Load Matilda VST3 + synth in one Fruity Wrapper.
 2. Matilda Settings → output port *N*; synth → input port *N* (use 11+).
-3. FL transport play + Matilda play gem → confirm synth receives notes.
+3. Matilda plugin **MIDI Out → (None)**.
+4. Route wrapper channel to a mixer insert (not master).
+5. FL transport play + Matilda play gem → confirm channel meter + step rack activity.
 4. Compare against virtual-port path (should be equivalent if wrapper routing works).
 5. Record FL version + build number in this table.
 
@@ -474,8 +476,8 @@ Use this checklist before freezing host architecture. Build outputs: VST3 + AU f
 | **GarageBand** | Standalone + IAC | ❌ external master | Manual BPM | ✅ virtual port | P0 | ✅ smoke-tested |
 | **FL Studio 20.0.1** | Standalone + loopMIDI (2 ports) | ✅ MIDI clock | ✅ v1.0.9+ | ✅ virtual port | P0 | ✅ validated Jul 2026 |
 | **FL Studio 20.0.1** | VST3 + loopMIDI (MIDI Out) | Host playhead | Host playhead | ✅ virtual port | P0 | ✅ validated Jul 2026 |
-| **FL Studio 20.0.1** | VST3 Fruity Wrapper ports | Host playhead | Host playhead | ❌ wrapper ports | P1 | ❌ failed — retest FL 21+ |
-| **FL Studio 21+** | VST3 Fruity Wrapper / Patcher | ? | Host playhead | ? internal ports | P1 | ⬜ not yet tested |
+| **FL Studio 25.1.4** | VST3 Fruity Wrapper ports | Host playhead | Host playhead | ✅ wrapper ports (v1.0.11 instrument mode) | P0 | ✅ validated Jul 2026 |
+| **FL Studio 20.0.1** | VST3 Fruity Wrapper ports | Host playhead | Host playhead | ❌ wrapper ports | P1 | ❌ failed — use virtual port |
 | **Logic Pro** | AU MIDI effect | ? | Host playhead | In-chain | P1 | ⬜ |
 | **Ableton Live** | VST3 MIDI effect | ? | Host playhead | In-chain | P1 | ⬜ |
 | **Bitwig** | VST3 / CLAP? | ? | Host playhead | In-chain | P1 | ⬜ |

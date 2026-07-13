@@ -14,6 +14,8 @@ import {
 import { effectiveScale, UI_SCALE_DEFAULT } from "../uiScale";
 import { CollapseToggle } from "./CollapseToggle";
 import { DawSyncToggle } from "./DawSyncToggle";
+import { enableRiveHero } from "../featureFlags";
+import { useMatildaEngine, type MatildaEngineState } from "../hooks/useMatildaEngine";
 import { HeroCanvas } from "./HeroCanvas";
 import { MatildaShell } from "./MatildaShell";
 import { UiResizeGrips } from "./UiResizeGrip";
@@ -24,12 +26,20 @@ type Props = {
   resizable?: boolean;
 };
 
+type FrameContentProps = Props & {
+  riveHero: boolean;
+  engine?: MatildaEngineState;
+};
+
 /**
  * M8b — Full plugin window: hero canvas + collapsible left panel + M8 control shell.
- * Collapse clips from the left; shell stays right-pinned (no shell left animation).
- * Default scale = 90% of design (0.52 × 0.9); drag any corner or edge between 70%…100% of design.
  */
-export function MatildaPluginFrame({ scale: scaleOverride, resizable = scaleOverride == null }: Props) {
+function MatildaPluginFrameContent({
+  scale: scaleOverride,
+  resizable = scaleOverride == null,
+  riveHero,
+  engine,
+}: FrameContentProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [dawSync, setDawSync] = useState(true);
   const [uiScaleFactor, setUiScaleFactor] = useState(UI_SCALE_DEFAULT);
@@ -47,6 +57,10 @@ export function MatildaPluginFrame({ scale: scaleOverride, resizable = scaleOver
     ? SHELL_TOP + ICON_COLLAPSED_INSET.top
     : ICON_EXPANDED.top;
   const ease = `${COLLAPSE_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+
+  const playing = riveHero && engine ? engine.playing : false;
+  const shellDawSync = riveHero && engine ? engine.dawSync : dawSync;
+  const onDawSyncChange = riveHero && engine ? engine.setDawSync : setDawSync;
 
   return (
     <div
@@ -77,7 +91,7 @@ export function MatildaPluginFrame({ scale: scaleOverride, resizable = scaleOver
             transformOrigin: "top left",
           }}
         >
-          <HeroCanvas />
+          <HeroCanvas playing={riveHero ? playing : undefined} />
 
           <div
             style={{
@@ -87,7 +101,12 @@ export function MatildaPluginFrame({ scale: scaleOverride, resizable = scaleOver
               zIndex: 2,
             }}
           >
-            <MatildaShell scale={1} embedded dawSync={dawSync} />
+            <MatildaShell
+              scale={1}
+              embedded
+              dawSync={shellDawSync}
+              engine={riveHero ? engine : undefined}
+            />
           </div>
 
           <CollapseToggle
@@ -100,8 +119,8 @@ export function MatildaPluginFrame({ scale: scaleOverride, resizable = scaleOver
           <DawSyncToggle
             left={DAW_SYNC_EXPANDED_LEFT}
             top={ICON_EXPANDED.top}
-            enabled={dawSync}
-            onToggle={setDawSync}
+            enabled={shellDawSync}
+            onToggle={onDawSyncChange}
           />
         </div>
       </div>
@@ -117,4 +136,16 @@ export function MatildaPluginFrame({ scale: scaleOverride, resizable = scaleOver
       )}
     </div>
   );
+}
+
+function MatildaPluginFrameWithRive(props: Props) {
+  const engine = useMatildaEngine();
+  return <MatildaPluginFrameContent {...props} riveHero engine={engine} />;
+}
+
+export function MatildaPluginFrame(props: Props) {
+  const riveHero = enableRiveHero();
+  if (riveHero)
+    return <MatildaPluginFrameWithRive {...props} />;
+  return <MatildaPluginFrameContent {...props} riveHero={false} />;
 }

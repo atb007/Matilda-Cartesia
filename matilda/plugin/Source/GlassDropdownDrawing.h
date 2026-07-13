@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "MatildaFonts.h"
 #include <vector>
 
 namespace matilda::ui::glass {
@@ -8,12 +9,88 @@ namespace matilda::ui::glass {
 /** Figma glass dropdown item size — boosted for JUCE legibility (same ratio as Movement title). */
 inline constexpr float kDdItemFigmaFs = 16.f;
 inline constexpr float kDdItemFs = 20.f;
-inline constexpr float kDdItemLineMul = 1.25f;
-inline constexpr float kInlineBoxRadius = 8.f;
+
+/**
+ * Screen-space dropdown list item metrics — option labels stay at a fixed pixel size
+ * regardless of app UI resize scale (Movement, Quantise, Transport glass menus).
+ *
+ * Figma / React original: 16px. JUCE nominal before screen-space fix: 20px × UI scale
+ * (~9–14px on screen at default zoom). Screen-space target: 18px (legible, not oversized).
+ */
+inline constexpr float kDdItemScreenFs = 18.f;
+inline constexpr float kDdItemScreenLineGap = 8.f;
+inline constexpr float kDdItemScreenItemGap = 5.f;
+inline constexpr float kDdItemLineMul = 1.15f;
+/** Tightest menu uses 83% of panel width for item text (Movement). */
+inline constexpr float kDdItemWidthFraction = 0.83f;
+inline constexpr float kDdMenuHorizPadPx = 44.f;
+
+inline juce::Font ddItemMenuFont() {
+    return matilda::fonts::kodeMonoBold(kDdItemScreenFs);
+}
+
+/** Panel width in screen px — at least {@p minWidthPx}, expanded to fit widest label. */
+inline int ddMenuWidthForItems(const juce::StringArray& items, int minWidthPx) {
+    const auto font = ddItemMenuFont();
+    int maxText = 0;
+    for (const auto& item : items)
+        maxText = juce::jmax(maxText, font.getStringWidth(item));
+
+    const int needed =
+        juce::roundToInt(static_cast<float>(maxText) / kDdItemWidthFraction + kDdMenuHorizPadPx);
+    return juce::jmax(minWidthPx, needed);
+}
+
+inline float ddItemTextHeightScreen() {
+    return kDdItemScreenFs * kDdItemLineMul;
+}
+
+/** Gap between rows: hairline + spacing (not drawn after the last item). */
+inline float ddItemSeparatorScreen() {
+    return kDdItemScreenLineGap + 1.f + kDdItemScreenItemGap;
+}
+
+/** Total list-area height for {@p itemCount} rows — separators only between items. */
+inline int ddMenuListHeightScreen(int itemCount) {
+    if (itemCount <= 0)
+        return 0;
+    return juce::roundToInt(ddItemTextHeightScreen() * static_cast<float>(itemCount)
+                            + ddItemSeparatorScreen() * static_cast<float>(itemCount - 1));
+}
+
+/** Minimum top/bottom inset so the rounded frame border stays visible with fixed-size items. */
+inline constexpr float kDdMinVertPadScreen = 10.f;
+
+inline float ddMenuVertPadScreen(float designPadY, float designScale) {
+    return juce::jmax(kDdMinVertPadScreen, designPadY * designScale);
+}
+
+/** Full dropdown panel height — scaled vertical chrome + fixed-size list block. */
+inline int ddMenuHeightScreen(int visibleItemCount, float designScale, float designPadY) {
+    const float pad = ddMenuVertPadScreen(designPadY, designScale);
+    if (visibleItemCount <= 0)
+        return juce::roundToInt(pad * 2.f);
+    return juce::roundToInt(pad * 2.f + static_cast<float>(ddMenuListHeightScreen(visibleItemCount)));
+}
 
 inline float ddItemBlockHeight(float scale) {
-    return kDdItemFs * scale * kDdItemLineMul;
+    juce::ignoreUnused(scale);
+    return ddItemTextHeightScreen() + ddItemSeparatorScreen();
 }
+
+/** Uniform row step used for scroll offset (each row includes its separator slot). */
+inline float ddItemScrollStrideScreen() {
+    return ddItemTextHeightScreen() + ddItemSeparatorScreen();
+}
+
+/** Advance Y after drawing item {@p index} of {@p itemCount} (separator only between items). */
+inline void advanceDropdownItemY(float& y, int index, int itemCount) {
+    y += ddItemTextHeightScreen();
+    if (index + 1 < itemCount)
+        y += ddItemSeparatorScreen();
+}
+
+inline constexpr float kInlineBoxRadius = 8.f;
 
 /** Inline picker / setting row — matches ScalePanel PickerDropdown box variant. */
 inline void drawInlinePickerBox(juce::Graphics& g, juce::Rectangle<float> bounds, float scale) {
@@ -115,44 +192,38 @@ inline juce::Image captureBackdrop(juce::Component& root, juce::Rectangle<int> a
 }
 
 inline void drawFrostOverlay(juce::Graphics& g, juce::Rectangle<float> bounds, float scale) {
-    const float radius = 24.f * scale;
+    const float inset = 1.5f;
+    const auto frame = bounds.reduced(inset);
+    const float radius =
+        juce::jmin(24.f * scale, frame.getWidth() * 0.5f, frame.getHeight() * 0.5f);
 
-    // Light charcoal tint — blurred backdrop should remain visible through the glass.
-    juce::ColourGradient frost(juce::Colour(0x58282c34), bounds.getTopLeft(),
-                               juce::Colour(0x481a1e24), bounds.getBottomRight(), false);
+    // Soft shadow beneath the panel (fill only — avoids side "U" stroke artefacts).
+    {
+        juce::Path shadow;
+        shadow.addRoundedRectangle(bounds.translated(0.f, 4.f).reduced(3.f, 0.f), radius);
+        g.setColour(juce::Colours::black.withAlpha(0.22f));
+        g.fillPath(shadow);
+    }
+
+    juce::ColourGradient frost(juce::Colour(0x58282c34), frame.getTopLeft(),
+                               juce::Colour(0x481a1e24), frame.getBottomRight(), false);
     frost.addColour(0.35, juce::Colour(0x50323840));
     frost.addColour(0.65, juce::Colour(0x40202428));
     g.setGradientFill(frost);
-    g.fillRoundedRectangle(bounds, radius);
+    g.fillRoundedRectangle(frame, radius);
 
-    juce::ColourGradient sheen(juce::Colours::white.withAlpha(0.14f), bounds.getTopLeft(),
-                               juce::Colours::white.withAlpha(0.03f), bounds.getCentre(), false);
+    juce::ColourGradient sheen(juce::Colours::white.withAlpha(0.14f), frame.getTopLeft(),
+                               juce::Colours::white.withAlpha(0.03f), frame.getCentre(), false);
     g.setGradientFill(sheen);
-    g.fillRoundedRectangle(bounds, radius);
+    g.fillRoundedRectangle(frame, radius);
+
+    // Single inset rounded stroke — complete frame on all four sides (not clipped at bottom).
+    g.setColour(juce::Colours::white.withAlpha(0.30f));
+    g.drawRoundedRectangle(frame, radius, 1.f);
 
     g.setColour(juce::Colours::white.withAlpha(0.20f));
-    g.drawRoundedRectangle(bounds.reduced(0.5f), radius, 1.f);
-
-    const float inset = juce::jmax(1.f, 1.5f * scale);
-    g.setColour(juce::Colours::white.withAlpha(0.30f));
-    g.drawLine(bounds.getX() + inset, bounds.getY() + inset, bounds.getRight() - inset, bounds.getY() + inset,
-               inset);
-    g.setColour(juce::Colours::white.withAlpha(0.12f));
-    g.drawLine(bounds.getX() + inset, bounds.getY() + inset, bounds.getX() + inset, bounds.getBottom() - inset,
-               inset);
-
-    g.setColour(juce::Colours::black.withAlpha(0.32f));
-    g.drawLine(bounds.getX() + inset, bounds.getBottom() - inset, bounds.getRight() - inset,
-               bounds.getBottom() - inset, 2.5f * scale);
-    g.setColour(juce::Colours::black.withAlpha(0.18f));
-    g.drawLine(bounds.getRight() - inset, bounds.getY() + inset, bounds.getRight() - inset,
-               bounds.getBottom() - inset, 1.5f * scale);
-
-    g.setColour(juce::Colour(0x0dffffff));
-    g.drawRoundedRectangle(bounds.reduced(inset * 2.f), radius - inset * 2.f, 1.f);
-
-    g.setColour(juce::Colours::black.withAlpha(0.38f));
-    g.drawRoundedRectangle(bounds.translated(0.f, 8.f * scale).reduced(4.f, 0.f), radius, 2.f * scale);
+    g.drawLine(frame.getX() + radius * 0.35f, frame.getY() + 0.5f, frame.getRight() - radius * 0.35f,
+               frame.getY() + 0.5f, 1.f);
 }
 
 /** Frosted glass panel — blurred backdrop when provided, otherwise heavy frost fill. */

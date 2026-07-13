@@ -4,10 +4,12 @@
 #include "../HeroBackdropDrawing.h"
 #include "../ReactShellLayout.h"
 
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
 #include "../Rive/RiveHeroConfig.h"
 #if defined(MATILDA_RIVE_BACKEND_METAL)
 #include "../Rive/RiveHeroMetalView.h"
+#elif defined(MATILDA_RIVE_BACKEND_D3D)
+#include "../Rive/RiveHeroD3DView.h"
 #endif
 #include "BinaryData.h"
 #endif
@@ -34,9 +36,23 @@ juce::Rectangle<float> portraitRectInHero(float componentWidth, float portraitOf
     return { px, py, pw, ph };
 }
 
+#if defined(MATILDA_RIVE_HERO)
+
+void refreshGpuOverlay(juce::Component* overlay) {
+#if defined(MATILDA_RIVE_BACKEND_METAL)
+    if (auto* metalView = dynamic_cast<matilda::rive::RiveHeroMetalView*>(overlay))
+        metalView->refreshDisplay();
+#elif defined(MATILDA_RIVE_BACKEND_D3D)
+    if (auto* d3dView = dynamic_cast<matilda::rive::RiveHeroD3DView*>(overlay))
+        d3dView->refreshDisplay();
+#endif
+}
+
+#endif
+
 } // namespace
 
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
 
 void HeroWordmark::paint(juce::Graphics& g) {
     using namespace matilda::react;
@@ -66,19 +82,19 @@ void HeroWordmark::paint(juce::Graphics& g) {
 
 HeroCanvas::HeroCanvas() {
     setInterceptsMouseClicks(false, false);
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
     setPaintingIsUnclipped(true);
     juce::MessageManager::callAsync([this] { ensureRiveLoaded(); });
 #endif
 }
 
 void HeroCanvas::setPlaying(bool playing) {
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
     if (playing_ == playing)
         return;
     playing_ = playing;
     rive_.setPlaying(playing_);
-#if !defined(MATILDA_RIVE_BACKEND_METAL)
+#if !defined(MATILDA_RIVE_BACKEND_GPU)
     syncRiveTimer();
 #endif
     repaintPortraitArea();
@@ -87,7 +103,7 @@ void HeroCanvas::setPlaying(bool playing) {
 }
 
 void HeroCanvas::setActiveLayerCount(int count) {
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
     if (activeLayerCount_ == count)
         return;
     activeLayerCount_ = count;
@@ -97,7 +113,7 @@ void HeroCanvas::setActiveLayerCount(int count) {
     juce::ignoreUnused(count);
 }
 
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
 
 juce::Component* HeroCanvas::riveOverlayComponent() {
     return riveLoaded_ ? rive_.overlayComponent() : nullptr;
@@ -106,12 +122,12 @@ juce::Component* HeroCanvas::riveOverlayComponent() {
 #endif
 
 void HeroCanvas::resized() {
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
     updatePortraitLayout();
 #endif
 }
 
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
 
 void HeroCanvas::ensureRiveLoaded() {
     if (riveLoaded_)
@@ -131,14 +147,13 @@ void HeroCanvas::ensureRiveLoaded() {
         overlay->setBounds(portraitOverlayRect_);
         overlay->setInterceptsMouseClicks(false, false);
         overlay->toFront(false);
-        if (auto* metalView = dynamic_cast<matilda::rive::RiveHeroMetalView*>(overlay))
-            metalView->refreshDisplay();
+        refreshGpuOverlay(overlay);
     }
 
     if (onRiveOverlayChanged)
         onRiveOverlayChanged();
 
-#if !defined(MATILDA_RIVE_BACKEND_METAL)
+#if !defined(MATILDA_RIVE_BACKEND_GPU)
     syncRiveTimer();
     rive_.tick(1.f / static_cast<float>(matilda::rive::kIdleFps));
 #endif
@@ -173,7 +188,7 @@ void HeroCanvas::updatePortraitLayout() {
                                                  portraitHeightScale, portraitContentScale);
     portraitLocalRect_ = portraitRect.toNearestInt();
 
-#if defined(MATILDA_RIVE_BACKEND_METAL)
+#if defined(MATILDA_RIVE_BACKEND_GPU)
     const float maskRight = maskX + maskW;
     const float rightExtend = juce::jmax(0.f, maskRight - portraitRect.getRight());
     portraitOverlayRect_ = portraitLocalRect_;
@@ -187,10 +202,9 @@ void HeroCanvas::updatePortraitLayout() {
 
     if (auto* overlay = rive_.overlayComponent()) {
         overlay->setBounds(portraitOverlayRect_);
-#if defined(MATILDA_RIVE_BACKEND_METAL)
+#if defined(MATILDA_RIVE_BACKEND_GPU)
         overlay->toFront(false);
-        if (auto* metalView = dynamic_cast<matilda::rive::RiveHeroMetalView*>(overlay))
-            metalView->refreshDisplay();
+        refreshGpuOverlay(overlay);
 #endif
     }
 
@@ -198,7 +212,7 @@ void HeroCanvas::updatePortraitLayout() {
         onRiveOverlayChanged();
 }
 
-#if !defined(MATILDA_RIVE_BACKEND_METAL)
+#if !defined(MATILDA_RIVE_BACKEND_GPU)
 
 void HeroCanvas::syncRiveTimer() {
     if (!riveLoaded_)
@@ -226,7 +240,7 @@ void HeroCanvas::repaintPortraitArea() {
     repaint(area);
 }
 
-#if !defined(MATILDA_RIVE_BACKEND_METAL)
+#if !defined(MATILDA_RIVE_BACKEND_GPU)
 
 bool HeroCanvas::shouldDrawCgRiveFrame() const {
     return rive_.isLoaded() && rive_.hasVisibleFrame() && rive_.frameImage().isValid();
@@ -254,7 +268,7 @@ void HeroCanvas::paint(juce::Graphics& g) {
     g.reduceClipRegion(juce::Rectangle<int>(juce::roundToInt(maskX), juce::roundToInt(maskY),
                                             juce::roundToInt(maskW), juce::roundToInt(maskH)));
 
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
     using namespace matilda::rive;
     const auto portraitRect =
         portraitRectInHero(bounds.getWidth(), kPortraitOffsetX, kPortraitOffsetY, kPortraitHeightScale,
@@ -269,9 +283,8 @@ void HeroCanvas::paint(juce::Graphics& g) {
                            portraitContentScale);
 #endif
 
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
-#if defined(MATILDA_RIVE_BACKEND_METAL)
-    // No static under Metal — overlay appears on first Rive frame only.
+#if defined(MATILDA_RIVE_HERO)
+#if defined(MATILDA_RIVE_BACKEND_GPU)
     if (!riveLoaded_ && staticPortrait.isValid())
         g.drawImage(staticPortrait, portraitRect);
 #else
@@ -287,7 +300,7 @@ void HeroCanvas::paint(juce::Graphics& g) {
 
     g.restoreState();
 
-#if !(defined(MATILDA_RIVE_HERO) && defined(__APPLE__))
+#if !defined(MATILDA_RIVE_HERO)
     const int labelLeft = juce::roundToInt(kHeroLabelLeft * s);
     const int labelW = juce::roundToInt(kHeroLabelW * s);
     const int titleTop = juce::roundToInt(kHeroLabelTop * s);
