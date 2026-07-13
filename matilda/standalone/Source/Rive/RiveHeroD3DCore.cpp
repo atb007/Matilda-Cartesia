@@ -14,6 +14,7 @@
 #include "rive/renderer/d3d11/render_context_d3d_impl.hpp"
 #include "rive/renderer/render_context.hpp"
 #include "rive/renderer/rive_renderer.hpp"
+#include "rive/renderer/texture.hpp"
 #include "rive/scene.hpp"
 #include "rive/viewmodel/viewmodel_instance_boolean.hpp"
 
