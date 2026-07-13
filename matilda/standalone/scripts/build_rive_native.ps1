@@ -30,10 +30,7 @@ rive-runtime not found. Clone and checkout the pinned revision:
 }
 
 New-Item -ItemType Directory -Force -Path $RiveMatildaDir | Out-Null
-$overlayDest = Join-Path $RiveMatildaDir 'premake5.lua'
-if (-not (Test-Path $overlayDest)) {
-    Copy-Item $RiveOverlaySrc $overlayDest
-}
+Copy-Item -Force $RiveOverlaySrc (Join-Path $RiveMatildaDir 'premake5.lua')
 
 if (-not $env:MATILDA_RIVE_BACKEND -or $env:MATILDA_RIVE_BACKEND -eq '') {
     $env:MATILDA_RIVE_BACKEND = 'd3d'

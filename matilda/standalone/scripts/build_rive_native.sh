@@ -34,9 +34,7 @@ if [[ ! -x "$RIVE_BUILD_SH" && ! -f "$RIVE_BUILD_SH" ]]; then
 fi
 
 mkdir -p "$RIVE_MATILDA_DIR"
-if [[ ! -f "$RIVE_MATILDA_DIR/premake5.lua" ]]; then
-    cp "$RIVE_OVERLAY_SRC" "$RIVE_MATILDA_DIR/premake5.lua"
-fi
+cp "$RIVE_OVERLAY_SRC" "$RIVE_MATILDA_DIR/premake5.lua"
 
 if [[ -z "${MATILDA_RIVE_BACKEND:-}" ]]; then
     if [[ "$OS_NAME" == "Darwin" ]]; then

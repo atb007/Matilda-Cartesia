@@ -312,6 +312,8 @@ if(MATILDA_RIVE_HERO)
             "${MATILDA_RIVE_LIB_DIR}/libwebp.lib"
             "${MATILDA_RIVE_LIB_DIR}/zlib.lib"
             d3d11.lib
+            d3d12.lib
+            d3dcompiler.lib
             dxgi.lib
         )
         target_link_options(Matilda PUBLIC
