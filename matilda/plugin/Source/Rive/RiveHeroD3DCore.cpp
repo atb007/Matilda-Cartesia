@@ -231,12 +231,12 @@ struct D3DRiveState {
         else
             artboard->advance(deltaSeconds);
 
-        renderContext->beginFrame({
-            .renderTargetWidth = width,
-            .renderTargetHeight = height,
-            .loadAction = ::rive::gpu::LoadAction::clear,
-            .clearColor = 0,
-        });
+        ::rive::gpu::RenderContext::FrameDescriptor frameDesc;
+        frameDesc.renderTargetWidth = width;
+        frameDesc.renderTargetHeight = height;
+        frameDesc.loadAction = ::rive::gpu::LoadAction::clear;
+        frameDesc.clearColor = 0;
+        renderContext->beginFrame(frameDesc);
 
         auto renderer = std::make_unique<::rive::RiveRenderer>(renderContext.get());
         renderer->save();
@@ -253,7 +253,9 @@ struct D3DRiveState {
         artboard->draw(renderer.get());
         renderer->restore();
 
-        renderContext->flush({.renderTarget = renderTarget.get()});
+        ::rive::gpu::RenderContext::FlushResources flushResources;
+        flushResources.renderTarget = renderTarget.get();
+        renderContext->flush(flushResources);
         renderTarget->setTargetTexture(nullptr);
 
         hasFrame = true;

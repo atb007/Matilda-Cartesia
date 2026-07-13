@@ -21,8 +21,13 @@
 #include <vector>
 
 #define NOMINMAX
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0A00
+#endif
 #include <d3d11.h>
+#include <dxgi.h>
 #include <dxgi1_2.h>
+#include <wrl/client.h>
 
 namespace matilda::rive::d3d {
 
@@ -231,12 +236,12 @@ struct D3DRiveState {
         else
             artboard->advance(deltaSeconds);
 
-        renderContext->beginFrame({
-            .renderTargetWidth = width,
-            .renderTargetHeight = height,
-            .loadAction = ::rive::gpu::LoadAction::clear,
-            .clearColor = 0,
-        });
+        ::rive::gpu::RenderContext::FrameDescriptor frameDesc;
+        frameDesc.renderTargetWidth = width;
+        frameDesc.renderTargetHeight = height;
+        frameDesc.loadAction = ::rive::gpu::LoadAction::clear;
+        frameDesc.clearColor = 0;
+        renderContext->beginFrame(frameDesc);
 
         auto renderer = std::make_unique<::rive::RiveRenderer>(renderContext.get());
         renderer->save();
@@ -253,7 +258,9 @@ struct D3DRiveState {
         artboard->draw(renderer.get());
         renderer->restore();
 
-        renderContext->flush({.renderTarget = renderTarget.get()});
+        ::rive::gpu::RenderContext::FlushResources flushResources;
+        flushResources.renderTarget = renderTarget.get();
+        renderContext->flush(flushResources);
         renderTarget->setTargetTexture(nullptr);
 
         hasFrame = true;

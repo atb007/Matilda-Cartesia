@@ -6,8 +6,13 @@
 #include "rive/renderer/d3d/d3d_utils.hpp"
 
 #define NOMINMAX
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0A00
+#endif
 #include <d3d11.h>
+#include <dxgi.h>
 #include <dxgi1_2.h>
+#include <wrl/client.h>
 #include <windows.h>
 
 namespace matilda::rive {
@@ -226,8 +231,6 @@ void RiveHeroD3DView::ensureHostWindow() {
 void RiveHeroD3DView::updateSwapChainGeometry() {
     if (getWidth() <= 0 || getHeight() <= 0)
         return;
-
-    resizeViewToFit();
 
     if (hostHwnd_ != nullptr) {
         SetWindowPos(static_cast<HWND>(hostHwnd_),
