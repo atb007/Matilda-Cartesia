@@ -1,10 +1,13 @@
 #include "RiveHeroRenderer.h"
 
-#if defined(MATILDA_RIVE_HERO) && defined(__APPLE__)
+#if defined(MATILDA_RIVE_HERO)
 
-#include "RiveHeroBackendCG.h"
 #if defined(MATILDA_RIVE_BACKEND_METAL)
 #include "RiveHeroBackendMetal.h"
+#elif defined(MATILDA_RIVE_BACKEND_D3D)
+#include "RiveHeroBackendD3D.h"
+#elif defined(__APPLE__)
+#include "RiveHeroBackendCG.h"
 #endif
 
 namespace matilda::rive {
@@ -12,8 +15,12 @@ namespace matilda::rive {
 std::unique_ptr<RiveHeroBackend> createRiveHeroBackend() {
 #if defined(MATILDA_RIVE_BACKEND_METAL)
     return std::make_unique<RiveHeroBackendMetal>();
-#else
+#elif defined(MATILDA_RIVE_BACKEND_D3D)
+    return std::make_unique<RiveHeroBackendD3D>();
+#elif defined(__APPLE__)
     return std::make_unique<RiveHeroBackendCG>();
+#else
+    return nullptr;
 #endif
 }
 

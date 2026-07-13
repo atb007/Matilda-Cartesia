@@ -323,11 +323,11 @@ if(MATILDA_RIVE_HERO)
             d3d11.lib
             dxgi.lib
         )
-        target_link_options(Matilda PRIVATE
+        target_link_options(Matilda PUBLIC
             "/WHOLEARCHIVE:${MATILDA_RIVE_LIB_DIR}/rive_pls_renderer.lib"
             "/WHOLEARCHIVE:${MATILDA_RIVE_LIB_DIR}/rive_decoders.lib"
             "/WHOLEARCHIVE:${MATILDA_RIVE_LIB_DIR}/rive.lib"
         )
     endif()
-    target_link_libraries(Matilda PRIVATE ${MATILDA_RIVE_LIBS})
+    target_link_libraries(Matilda PUBLIC ${MATILDA_RIVE_LIBS})
 endif()
