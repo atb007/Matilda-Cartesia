@@ -86,14 +86,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Harfbuzz (Rive dependency) has very long test filenames; default Windows paths fail checkout.
+      - name: Enable Windows long paths for Git
+        shell: pwsh
+        run: |
+          git config --global core.longpaths true
+          git config --system core.longpaths true
+          New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
+            -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+
       - name: Build Rive native runtime (Windows)
         working-directory: matilda/standalone
         shell: pwsh
         run: |
           $RIVE_PIN = (Get-Content RIVE_RUNTIME_PIN -Raw).Trim()
-          git clone https://github.com/rive-app/rive-runtime.git third_party/rive-runtime
+          git -c core.longpaths=true clone https://github.com/rive-app/rive-runtime.git third_party/rive-runtime
           Set-Location third_party/rive-runtime
-          git checkout $RIVE_PIN
+          git -c core.longpaths=true checkout $RIVE_PIN
           Set-Location ../..
           $env:MATILDA_RIVE_BACKEND = 'd3d'
           ./scripts/build_rive_native.ps1
@@ -173,11 +182,11 @@ jobs:
             ### macOS
             - **VST3:** unzip `Matilda-macOS-vst3.zip` → copy `Matilda.vst3` to `~/Library/Audio/Plug-Ins/VST3/`
             - **Standalone:** unzip `Matilda-macOS-standalone.zip` → open `Matilda.app` (Apple Silicon / arm64)
-            - Universal binary (Apple Silicon + Intel) for **VST3 only**
+            - **VST3 + Standalone:** arm64 (Apple Silicon) when Rive hero is enabled
 
             ### Windows (FL Studio, etc.)
             - **VST3:** unzip `Matilda-Windows-vst3.zip` → copy `Matilda.vst3` to `C:\Program Files\Common Files\VST3\`
             - **Standalone:** unzip `Matilda-Windows-standalone.zip` → run `Matilda.exe`
             - Rescan plugins in your DAW after copying the VST3 folder
 
-            Matilda is a **MIDI effect** — insert before your instrument in the chain.
+            Matilda is a **silent instrument** — use Fruity Wrapper in FL Studio (see release notes).

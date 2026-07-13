@@ -6,6 +6,9 @@
 #   cg    — CPU CoreGraphics fallback (macOS only)
 $ErrorActionPreference = 'Stop'
 
+# Windows CI needs this before rive-runtime fetches harfbuzz (very long test paths).
+git config --global core.longpaths true 2>$null
+
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $StandaloneDir = Resolve-Path (Join-Path $ScriptDir '..')
 $RiveRuntimeDir = Join-Path $StandaloneDir 'third_party/rive-runtime'
