@@ -65,7 +65,10 @@ struct D3DRiveState {
             return true;
 
         if (factory == nullptr) {
-            if (!succeeded(CreateDXGIFactory2(0, IID_PPV_ARGS(&factory))))
+            Microsoft::WRL::ComPtr<IDXGIFactory1> factory1;
+            if (!succeeded(CreateDXGIFactory(IID_PPV_ARGS(&factory1))))
+                return false;
+            if (!succeeded(factory1.As(&factory)))
                 return false;
         }
 

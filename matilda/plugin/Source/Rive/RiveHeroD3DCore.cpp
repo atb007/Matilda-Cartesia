@@ -21,8 +21,13 @@
 #include <vector>
 
 #define NOMINMAX
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0A00
+#endif
 #include <d3d11.h>
+#include <dxgi.h>
 #include <dxgi1_2.h>
+#include <wrl/client.h>
 
 namespace matilda::rive::d3d {
 
@@ -60,7 +65,10 @@ struct D3DRiveState {
             return true;
 
         if (factory == nullptr) {
-            if (!succeeded(CreateDXGIFactory2(0, IID_PPV_ARGS(&factory))))
+            Microsoft::WRL::ComPtr<IDXGIFactory1> factory1;
+            if (!succeeded(CreateDXGIFactory(IID_PPV_ARGS(&factory1))))
+                return false;
+            if (!succeeded(factory1.As(&factory)))
                 return false;
         }
 
