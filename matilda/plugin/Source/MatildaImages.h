@@ -34,4 +34,7 @@ juce::Image knobSphere();
 juce::Image knobColoredGloss(knob::Variant variant, bool gateOn);
 juce::Image knobStageGlow();
 
+juce::Image stepScrollVine();
+juce::Image stepScrollCrystal(int layer);
+
 } // namespace matilda::images

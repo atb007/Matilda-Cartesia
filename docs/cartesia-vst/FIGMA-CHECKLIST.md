@@ -23,7 +23,7 @@ Use this doc as your Figma build order. Check off components as you ship them.
 | `4976:4729` Frame | `ShellFrameOverlay` | `shell-frame-vines-only.png` + `@2x` |
 | `5001:5572` metal strips | — | **Removed** per design tweak |
 
-**Deferred:** nine-slice vines border · **Rive** animated portrait (hair/body + state machine) — see `MILESTONES.md` §Future enhancements.
+**Deferred:** nine-slice vines border. **Rive** portrait is shipped (Metal/D3D v3) — see `RIVE_ANIMATION_RULEBOOK.md`.
 
 ---
 
@@ -142,7 +142,7 @@ Grotesque character, harsh contrast, joke UI copy, unreadable control placement,
 
 | Token | Duration | Easing | Use |
 |-------|----------|--------|-----|
-| `motion/breathe` | 3.2 s loop | sine | Idle hero — **future Rive** hair/body state |
+| `motion/breathe` | 3.2 s loop | sine | Idle hero — Rive v3 idle / layer glow bindings |
 | `motion/collapse` | 380 ms | cubic-bezier(0.4,0,0.2,1) | Hero panel expand/collapse ✅ |
 | `motion/playhead` | 120 ms | ease-out | Cell highlight move |
 | `motion/modal-in` | 220 ms | ease-out | Sheet open |
@@ -381,9 +381,16 @@ Defer until Phase B+:
 
 - Independent X/Y/Z clock strips
 - Global wobble macro · probability modal
-- Polyphony UI (`poly_voices` reserved in schema)
 - Mod matrix · Teleiso script · preset browser
 - Play on transport (field exists; UI deferred)
+
+**Frozen in standalone (Jul 15, 2026) — port to plugin / Windows VST3 still open:**
+
+- Polyphony crown UI + `polyphony` patch flag ([5171:102837](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=5171-102837))
+- Per-layer step-count vine
+- Mini-grid layer copy/paste/reset menu (reset = gates on)
+- Preset bar ([5193:102814](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=5193-102814)) — dirty `*`, native Save, user library
+- Rive v3 hero + Metal wordmark compositing
 
 ---
 
@@ -404,4 +411,4 @@ Defer until Phase B+:
 
 ---
 
-*Matilda · Figma checklist v2 · pairs with `SPEC.md`, `DESIGN.md`, `matilda/`*
+*Matilda · Figma checklist v2 · pairs with `SPEC.md`, `DESIGN.md`, `matilda/` · standalone freeze Jul 15, 2026*

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 
 # Matilda Standalone-only codebase (forked from plugin v1.0.2, before DAW-coupling regressions).
 # Kept independent from matilda/plugin so the macOS standalone app stays known-good.
-project(MatildaStandalone VERSION 1.0.11 LANGUAGES C CXX)
+project(MatildaStandalone VERSION 1.0.12 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -81,6 +81,12 @@ set(MATILDA_ASSET_SOURCES
         ../assets/ui/figma/crystal-amber.png
         ../assets/ui/figma/play-button.png
         ../assets/ui/figma/gem-knob-glow.png
+        # Step scroll vine (Figma stepScroll)
+        ../assets/ui/stepscroll/vine-track.png
+        ../assets/ui/stepscroll/crystal-orange.png
+        ../assets/ui/stepscroll/crystal-red.png
+        ../assets/ui/stepscroll/crystal-green.png
+        ../assets/ui/stepscroll/crystal-blue.png
         # Main grid knob (Figma 4921:102056) — shared ring/sphere + per-layer gloss
         ../assets/ui/knob/orange/OuterRing2x.png
         ../assets/ui/knob/orange/DarkSpehere2x.png
@@ -144,11 +150,14 @@ set(MATILDA_ASSET_SOURCES
         ../../cartesia-vst-ui/public/assets/scale-arrow-right.svg
         # Default Patch v2 preset
         ../presets/default.layer1.json
+        # Preset bar icons (Figma 5193:102814)
+        ../assets/ui/presets/preset-save.svg
+        ../assets/ui/presets/preset-chevrons.svg
 )
 
 if(MATILDA_RIVE_HERO)
     list(APPEND MATILDA_ASSET_SOURCES
-        ../../cartesia-vst-ui/public/assets/matilda-cartesia-v2.riv
+        ../../cartesia-vst-ui/public/assets/matilda-cartesia-v3.riv
     )
 endif()
 
@@ -173,6 +182,9 @@ target_sources(Matilda
         Source/Components/TransportBar.cpp
         Source/Components/MovementSelector.cpp
         Source/Components/StepPathStrip.cpp
+        Source/Components/StepScroll.cpp
+        Source/Components/PolyphonyCrown.cpp
+        Source/Components/PresetBar.cpp
         Source/Components/MatildaShellPanel.cpp
         Source/Components/ShellChrome.cpp
         Source/Components/HeroCanvas.cpp
@@ -181,6 +193,7 @@ target_sources(Matilda
         Source/Components/CollapseToggle.cpp
         Source/Engine/SequencerEngine.cpp
         Source/Engine/PatchStore.cpp
+        Source/Engine/PresetLibrary.cpp
 )
 
 if(MATILDA_RIVE_HERO)

@@ -182,4 +182,17 @@ juce::Image knobStageGlow() {
     return load(BinaryData::gemknobglow_png, BinaryData::gemknobglow_pngSize);
 }
 
+juce::Image stepScrollVine() {
+    return load(BinaryData::vinetrack_png, BinaryData::vinetrack_pngSize);
+}
+
+juce::Image stepScrollCrystal(int layer) {
+    switch (layer & 3) {
+        case 1: return load(BinaryData::crystalred_png, BinaryData::crystalred_pngSize);
+        case 2: return load(BinaryData::crystalgreen_png, BinaryData::crystalgreen_pngSize);
+        case 3: return load(BinaryData::crystalblue_png, BinaryData::crystalblue_pngSize);
+        default: return load(BinaryData::crystalorange_png, BinaryData::crystalorange_pngSize);
+    }
+}
+
 } // namespace matilda::images

@@ -3,14 +3,14 @@
 namespace matilda::rive {
 
 /** Shared Rive hero settings — keep in sync with cartesia-vst-ui/src/riveConfig.ts and docs/RIVE_ANIMATION_RULEBOOK.md */
-inline constexpr const char* kRiveAssetVersion = "v2";
+inline constexpr const char* kRiveAssetVersion = "v3";
 inline constexpr const char* kArtboard = "Artboard";
 inline constexpr const char* kViewModel = "HairStreaksTrimControl";
 inline constexpr const char* kPlayBoolean = "streakVisible";
 inline constexpr const char* kBodyStreakBoolean = "bodyStreak";
 inline constexpr const char* kBodyGlowBoolean = "bodyGlow";
 inline constexpr const char* kFaceGlowVisBoolean = "faceGlowVis";
-inline constexpr const char* kFaceStreakVisBoolean = "faceStreakVIs";
+inline constexpr const char* kFaceStreakVisBoolean = "faceStreakVis";
 
 /** Same box as static PNG / React MatildaRivePortrait (bottom-left anchor in mask space). */
 inline constexpr float kPortraitOffsetX = 20.f;

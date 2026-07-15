@@ -15,6 +15,7 @@ public:
     bool loadFromMemory(const void* data, size_t numBytes);
     void setPlaying(bool playing);
     void setActiveLayerCount(int count);
+    void setPolyphony(bool enabled);
     void setContentAlignSize(uint32_t width, uint32_t height);
 
     [[nodiscard]] bool isLoaded() const;

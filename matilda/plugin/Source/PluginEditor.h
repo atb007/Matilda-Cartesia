@@ -11,6 +11,9 @@
 #include "Components/MatildaShellPanel.h"
 #include "Components/NativePluginFrame.h"
 #include "Components/UiResizeGrip.h"
+#include "Components/StepScroll.h"
+#include "Components/PolyphonyCrown.h"
+#include "Components/PresetBar.h"
 #include "UiScale.h"
 #include <array>
 
@@ -30,8 +33,11 @@ private:
     LayerOverview     overview_{ processor_.patch(), laf_ };
     MovementSelector  movement_{ processor_.patch(), laf_ };
     GemGrid           grid_{ processor_.engine(), laf_ };
+    StepScroll        stepScroll_{ processor_.patch(), laf_ };
+    PolyphonyCrown    polyphonyCrown_{ processor_.patch(), laf_ };
+    PresetBar         presetBar_{ processor_.patch(), laf_ };
     MatildaShellPanel shell_{ processor_.patch(), processor_.engine(), laf_, transport_, quantise_,
-                              overview_, movement_, grid_ };
+                              overview_, movement_, grid_, stepScroll_, polyphonyCrown_, presetBar_ };
     NativePluginFrame frame_{ shell_ };
 
     juce::Label bpmLabel_{"", "120 BPM"};

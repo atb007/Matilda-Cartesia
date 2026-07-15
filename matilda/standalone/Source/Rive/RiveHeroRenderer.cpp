@@ -48,6 +48,11 @@ void RiveHeroRenderer::setActiveLayerCount(int count) {
         backend_->setActiveLayerCount(count);
 }
 
+void RiveHeroRenderer::setPolyphony(bool enabled) {
+    if (backend_ != nullptr)
+        backend_->setPolyphony(enabled);
+}
+
 void RiveHeroRenderer::setDisplayRect(juce::Rectangle<int> rect) {
     if (backend_ != nullptr)
         backend_->setDisplayRect(rect);

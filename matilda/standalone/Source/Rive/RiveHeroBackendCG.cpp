@@ -101,11 +101,11 @@ struct RiveHeroBackendCG::Impl {
         return true;
     }
 
-    void applyDataBindings(bool playing, int activeLayerCount) {
+    void applyDataBindings(bool playing, int activeLayerCount, bool polyphony) {
         if (streakVisible != nullptr)
             streakVisible->propertyValue(playing);
 
-        const auto glow = layerGlowForTransport(playing, activeLayerCount);
+        const auto glow = layerGlowForTransport(playing, activeLayerCount, polyphony);
         if (bodyStreak != nullptr)
             bodyStreak->propertyValue(glow.bodyStreak);
         if (bodyGlow != nullptr)
@@ -116,8 +116,8 @@ struct RiveHeroBackendCG::Impl {
             faceStreakVis->propertyValue(glow.faceStreakVis);
     }
 
-    void applyPlaying(bool playing, int activeLayerCount) {
-        applyDataBindings(playing, activeLayerCount);
+    void applyPlaying(bool playing, int activeLayerCount, bool polyphony) {
+        applyDataBindings(playing, activeLayerCount, polyphony);
     }
 
     void renderFrame() {
@@ -222,7 +222,7 @@ bool RiveHeroBackendCG::loadFromMemory(const void* data, size_t numBytes) {
     if (impl_->scene != nullptr && impl_->viewModelInstance != nullptr)
         impl_->scene->bindViewModelInstance(impl_->viewModelInstance);
 
-    impl_->applyPlaying(false, activeLayerCount_);
+    impl_->applyPlaying(false, activeLayerCount_, polyphony_);
     if (impl_->scene != nullptr)
         impl_->scene->advanceAndApply(0.f);
     else
@@ -235,12 +235,17 @@ bool RiveHeroBackendCG::loadFromMemory(const void* data, size_t numBytes) {
 
 void RiveHeroBackendCG::setPlaying(bool playing) {
     playing_ = playing;
-    impl_->applyPlaying(playing_, activeLayerCount_);
+    impl_->applyPlaying(playing_, activeLayerCount_, polyphony_);
 }
 
 void RiveHeroBackendCG::setActiveLayerCount(int count) {
     activeLayerCount_ = count;
-    impl_->applyPlaying(playing_, activeLayerCount_);
+    impl_->applyPlaying(playing_, activeLayerCount_, polyphony_);
+}
+
+void RiveHeroBackendCG::setPolyphony(bool enabled) {
+    polyphony_ = enabled;
+    impl_->applyPlaying(playing_, activeLayerCount_, polyphony_);
 }
 
 void RiveHeroBackendCG::setDisplayRect(juce::Rectangle<int> rect) {
@@ -269,7 +274,7 @@ bool RiveHeroBackendCG::tick(float deltaSeconds) {
     if (impl_->ctx == nullptr)
         return false;
 
-    impl_->applyPlaying(playing_, activeLayerCount_);
+    impl_->applyPlaying(playing_, activeLayerCount_, polyphony_);
     impl_->artboard->advance(0.f);
 
     if (impl_->scene != nullptr)

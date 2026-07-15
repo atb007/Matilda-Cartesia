@@ -70,21 +70,33 @@ No film-strip metal bars (removed per Figma tweak). Target shipping window sizes
 - Click an **activated** layer's array → **selected layer**; main 4×4 shows that layer's cells. Hit boxes are invisible (no outline stroke) but keep the same click target.
 - Inactive arrays are not selectable.
 - **Edit while playing:** selected grid can differ from currently **playing** layer; playhead shows on **playing** layer’s mini grid (+ main grid when selected = playing).
-- **Mini/main playhead sync:** The playhead uses the **same step index** (0…15, row-major: left → right, then next row) on the main 4×4 grid and the **playing** layer’s mini-grid cell (column-major layout in the draped array — index remapped). The mini-grid gem switches to the Figma **on** asset at the playhead step; main grid LED pill lights in parallel. **Gate-off cells** stay dim on both — no mini-grid on-state or LED at that step.
-- **Per-layer cell state:** Gate, note, trigger-prob, and jitter settings belong to **one cell index on one layer only**; switching the edited layer shows that layer’s own 16-cell data (no copy across layers).
+- **Mini/main playhead sync:** Playhead UI (mini-grid + main 4×4 LED) shows the **last fired** step — the same index used for MIDI emission (`SequencerEngine::lastStepIndex` / poly `lastTickResults`). Do **not** light from live `layer.stepIndex` after `advancePath` (that is the *next* cell and causes one-ahead lights + handoff glitches). Index space is 0…15 row-major on the main grid; mini-grid remaps to column-major for the draped array. **Gate-off cells** stay dim on both — no mini-grid on-state or LED at that step. Sequential pass: cells **1→N** then next active layer from **1**. Play/resume after stop: `engine_.reset()` then first tick fires cell 1.
+- **Per-layer cell state:** Gate, note, trigger-prob, and jitter settings belong to **one cell index on one layer only**; switching the edited layer shows that layer’s own cell data.
+- **Copy / paste / reset (standalone — mini-grid only):** Right-click a layer body in the **layer overview** for a glass context menu. Copy/paste transfers **visible steps** only (`active_step_count`, 1…16), including gate-off cells. Modes: notes only · notes + mini-knobs. Paste overrides those steps on the target, sets the target’s step count to the clipboard length, and **activates** an inactive target. Reset (active layers only) clears all 16 cells (**gates on**, degree 0 / note defaults, mini-knobs disarmed). In-memory undo stack for paste/reset. Floater feedback: Copied / Pasted / Reset / Undo. Does **not** copy movement mode.
 
-### Playback — sequential (v1)
+### Playback — sequential (default) vs polyphony
 
 ```text
-For each active layer in order (1 → 2 → 3 → 4):
-  Run that layer’s movement through 16 steps (respecting gates)
-  Then advance to next active layer
-Loop
+Polyphony OFF (default):
+  For each active layer in order (1 → 2 → 3 → 4):
+    Run that layer’s movement through its active_step_count steps (respecting gates)
+    Then advance to next active layer
+  Loop
+
+Polyphony ON (standalone — crown toggle):
+  All active layers advance and may fire on the same clock tick
+  Mini-grid shows per-layer playheads; main 4×4 playhead = selected layer only
 ```
 
-- **Mono output** — one note at a time; **no polyphony** in v1 (schema reserves `poly_voices` for future).
-- **v1 implementation order:** Layer 1 engine + UI first, then layers 2–4.
-- **Multi-layer playhead (engine — M9, not UI demo):** When layers 2–4 are active, the playhead finishes layer 1’s 16 steps (per that layer’s movement mode), then continues on the next active layer — not a single shared step counter across layers. Forward / reverse / ping-pong / etc. all affect *when* the hand-off happens. The current UI demo only animates the **selected** layer’s grid; full sequencing is owned by the arp engine.
+- **Default:** polyphony **off**; persisted as `polyphony` in patch JSON.
+- **Crown UI:** discoverable when **≥ 2** layers active; idle = soft white frontGlow pulse; on = morphing hue bloom (union metallic gem omitted — glow-only). Dropping to 1 active layer fades the crown out. Figma: `glowPolyphony` ([5171:102837](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=5171-102837)).
+- **v1 implementation order:** Layer 1 engine + UI first, then layers 2–4 (done in JUCE).
+- **Multi-layer playhead:** Sequential mode hands off after each layer’s path; poly mode ticks all active layers together. Main grid always shows the **selected** layer.
+
+### Per-layer step count (standalone)
+
+- Each layer has `active_step_count` (1…16, default 16). Engine loop / path length uses this count (supports polyrhythms across layers).
+- **UI:** vine / diamond **step scroll** under the main 4×4 (`StepScroll`). Snap points at 4 / 8 / 12 / 16; smooth between. Out-of-range cells hidden on main grid + mini-grid.
 
 ---
 
@@ -201,7 +213,8 @@ Layer:
   active: bool
   movement: MovementMode
   random_skip_prob: float     # for random_skip mode
-  step_index: int             # 0..15
+  active_step_count: int      # 1..16 pattern length (standalone UI: step scroll)
+  step_index: int             # 0..active_step_count-1 (runtime)
   step_dir: int               # +1 / -1 for ping-pong/pendulum
   cells[4][4]: Cell
 
@@ -212,9 +225,10 @@ Patch:
   master_division
   play_mode, play_on_transport
   selected_layer: int         # 0..3 editor focus
+  polyphony: bool             # standalone: simultaneous active-layer ticks (default false)
   layers[4]: Layer
   seed: optional int
-  poly_voices: int            # reserved, default 1
+  poly_voices: int            # reserved legacy field; prefer `polyphony` bool for layer simultaneity
 ```
 
 Preset JSON: `matilda/presets/*.json`
@@ -227,28 +241,69 @@ Preset JSON: `matilda/presets/*.json`
 
 | In | Out |
 |----|-----|
-| Layer 1 sequential playback | Polyphony |
-| 6 movement modes | X/Y/Z independent clock UI |
-| Cell gate, trigger prob, jitter, octave offset | Global wobble macro |
-| Quantise panel + tonic-relative min/max | Mod matrix |
-| Layer overview activate + mini-grid edit selection | Full 4-layer engine (UI ready) |
-| Playhead lighting (Cartesia) | AUv3 iOS |
-| Preset JSON v2 | Teleiso script |
+| Layer 1 sequential playback | X/Y/Z independent clock UI |
+| 6 movement modes | Global wobble macro |
+| Cell gate, trigger prob, jitter, octave offset | Mod matrix |
+| Quantise panel + tonic-relative min/max | Teleiso script |
+| Layer overview activate + mini-grid edit selection | AUv3 iOS |
+| Playhead lighting (Cartesia) | |
+| Preset JSON v2 | |
 
-### v1.1 — All layers sequential
+### v1.1 — All layers + standalone enhancements (Jul 2026)
 
-- Layers 2–4 engine + mini grid playheads
-- Per-layer movement in dropdown when switching edited layer (mini-grid selection)
+| In | Notes |
+|----|-------|
+| Layers 2–4 sequential engine + mini playheads | Shipped in JUCE |
+| Per-layer movement when switching edited layer | Mini-grid selection |
+| **Polyphony** (simultaneous active layers) | Standalone crown toggle; patch `polyphony` |
+| **Per-layer step count** | Vine step scroll; `active_step_count` |
+| **Layer copy / paste / reset / undo** | Mini-grid right-click only |
+| Frosted shell glass + glow-only polyphony crown | Standalone UI |
 
 ### Phase B
 
 - Independent XYZ clock divisions
 - Play on transport · MIDI play modes
-- Randomize modal · preset browser
+- Randomize modal
+- Port standalone-only UI (poly crown, step scroll, layer clipboard, presets) into `matilda/plugin/` when ready
 
-### Future UI (post-M8b — not in v1 scope)
+### Standalone presets (Jul 2026)
 
-- **Rive hero animation** — animated Matilda hair/body via Rive state machine; inputs driven by transport/playback/collapse scenarios. `HeroCanvas` portrait slot stays swappable (static PNG today). See `MILESTONES.md` §Future enhancements.
+- **UI:** Figma `PresetModule` ([5193:102814](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=5193-102814)) — name dropdown + save; dirty `*` suffix.
+- **Library:** `~/Library/Application Support/IdeasLab/Matilda/presets/` (macOS) / `%AppData%\IdeasLab\Matilda\presets\` (Windows); seed `Init.json` on first launch.
+- **Save:** native Save dialog every time (unlimited files). Dropdown shows max **10** rows (scroll for more).
+- **Load:** full patch replace; **BPM + transport play/stop preserved**.
+
+### Mini-grid RESET VALUES
+
+- Clears the layer’s cells to **gate on**, **degree 0** (lowest), default velocity/knob fields — not gated-off empties.
+
+---
+
+## Windows VST3 port status (post–v1.0.11)
+
+Shipped / polished in **`matilda/standalone/`** and ported into **`matilda/plugin/`** on Jul 16, 2026. Local macOS VST3/AU build passes; final Windows VST3 package still needs Windows/CI validation.
+
+| # | Enhancement | Standalone status | Windows VST3 notes |
+|---|-------------|-------------------|--------------------|
+| 1 | **Rive hero v3** (`matilda-cartesia-v3.riv`) | ✅ source port | D3D path present; validate Windows artifact |
+| 2 | **Wordmark above GPU** (`CALayer` / peer-safe) | ✅ source port | Metal layer path done; D3D sibling path builds |
+| 3 | **`faceStreakVis` ← polyphony ∧ ≥2 layers + transport** | ✅ source port | Uses `setPolyphony` + layer count; off with a single active layer |
+| 4 | **Polyphony crown + engine** | ✅ source port | `PolyphonyCrown`, `PatchState::polyphony`, poly tick path |
+| 5 | **Per-layer step scroll** | ✅ source port | `StepScroll` + `active_step_count` |
+| 6 | **Layer clipboard menu** (copy/paste/reset/undo) | ✅ source port | Mini-grid right-click; reset = gate-on / degree 0 |
+| 7 | **Frosted shell glass** | ✅ source port | `ShellChrome` frost; shell is non-opaque |
+| 8 | **Presets bar + user library** | ✅ source port | `PresetBar` / `PresetLibrary` (AppData presets folder + Init seed) |
+| 9 | **Playhead UI = last fired step** | ✅ source port | Uses `lastStepIndex` / tick results — not post-advance `currentStepIndex` |
+
+**Already in v1.0.11 Windows VST3:** glass dropdown polish, FL Fruity Wrapper instrument mode, DAW sync / MIDI out (as of that release). Do not re-port those unless regressions appear.
+
+**Standalone freeze:** Jul 15, 2026 — see [MILESTONES — Standalone freeze](./MILESTONES.md#standalone-freeze--jul-15-2026).
+
+### Shipped UI (hero)
+
+- **Rive hero** — macOS Metal / Windows D3D native runtime; play + layer-count view-model bindings. Static PNG until first GPU frame. See `matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md`.
+- **Wordmark above Rive (Metal)** — `CALayer` on the Metal host above `CAMetalLayer` (`RiveHeroMetalView::setWordmarkOverlay`). Version label: `Cartesia - v` + `JucePlugin_VersionString`.
 
 ---
 
@@ -257,14 +312,18 @@ Preset JSON: `matilda/presets/*.json`
 | Path | Role |
 |------|------|
 | `matilda/` | Product root, assets, presets, JUCE plugin target |
-| `matilda/plugin/` | JUCE sources (Phase 0) |
+| `matilda/plugin/` | JUCE VST3 + AU |
+| `matilda/standalone/` | JUCE Standalone (ahead on Jul 2026 UI) |
 | `cartesia/model.py` | v2 Patch schema |
 | `cartesia/engine.py` | Stepping engine (migration in progress) |
 | `live_cartesia.py` | Python MIDI prototype CLI |
 | `cartesia-vst-ui/` | React + TS UI prototype — **M1–M8b complete** |
 | `cartesia-vst-ui/src/components/MatildaPluginFrame.tsx` | Full window: hero + collapse + shell |
 | `cartesia-vst-ui/src/components/MatildaShell.tsx` | Control cluster assembly (M8) |
-| `cartesia-vst-ui/src/components/HeroCanvas.tsx` | Starfield, portrait, wordmark (Rive-ready slot) |
+| `cartesia-vst-ui/src/components/HeroCanvas.tsx` | Starfield, portrait, wordmark (web / design ref) |
+| `matilda/*/Source/Components/HeroCanvas.cpp` | Native hero + Rive load |
+| `matilda/*/Source/Rive/RiveHeroMetalView.mm` | Metal host + wordmark `CALayer` |
+| `matilda/*/Source/Components/HeroWordmarkDrawing.h` | Shared Jacquard wordmark paint |
 | `cartesia-vst-ui/src/heroLayout.ts` | Expand/collapse layout constants |
 | `gridwalker/` | Legacy sandbox — reference only |
 
@@ -272,13 +331,15 @@ Preset JSON: `matilda/presets/*.json`
 
 ## Success criteria (v1)
 
-1. Layer 1 Forward walks 16 cells top-left → bottom-right; playhead lights match Cartesia.
-2. Hard gate off → dim gem; mini grid dot does not light on that step.
+1. Layer 1 Forward walks 16 cells top-left → bottom-right; playhead lights match the sounding cell (last fired step).
+2. Hard gate off → dim gem; mini grid does not light on that step.
 3. Orange ▲ at 50% thins triggers without breaking step clock.
 4. Green ● wobble audible; octave offset shifts base pitch (C3 + 2 oct → C5).
 5. Tonic change updates Min/Max labels; degrees unchanged.
-6. Preset save/load restores grid + movement + layer active flags.
+6. Preset save/load restores grid + movement + layer active flags (standalone: BPM/transport preserved on load).
+7. Sequential handoff: finish layer N at last visible step, next layer lights/sounds from step 1.
+8. Stop then play: clean restart from cell 1 (audio + UI).
 
 ---
 
-*Spec v2 · aligned with Figma Matilda · UI shell M8b complete Jun 2026*
+*Spec v2 · aligned with Figma Matilda · UI shell M8b Jun 2026 · standalone freeze Jul 15, 2026*

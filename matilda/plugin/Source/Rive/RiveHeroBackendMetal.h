@@ -15,6 +15,7 @@ public:
     bool loadFromMemory(const void* data, size_t numBytes) override;
     void setPlaying(bool playing) override;
     void setActiveLayerCount(int count) override;
+    void setPolyphony(bool enabled) override;
     void setDisplayRect(juce::Rectangle<int> rect) override;
     void setContentAlignRect(juce::Rectangle<int> rect) override;
     bool tick(float deltaSeconds) override;

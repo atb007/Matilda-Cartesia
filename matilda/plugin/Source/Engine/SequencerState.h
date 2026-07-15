@@ -41,10 +41,16 @@ struct LayerState {
     int stepDir = 1;
     int stepsOnLayer = 0;
     int pathHold = 0;
+    /** Pattern length for this layer (1…16). Cells beyond this are inactive. */
+    int activeStepCount = kGridSize * kGridSize;
     std::vector<int> randomBag;
     int randomBagPos = 0;
     std::array<std::array<CellState, kGridSize>, kGridSize> cells{};
 };
+
+inline int clampActiveStepCount(int count) {
+    return juce::jlimit(1, kGridSize * kGridSize, count);
+}
 
 struct PatchState {
     juce::String root = "C";
@@ -55,6 +61,8 @@ struct PatchState {
     double masterDivision = 1.0 / 16.0;
     int selectedLayer = 0;
     PlayMode playMode = PlayMode::Transport;
+    /** When true, all active layers advance and can fire together. */
+    bool polyphony = false;
     std::array<LayerState, kLayerCount> layers{};
 };
 

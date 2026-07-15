@@ -4,7 +4,7 @@
 
 namespace matilda::rive {
 
-/** Layer-driven glow/streak booleans — only applied while transport is playing. */
+/** Glow/streak booleans — only applied while transport is playing. */
 struct LayerGlowState {
     bool bodyStreak = false;
     bool bodyGlow = false;
@@ -12,17 +12,19 @@ struct LayerGlowState {
     bool faceStreakVis = false;
 };
 
-inline LayerGlowState layerGlowFromActiveCount(int activeLayerCount) {
+inline LayerGlowState layerGlowFromInputs(int activeLayerCount, bool polyphony) {
     LayerGlowState s;
     s.bodyGlow = activeLayerCount >= 2;
     s.faceGlowVis = activeLayerCount >= 2;
     s.bodyStreak = activeLayerCount >= 3;
-    s.faceStreakVis = activeLayerCount >= 4;
+    // faceStreakVis — polyphony only meaningful with ≥2 active layers (same as crown).
+    // Cleared when paused via layerGlowForTransport.
+    s.faceStreakVis = polyphony && activeLayerCount >= 2;
     return s;
 }
 
-inline LayerGlowState layerGlowForTransport(bool playing, int activeLayerCount) {
-    return playing ? layerGlowFromActiveCount(activeLayerCount) : LayerGlowState{};
+inline LayerGlowState layerGlowForTransport(bool playing, int activeLayerCount, bool polyphony) {
+    return playing ? layerGlowFromInputs(activeLayerCount, polyphony) : LayerGlowState{};
 }
 
 } // namespace matilda::rive

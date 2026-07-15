@@ -4,6 +4,7 @@
 #include "Engine/SequencerEngine.h"
 #include "Engine/PatchStore.h"
 #include "UiScale.h"
+#include <array>
 
 class MatildaAudioProcessor : public juce::AudioProcessor,
                               public juce::ChangeBroadcaster,
@@ -94,6 +95,7 @@ private:
     double userBpm_ = kFallbackBpm;
     int externalTempoHoldBlocks_ = 0;
     int activeNote_ = -1;
+    std::array<int, matilda::kLayerCount> activeNotesPerLayer_{ -1, -1, -1, -1 };
     bool sequencerWasRunning_ = false;
     bool hostWasPlaying_ = false;
     bool pendingBeatStart_ = false;
@@ -130,6 +132,7 @@ private:
     void panicNotes(juce::MidiBuffer& midi, int samplePos);
     void sendNoteOff(juce::MidiBuffer& midi, int note, int samplePos);
     void emitStepNote(juce::MidiBuffer& midi, int samplePos);
+    void emitLayerNote(juce::MidiBuffer& midi, int layer, int step, int samplePos);
     void advanceSequencerStep(juce::MidiBuffer& midi, int samplePos);
     void handleTransportMidi(const juce::MidiBuffer& incoming, juce::MidiBuffer& outgoing);
     void processSequencer(juce::MidiBuffer& midi, int numSamples);

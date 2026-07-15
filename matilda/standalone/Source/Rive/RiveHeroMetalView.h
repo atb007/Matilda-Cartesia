@@ -16,6 +16,14 @@ public:
     void attachRiveBytes(const void* data, size_t numBytes);
     void refreshDisplay();
 
+    /**
+     * Wordmark drawn as a CALayer above CAMetalLayer (same NSView).
+     * Peer-sibling NSViews lose z-order when resizeViewToFit re-attaches Metal.
+     * boundsInOverlay is in this component's local coordinates.
+     */
+    void setWordmarkOverlay(const juce::Image& image, juce::Rectangle<int> boundsInOverlay);
+    void clearWordmarkOverlay();
+
     [[nodiscard]] bool isRiveReady() const { return riveReady_; }
     [[nodiscard]] bool hasRenderedFrame() const { return hasRenderedFrame_; }
 

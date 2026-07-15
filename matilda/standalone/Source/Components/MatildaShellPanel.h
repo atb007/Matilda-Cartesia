@@ -8,6 +8,9 @@
 #include "LayerOverview.h"
 #include "MovementSelector.h"
 #include "GemGrid.h"
+#include "StepScroll.h"
+#include "PolyphonyCrown.h"
+#include "PresetBar.h"
 #include "TransportBar.h"
 
 class MatildaLookAndFeel;
@@ -25,7 +28,10 @@ public:
                       QuantisePanel& quantise,
                       LayerOverview& overview,
                       MovementSelector& movement,
-                      GemGrid& grid);
+                      GemGrid& grid,
+                      StepScroll& stepScroll,
+                      PolyphonyCrown& polyphonyCrown,
+                      PresetBar& presetBar);
 
     void setPreviewScale(float scale);
     [[nodiscard]] float previewScale() const { return previewScale_; }
@@ -35,6 +41,9 @@ public:
     LayerOverview& layerOverview() { return overview_; }
     MovementSelector& movementSelector() { return movement_; }
     GemGrid& gemGrid() { return grid_; }
+    StepScroll& stepScroll() { return stepScroll_; }
+    PolyphonyCrown& polyphonyCrown() { return polyphonyCrown_; }
+    PresetBar& presetBar() { return presetBar_; }
     TransportBar& transportBar() { return transport_; }
 
 private:
@@ -49,6 +58,9 @@ private:
     LayerOverview& overview_;
     MovementSelector& movement_;
     GemGrid& grid_;
+    StepScroll& stepScroll_;
+    PolyphonyCrown& polyphonyCrown_;
+    PresetBar& presetBar_;
 
     void resized() override;
 };

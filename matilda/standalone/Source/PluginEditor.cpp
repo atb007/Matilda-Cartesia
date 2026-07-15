@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include "Engine/PresetLibrary.h"
 #include "Engine/ScaleConfig.h"
 #include "HeroBackdropDrawing.h"
 #include "ReactShellLayout.h"
@@ -126,8 +127,12 @@ void MatildaAudioProcessorEditor::refreshAll() {
     const int layer = processor_.patch().selectedLayer;
     grid_.setLayer(layer);
     grid_.refresh();
+    stepScroll_.setLayer(layer);
+    stepScroll_.syncFromPatch();
+    polyphonyCrown_.syncFromPatch();
     overview_.refresh();
     quantise_.syncFromPatch();
+    presetBar_.syncFromPatch();
     syncToggle_.setToggleState(processor_.followExternalTransport(), juce::dontSendNotification);
     updateStatusLine();
     layoutChromeOverlays();
@@ -136,6 +141,7 @@ void MatildaAudioProcessorEditor::refreshAll() {
 
 void MatildaAudioProcessorEditor::syncHeroRiveBindings() {
     frame_.hero().setActiveLayerCount(countActiveLayers(processor_.patch()));
+    frame_.hero().setPolyphony(processor_.patch().polyphony);
 }
 
 void MatildaAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster*) {
@@ -160,31 +166,88 @@ void MatildaAudioProcessorEditor::bindCallbacks() {
     quantise_.onChanged = [this] {
         processor_.engine().requantizeAllCells();
         grid_.refresh();
+        presetBar_.notePatchEdited();
     };
 
     overview_.onLayerActivated = [this](int) {
         grid_.refresh();
         overview_.refresh();
+        polyphonyCrown_.syncFromPatch();
         syncHeroRiveBindings();
+        presetBar_.notePatchEdited();
     };
     overview_.onLayerSelected = [this](int layer) {
         processor_.patch().selectedLayer = layer;
         grid_.setLayer(layer);
+        stepScroll_.setLayer(layer);
         movement_.syncFromPatch();
         overview_.refresh();
+        presetBar_.notePatchEdited();
+    };
+    overview_.onLayerDataChanged = [this](int layer) {
+        processor_.engine().onActiveStepCountChanged(layer);
+        overview_.refresh();
+        polyphonyCrown_.syncFromPatch();
+        syncHeroRiveBindings();
+        if (processor_.patch().selectedLayer == layer) {
+            grid_.refresh();
+            stepScroll_.syncFromPatch();
+        }
+        updateStatusLine();
+        presetBar_.notePatchEdited();
     };
 
-    movement_.onChanged = [this] { overview_.refresh(); };
+    movement_.onChanged = [this] {
+        overview_.refresh();
+        presetBar_.notePatchEdited();
+    };
 
-    transport_.onSettingsChanged = [this] { updateStatusLine(); };
+    transport_.onSettingsChanged = [this] {
+        updateStatusLine();
+        presetBar_.notePatchEdited();
+    };
 
-    grid_.onCellChanged = [this] { overview_.refresh(); };
+    grid_.onCellChanged = [this] {
+        overview_.refresh();
+        presetBar_.notePatchEdited();
+    };
+
+    stepScroll_.onChanged = [this] {
+        const int layer = processor_.patch().selectedLayer;
+        processor_.engine().onActiveStepCountChanged(layer);
+        grid_.refresh();
+        overview_.refresh();
+        updateStatusLine();
+        presetBar_.notePatchEdited();
+    };
+
+    polyphonyCrown_.onChanged = [this] {
+        overview_.refresh();
+        polyphonyCrown_.syncFromPatch();
+        syncHeroRiveBindings();
+        updateStatusLine();
+        presetBar_.notePatchEdited();
+    };
+
+    presetBar_.onLoadPreset = [this](const juce::String& name) {
+        // Keep BPM + transport running state; only replace patch content.
+        matilda::PatchState next;
+        if (!matilda::PresetLibrary::loadNamed(name, next))
+            return;
+        processor_.patch() = next;
+        processor_.engine().reset();
+        processor_.engine().requantizeAllCells();
+        refreshAll();
+        syncHeroRiveBindings();
+        frame_.hero().setPlaying(processor_.isSequencerRunning());
+    };
 }
 
 void MatildaAudioProcessorEditor::updateStatusLine() {
     const auto& eng = processor_.engine();
     const auto& patch = processor_.patch();
-    const int step = processor_.isSequencerStepping() ? eng.currentStepIndex() : -1;
+    // lastStepIndex = cell that just fired (matches MIDI). currentStepIndex is already advanced.
+    const int step = processor_.isSequencerStepping() ? eng.lastStepIndex() : -1;
 
     statusLabel_.setText(
         "step=" + juce::String(step) + " tick=" + juce::String(eng.masterTick()) + " · L"
@@ -209,8 +272,21 @@ void MatildaAudioProcessorEditor::applyBpmFromLabel() {
 void MatildaAudioProcessorEditor::timerCallback() {
     const auto& eng = processor_.engine();
     const bool running = processor_.isSequencerRunning();
-    const int step = running ? eng.currentStepIndex() : -1;
-    overview_.setPlayingLayer(eng.lastPlayingLayer(), step);
+    const auto& patch = processor_.patch();
+
+    if (running && patch.polyphony) {
+        // Playheads must use last-fired steps from the tick, not post-advance layer.stepIndex.
+        std::array<int, matilda::kLayerCount> steps{};
+        steps.fill(-1);
+        for (const auto& r : eng.lastTickResults())
+            steps[static_cast<size_t>(r.layer)] = r.stepIndex;
+        overview_.setPolyPlayheads(steps, true);
+    } else {
+        const int step = running ? eng.lastStepIndex() : -1;
+        overview_.setPlayingLayer(eng.lastPlayingLayer(), step);
+    }
+
+    const int step = running ? eng.lastStepIndex() : -1;
     grid_.setPlayhead(step, eng.lastPlayingLayer(), eng.lastStepFired());
 
     if (running && !lastTransportRunning_) {

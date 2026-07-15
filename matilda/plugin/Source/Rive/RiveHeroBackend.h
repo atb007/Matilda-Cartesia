@@ -19,6 +19,8 @@ public:
     virtual void setPlaying(bool playing) = 0;
     /** Active z-axis layers from LayerOverview toggles (layer 0 always on). */
     virtual void setActiveLayerCount(int count) = 0;
+    /** Patch polyphony flag — with ≥2 active layers, drives faceStreakVis while playing. */
+    virtual void setPolyphony(bool enabled) = 0;
     virtual void setDisplayRect(juce::Rectangle<int> rect) = 0;
     virtual void setContentAlignRect(juce::Rectangle<int> rect) = 0;
     virtual bool tick(float deltaSeconds) = 0;

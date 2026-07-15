@@ -1,5 +1,5 @@
 #include "HeroCanvas.h"
-#include "../MatildaFonts.h"
+#include "HeroWordmarkDrawing.h"
 #include "../MatildaImages.h"
 #include "../HeroBackdropDrawing.h"
 #include "../ReactShellLayout.h"
@@ -52,31 +52,10 @@ void refreshGpuOverlay(juce::Component* overlay) {
 
 } // namespace
 
-#if defined(MATILDA_RIVE_HERO)
+#if defined(MATILDA_RIVE_HERO) && !defined(MATILDA_RIVE_BACKEND_METAL)
 
 void HeroWordmark::paint(juce::Graphics& g) {
-    using namespace matilda::react;
-
-    if (auto* parent = getParentComponent()) {
-        const float s = getWidth() / kExpandedW;
-
-        const int labelLeft = juce::roundToInt(kHeroLabelLeft * s);
-        const int labelW = juce::roundToInt(kHeroLabelW * s);
-        const int titleTop = juce::roundToInt(kHeroLabelTop * s);
-        const int titleH = juce::roundToInt(kHeroTitleLineH * s);
-
-        g.setColour(juce::Colours::white);
-        g.setFont(matilda::fonts::jacquard24(kHeroTitleFs * s));
-        g.drawText("Matilda", labelLeft, titleTop, labelW, titleH, juce::Justification::right);
-
-        const int subTop = juce::roundToInt((kHeroLabelTop + kHeroTitleLineH + kHeroSubtitleGap) * s);
-        const int subH = juce::roundToInt(kHeroSubtitleFs * s);
-
-        g.setColour(juce::Colour(0xffdf90e5));
-        g.setFont(matilda::fonts::jacquard24(kHeroSubtitleFs * s));
-        g.drawText("Cartesia - v" + juce::String(JucePlugin_VersionString), labelLeft, subTop, labelW, subH,
-                   juce::Justification::right);
-    }
+    matilda::ui::paintHeroWordmark(g, static_cast<float>(getWidth()));
 }
 
 #endif
@@ -114,6 +93,17 @@ void HeroCanvas::setActiveLayerCount(int count) {
     juce::ignoreUnused(count);
 }
 
+void HeroCanvas::setPolyphony(bool enabled) {
+#if defined(MATILDA_RIVE_HERO)
+    if (polyphony_ == enabled)
+        return;
+    polyphony_ = enabled;
+    rive_.setPolyphony(polyphony_);
+    repaintPortraitArea();
+#endif
+    juce::ignoreUnused(enabled);
+}
+
 #if defined(MATILDA_RIVE_HERO)
 
 juce::Component* HeroCanvas::riveOverlayComponent() {
@@ -135,13 +125,14 @@ void HeroCanvas::ensureRiveLoaded() {
         return;
 
     updatePortraitLayout();
-    riveLoaded_ = rive_.loadFromMemory(BinaryData::matildacartesiav2_riv,
-                                       BinaryData::matildacartesiav2_rivSize);
+    riveLoaded_ = rive_.loadFromMemory(BinaryData::matildacartesiav3_riv,
+                                       BinaryData::matildacartesiav3_rivSize);
     if (!riveLoaded_)
         return;
 
     rive_.setPlaying(playing_);
     rive_.setActiveLayerCount(activeLayerCount_);
+    rive_.setPolyphony(polyphony_);
 
     if (auto* overlay = rive_.overlayComponent()) {
         addAndMakeVisible(overlay);
@@ -149,6 +140,9 @@ void HeroCanvas::ensureRiveLoaded() {
         overlay->setInterceptsMouseClicks(false, false);
         overlay->toFront(false);
         refreshGpuOverlay(overlay);
+#if defined(MATILDA_RIVE_BACKEND_METAL)
+        syncMetalWordmarkOverlay();
+#endif
     }
 
     if (onRiveOverlayChanged)
@@ -207,11 +201,44 @@ void HeroCanvas::updatePortraitLayout() {
         overlay->toFront(false);
         refreshGpuOverlay(overlay);
 #endif
+#if defined(MATILDA_RIVE_BACKEND_METAL)
+        syncMetalWordmarkOverlay();
+#endif
     }
 
     if (onRiveOverlayChanged && riveLoaded_)
         onRiveOverlayChanged();
 }
+
+#if defined(MATILDA_RIVE_BACKEND_METAL)
+
+void HeroCanvas::syncMetalWordmarkOverlay() {
+    using namespace matilda::react;
+
+    auto* metalView = dynamic_cast<matilda::rive::RiveHeroMetalView*>(rive_.overlayComponent());
+    if (metalView == nullptr || portraitOverlayRect_.isEmpty())
+        return;
+
+    const auto labelInHero = heroWordmarkBounds(static_cast<float>(getWidth()));
+    const auto labelInOverlay = labelInHero.translated(-portraitOverlayRect_.getX(), -portraitOverlayRect_.getY());
+    if (labelInOverlay.getWidth() <= 0 || labelInOverlay.getHeight() <= 0)
+        return;
+
+    const float scale = static_cast<float>(metalView->getDesktopScaleFactor());
+    const int pw = juce::jmax(1, juce::roundToInt(static_cast<float>(labelInOverlay.getWidth()) * scale));
+    const int ph = juce::jmax(1, juce::roundToInt(static_cast<float>(labelInOverlay.getHeight()) * scale));
+
+    juce::Image img(juce::Image::ARGB, pw, ph, true);
+    {
+        juce::Graphics g(img);
+        g.addTransform(juce::AffineTransform::scale(scale));
+        matilda::ui::paintHeroWordmark(g, static_cast<float>(labelInOverlay.getWidth()));
+    }
+
+    metalView->setWordmarkOverlay(img, labelInOverlay);
+}
+
+#endif
 
 #if !defined(MATILDA_RIVE_BACKEND_GPU)
 
@@ -301,21 +328,22 @@ void HeroCanvas::paint(juce::Graphics& g) {
 
     g.restoreState();
 
-#if !defined(MATILDA_RIVE_HERO)
-    const int labelLeft = juce::roundToInt(kHeroLabelLeft * s);
-    const int labelW = juce::roundToInt(kHeroLabelW * s);
-    const int titleTop = juce::roundToInt(kHeroLabelTop * s);
-    const int titleH = juce::roundToInt(kHeroTitleLineH * s);
-
-    g.setColour(juce::Colours::white);
-    g.setFont(matilda::fonts::jacquard24(kHeroTitleFs * s));
-    g.drawText("Matilda", labelLeft, titleTop, labelW, titleH, juce::Justification::right);
-
-    const int subTop = juce::roundToInt((kHeroLabelTop + kHeroTitleLineH + kHeroSubtitleGap) * s);
-    const int subH = juce::roundToInt(kHeroSubtitleFs * s);
-
-    g.setColour(juce::Colour(0xffdf90e5));
-    g.setFont(matilda::fonts::jacquard24(kHeroSubtitleFs * s));
-    g.drawText("Cartesia - v1.0", labelLeft, subTop, labelW, subH, juce::Justification::right);
+    // Paint wordmark in-canvas when there is no sibling/native overlay yet:
+    // - no Rive build
+    // - Metal build before the Metal host exists (static portrait flash)
+#if !defined(MATILDA_RIVE_HERO) \
+    || (defined(MATILDA_RIVE_BACKEND_METAL) && defined(MATILDA_RIVE_HERO))
+#if defined(MATILDA_RIVE_BACKEND_METAL)
+    const bool paintFallbackWordmark = !riveLoaded_ || rive_.overlayComponent() == nullptr;
+#else
+    const bool paintFallbackWordmark = true;
+#endif
+    if (paintFallbackWordmark) {
+        juce::Graphics::ScopedSaveState save(g);
+        const auto label = heroWordmarkBounds(bounds.getWidth());
+        g.addTransform(juce::AffineTransform::translation(static_cast<float>(label.getX()),
+                                                          static_cast<float>(label.getY())));
+        matilda::ui::paintHeroWordmark(g, static_cast<float>(label.getWidth()));
+    }
 #endif
 }

@@ -37,6 +37,7 @@ juce::var layerToVar(const LayerState& layer) {
     o->setProperty("active", layer.active);
     o->setProperty("movement", PatchStore::movementToString(layer.movement));
     o->setProperty("random_skip_prob", static_cast<double>(layer.randomSkipProb));
+    o->setProperty("active_step_count", clampActiveStepCount(layer.activeStepCount));
 
     juce::Array<juce::var> rows;
     for (int y = 0; y < kGridSize; ++y) {
@@ -55,6 +56,8 @@ bool layerFromVar(const juce::var& v, LayerState& layer) {
     layer.active = static_cast<bool>(v.getProperty("active", false));
     layer.movement = PatchStore::movementFromString(v.getProperty("movement", "forward").toString());
     layer.randomSkipProb = static_cast<float>(static_cast<double>(v.getProperty("random_skip_prob", 0.0)));
+    layer.activeStepCount = clampActiveStepCount(
+        static_cast<int>(v.getProperty("active_step_count", kGridSize * kGridSize)));
 
     const auto cells = v.getProperty("cells", {});
     if (cells.isArray()) {
@@ -108,7 +111,8 @@ juce::String PatchStore::patchToJson(const PatchState& patch) {
     root->setProperty("play_mode", patch.playMode == PlayMode::Note ? "note" : "transport");
     root->setProperty("play_on_transport", false);
     root->setProperty("selected_layer", patch.selectedLayer);
-    root->setProperty("poly_voices", 1);
+    root->setProperty("polyphony", patch.polyphony);
+    root->setProperty("poly_voices", patch.polyphony ? kLayerCount : 1);
 
     juce::Array<juce::var> layers;
     for (const auto& layer : patch.layers)
@@ -131,6 +135,12 @@ bool PatchStore::patchFromJson(const juce::String& json, PatchState& out) {
     out.masterDivision = static_cast<double>(parsed.getProperty("master_division", 1.0 / 16.0));
     out.selectedLayer = juce::jlimit(0, kLayerCount - 1,
                                      static_cast<int>(parsed.getProperty("selected_layer", 0)));
+    out.polyphony = static_cast<bool>(parsed.getProperty("polyphony", false));
+    if (!out.polyphony) {
+        // Legacy: poly_voices > 1 meant simultaneous layers.
+        const int polyVoices = static_cast<int>(parsed.getProperty("poly_voices", 1));
+        out.polyphony = polyVoices > 1;
+    }
 
     const auto playModeStr = parsed.getProperty("play_mode", "note").toString().toLowerCase();
     out.playMode = playModeStr == "transport" ? PlayMode::Transport : PlayMode::Note;

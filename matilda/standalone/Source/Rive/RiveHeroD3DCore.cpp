@@ -55,6 +55,7 @@ struct D3DRiveState {
     bool loaded = false;
     bool playing = false;
     int activeLayerCount = 1;
+    bool polyphony = false;
     bool hasFrame = false;
     uint32_t alignWidth = 0;
     uint32_t alignHeight = 0;
@@ -139,7 +140,7 @@ struct D3DRiveState {
         if (streakVisible != nullptr)
             streakVisible->propertyValue(playing);
 
-        const auto glow = layerGlowForTransport(playing, activeLayerCount);
+        const auto glow = layerGlowForTransport(playing, activeLayerCount, polyphony);
         if (bodyStreak != nullptr)
             bodyStreak->propertyValue(glow.bodyStreak);
         if (bodyGlow != nullptr)
@@ -157,6 +158,11 @@ struct D3DRiveState {
 
     void applyActiveLayerCount(int count) {
         activeLayerCount = count;
+        applyDataBindings();
+    }
+
+    void applyPolyphony(bool enabled) {
+        polyphony = enabled;
         applyDataBindings();
     }
 
@@ -294,6 +300,11 @@ void D3DRiveCore::setPlaying(bool playing) {
 void D3DRiveCore::setActiveLayerCount(int count) {
     if (impl_ != nullptr)
         impl_->state.applyActiveLayerCount(count);
+}
+
+void D3DRiveCore::setPolyphony(bool enabled) {
+    if (impl_ != nullptr)
+        impl_->state.applyPolyphony(enabled);
 }
 
 void D3DRiveCore::setContentAlignSize(uint32_t width, uint32_t height) {

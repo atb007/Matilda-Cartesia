@@ -6,8 +6,8 @@
 #include "../Rive/RiveHeroRenderer.h"
 #endif
 
-#if defined(MATILDA_RIVE_HERO)
-/** Wordmark overlay — sibling above HeroCanvas so it wins over native GPU overlay. */
+#if defined(MATILDA_RIVE_HERO) && !defined(MATILDA_RIVE_BACKEND_METAL)
+/** Wordmark overlay — sibling above HeroCanvas (CG / non-Metal GPU). */
 class HeroWordmark : public juce::Component {
 public:
     HeroWordmark() { setInterceptsMouseClicks(false, false); }
@@ -28,6 +28,7 @@ public:
     void resized() override;
     void setPlaying(bool playing);
     void setActiveLayerCount(int count);
+    void setPolyphony(bool enabled);
 
 #if defined(MATILDA_RIVE_HERO)
     /** Native GPU overlay — re-front after shell/wordmark stack sync. */
@@ -41,6 +42,9 @@ private:
     void ensureRiveLoaded();
     void updatePortraitLayout();
     void repaintPortraitArea();
+#if defined(MATILDA_RIVE_BACKEND_METAL)
+    void syncMetalWordmarkOverlay();
+#endif
 #if !defined(MATILDA_RIVE_BACKEND_GPU)
     void timerCallback() override;
     void syncRiveTimer();
@@ -50,6 +54,7 @@ private:
     RiveHeroRenderer rive_;
     bool playing_ = false;
     int activeLayerCount_ = 1;
+    bool polyphony_ = false;
     bool riveLoaded_ = false;
     juce::Rectangle<int> portraitClipRect_;
     juce::Rectangle<int> portraitLocalRect_;

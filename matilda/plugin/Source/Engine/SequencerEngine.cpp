@@ -54,9 +54,12 @@ void SequencerEngine::reset() {
     stepsOnLayer_ = 0;
     lastStepIndex_ = -1;
     lastFired_ = false;
+    lastTickResults_.clear();
+    lastPlayingLayer_ = 0;
     for (int i = 0; i < kLayerCount; ++i) {
         if (patch_.layers[static_cast<size_t>(i)].active) {
             playingLayerIdx_ = i;
+            lastPlayingLayer_ = i;
             break;
         }
     }
@@ -71,8 +74,29 @@ void SequencerEngine::reset() {
 }
 
 std::pair<int, int> SequencerEngine::indexToXY(int index) {
-    index = juce::jlimit(0, 15, index);
+    index = juce::jlimit(0, kMaxStepsPerLayer - 1, index);
     return {index % kGridSize, index / kGridSize};
+}
+
+int SequencerEngine::layerActiveStepCount(int layer) const {
+    layer = juce::jlimit(0, kLayerCount - 1, layer);
+    return clampActiveStepCount(patch_.layers[static_cast<size_t>(layer)].activeStepCount);
+}
+
+int SequencerEngine::layerStepIndex(int layer) const {
+    layer = juce::jlimit(0, kLayerCount - 1, layer);
+    return patch_.layers[static_cast<size_t>(layer)].stepIndex;
+}
+
+void SequencerEngine::onActiveStepCountChanged(int layer) {
+    layer = juce::jlimit(0, kLayerCount - 1, layer);
+    auto& L = patch_.layers[static_cast<size_t>(layer)];
+    L.activeStepCount = clampActiveStepCount(L.activeStepCount);
+    if (L.stepIndex >= L.activeStepCount)
+        L.stepIndex = L.activeStepCount - 1;
+    L.randomBag.clear();
+    L.randomBagPos = 0;
+    L.pathHold = 0;
 }
 
 int SequencerEngine::findNextActiveLayer(int fromLayer) const {
@@ -324,12 +348,16 @@ void SequencerEngine::assignCellFromMidi(CellState& cell, int midi) const {
 }
 
 void SequencerEngine::advancePath(LayerState& layer) {
+    const int n = clampActiveStepCount(layer.activeStepCount);
+    if (layer.stepIndex >= n)
+        layer.stepIndex = n - 1;
+
     switch (layer.movement) {
         case MovementMode::Forward:
-            layer.stepIndex = (layer.stepIndex + 1) % 16;
+            layer.stepIndex = (layer.stepIndex + 1) % n;
             break;
         case MovementMode::Reverse:
-            layer.stepIndex = (layer.stepIndex + 15) % 16;
+            layer.stepIndex = (layer.stepIndex + n - 1) % n;
             break;
         case MovementMode::PingPong:
         case MovementMode::Pendulum: {
@@ -338,9 +366,10 @@ void SequencerEngine::advancePath(LayerState& layer) {
                 --layer.pathHold;
                 break;
             }
+            const int last = n - 1;
             int next = layer.stepIndex + layer.stepDir;
-            if (next >= 15) {
-                layer.stepIndex = 15;
+            if (next >= last) {
+                layer.stepIndex = last;
                 layer.stepDir = -1;
                 layer.pathHold = holdNeeded - 1;
             } else if (next <= 0) {
@@ -354,10 +383,10 @@ void SequencerEngine::advancePath(LayerState& layer) {
         }
         case MovementMode::Random:
             if (layer.randomBag.empty() || layer.randomBagPos >= static_cast<int>(layer.randomBag.size())) {
-                layer.randomBag.resize(16);
-                for (int i = 0; i < 16; ++i)
+                layer.randomBag.resize(static_cast<size_t>(n));
+                for (int i = 0; i < n; ++i)
                     layer.randomBag[static_cast<size_t>(i)] = i;
-                for (int i = 15; i > 0; --i) {
+                for (int i = n - 1; i > 0; --i) {
                     const int j = rng_.nextInt(i + 1);
                     std::swap(layer.randomBag[static_cast<size_t>(i)], layer.randomBag[static_cast<size_t>(j)]);
                 }
@@ -366,8 +395,8 @@ void SequencerEngine::advancePath(LayerState& layer) {
             layer.stepIndex = layer.randomBag[static_cast<size_t>(layer.randomBagPos++)];
             break;
         case MovementMode::RandomSkip:
-            for (int i = 0; i < 16; ++i) {
-                const int candidate = (layer.stepIndex + 1) % 16;
+            for (int i = 0; i < n; ++i) {
+                const int candidate = (layer.stepIndex + 1) % n;
                 if (rng_.nextFloat() >= juce::jlimit(0.0f, 1.0f, layer.randomSkipProb)) {
                     layer.stepIndex = candidate;
                     break;
@@ -380,26 +409,66 @@ void SequencerEngine::advancePath(LayerState& layer) {
 
 void SequencerEngine::maybeSwitchLayer() {
     ++stepsOnLayer_;
-    if (stepsOnLayer_ < kStepsPerLayerPass)
+    const int passLen = layerActiveStepCount(playingLayerIdx_);
+    if (stepsOnLayer_ < passLen)
         return;
     stepsOnLayer_ = 0;
     playingLayerIdx_ = findNextActiveLayer(playingLayerIdx_);
 }
 
-void SequencerEngine::tick() {
-    ++masterTick_;
-    reconcilePlayingLayer();
-    const int layerIdx = playingLayerIdx_;
+LayerTickResult SequencerEngine::tickLayer(int layerIdx) {
     auto& layer = patch_.layers[static_cast<size_t>(layerIdx)];
     const int stepBefore = layer.stepIndex;
     const auto [x, y] = indexToXY(stepBefore);
     auto& c = cell(layerIdx, x, y);
 
-    lastStepIndex_ = stepBefore;
-    lastPlayingLayer_ = layerIdx;
-    lastFired_ = c.gate && rollTrigger(c);
+    LayerTickResult result;
+    result.layer = layerIdx;
+    result.stepIndex = stepBefore;
+    result.fired = c.gate && rollTrigger(c);
 
     advancePath(layer);
+    return result;
+}
+
+void SequencerEngine::tick() {
+    ++masterTick_;
+    lastTickResults_.clear();
+
+    if (patch_.polyphony) {
+        lastFired_ = false;
+        for (int i = 0; i < kLayerCount; ++i) {
+            if (!patch_.layers[static_cast<size_t>(i)].active)
+                continue;
+            const auto result = tickLayer(i);
+            lastTickResults_.push_back(result);
+            if (result.fired)
+                lastFired_ = true;
+        }
+
+        // Keep mono UI fields pointed at the selected active layer (else first active).
+        // lastStepIndex must be the fired step for that layer, not post-advance stepIndex.
+        int uiLayer = patch_.selectedLayer;
+        if (!patch_.layers[static_cast<size_t>(uiLayer)].active)
+            uiLayer = findNextActiveLayer(uiLayer);
+        lastPlayingLayer_ = uiLayer;
+        lastStepIndex_ = -1;
+        for (const auto& r : lastTickResults_) {
+            if (r.layer == uiLayer) {
+                lastStepIndex_ = r.stepIndex;
+                break;
+            }
+        }
+        playingLayerIdx_ = uiLayer;
+        return;
+    }
+
+    reconcilePlayingLayer();
+    const auto result = tickLayer(playingLayerIdx_);
+    lastTickResults_.push_back(result);
+    lastStepIndex_ = result.stepIndex;
+    lastPlayingLayer_ = result.layer;
+    lastFired_ = result.fired;
     maybeSwitchLayer();
 }
 

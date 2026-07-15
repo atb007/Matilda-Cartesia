@@ -44,6 +44,7 @@ struct MetalRiveState {
     bool loaded = false;
     bool playing = false;
     int activeLayerCount = 1;
+    bool polyphony = false;
     bool hasFrame = false;
     uint32_t alignWidth = 0;
     uint32_t alignHeight = 0;
@@ -95,7 +96,7 @@ struct MetalRiveState {
         if (streakVisible != nullptr)
             streakVisible->propertyValue(playing);
 
-        const auto glow = layerGlowForTransport(playing, activeLayerCount);
+        const auto glow = layerGlowForTransport(playing, activeLayerCount, polyphony);
         if (bodyStreak != nullptr)
             bodyStreak->propertyValue(glow.bodyStreak);
         if (bodyGlow != nullptr)
@@ -113,6 +114,11 @@ struct MetalRiveState {
 
     void applyActiveLayerCount(int count) {
         activeLayerCount = count;
+        applyDataBindings();
+    }
+
+    void applyPolyphony(bool enabled) {
+        polyphony = enabled;
         applyDataBindings();
     }
 
@@ -252,6 +258,11 @@ void MetalRiveCore::setPlaying(bool playing) {
 void MetalRiveCore::setActiveLayerCount(int count) {
     if (impl_ != nullptr)
         impl_->state.applyActiveLayerCount(count);
+}
+
+void MetalRiveCore::setPolyphony(bool enabled) {
+    if (impl_ != nullptr)
+        impl_->state.applyPolyphony(enabled);
 }
 
 void MetalRiveCore::setContentAlignSize(uint32_t width, uint32_t height) {

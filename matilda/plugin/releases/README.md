@@ -48,6 +48,6 @@ git tag v1.0.10
 git push origin v1.0.10
 ```
 
-Latest release: **v1.0.11** (pending tag) — FL 25 Fruity Wrapper channel routing fix + v1.0.10 UI polish (dropdowns + macOS Rive hero) in plugin and standalone. Sync behaviour unchanged.
+Latest release: **v1.0.12** — Jul 2026 standalone freeze source-ported to VST3/AU: polyphony crown/engine, step scroll, layer clipboard, presets, frosted shell, Rive v3/`faceStreakVis`, and last-fired playhead sync.
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.

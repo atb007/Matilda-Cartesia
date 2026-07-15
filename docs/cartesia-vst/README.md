@@ -8,9 +8,11 @@
 | Phase | State |
 |-------|-------|
 | **M1–M8b** UI prototype | ✅ Complete (Jun 11, 2026) |
-| **M9** Engine / JUCE link | 🔄 In progress |
+| **M9** Engine / JUCE link | ✅ Layers + quantise + transport in JUCE |
 | **FL Studio integration** | ✅ Virtual-port routing validated (Jul 2026) — see [MILESTONES.md](./MILESTONES.md#integration-milestones-jul-2026) |
-| **Rive hero animation** | ⬜ Future — noted in `MILESTONES.md` |
+| **Standalone Jul 2026** | ✅ **Frozen Jul 15, 2026** — polyphony · step scroll · clipboard · presets · frost · Rive v3 · playhead sync |
+| **Rive hero animation** | ✅ v3 Metal/D3D + wordmark above GPU — [RIVE_ANIMATION_RULEBOOK.md](../../matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md) |
+| **Plugin / Windows VST3 port** | ✅ Source port complete Jul 16, 2026 · Windows package validation pending — [SPEC status](./SPEC.md#windows-vst3-port-status-postv1011) |
 
 ## Documents
 
@@ -18,15 +20,18 @@
 |-----|-------------|
 | [SPEC.md](./SPEC.md) | Product + engine spec (source of truth) |
 | [DESIGN.md](./DESIGN.md) | UI layout, cell interactions, hero/collapse behaviour |
-| [MILESTONES.md](./MILESTONES.md) | Module-by-module UI build log + future enhancements |
+| [MILESTONES.md](./MILESTONES.md) | Module-by-module UI build log + host + standalone Jul 2026 |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Repo layout, phases, UI ↔ engine binding |
 | [FIGMA-CHECKLIST.md](./FIGMA-CHECKLIST.md) | Figma component handoff + shipped node map |
 | [PRD-SANDBOX.md](./PRD-SANDBOX.md) | Legacy GridWalker sandbox PRD (historical) |
+| [Standalone README](../../matilda/standalone/README.md) | Build + DAW wiring + Jul 2026 feature table |
 
 ## Figma
 
 - [Main UI](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=4919-97886)
 - [Layer + grid behaviour](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=4922-103830)
+- [Polyphony crown](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=5171-102837)
+- [Presets bar](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=5193-102814)
 - [Expanded plugin window](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=5002-6446)
 - [Collapsed plugin window](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=5002-6447)
 

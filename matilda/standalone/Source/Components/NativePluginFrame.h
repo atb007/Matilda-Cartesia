@@ -32,20 +32,23 @@ private:
     public:
         ContentPanel(HeroCanvas& hero, MatildaShellPanel& shell) : hero_(hero), shell_(shell) {
             addAndMakeVisible(hero_);
-#if defined(MATILDA_RIVE_HERO)
+#if defined(MATILDA_RIVE_HERO) && !defined(MATILDA_RIVE_BACKEND_METAL)
+            // CG/D3D: painted sibling. Metal embeds wordmark above CAMetalLayer instead.
             addAndMakeVisible(heroWordmark_);
             heroWordmark_.setInterceptsMouseClicks(false, false);
             heroWordmark_.setOpaque(false);
+#endif
+#if defined(MATILDA_RIVE_HERO)
             hero_.onRiveOverlayChanged = [this] { syncContentStackOrder(); };
 #endif
             addAndMakeVisible(shell_);
-            shell_.setOpaque(true);
+            shell_.setOpaque(false);
         }
 
         void layoutContent(float previewScale, bool showHero) {
             using namespace matilda::react;
             hero_.setVisible(showHero);
-#if defined(MATILDA_RIVE_HERO)
+#if defined(MATILDA_RIVE_HERO) && !defined(MATILDA_RIVE_BACKEND_METAL)
             heroWordmark_.setVisible(showHero);
 #endif
             if (!showHero) {
@@ -56,8 +59,8 @@ private:
             const int heroW = sx(kExpandedW, previewScale);
             const int heroH = sx(kFrameH, previewScale);
             hero_.setBounds(0, 0, heroW, heroH);
-#if defined(MATILDA_RIVE_HERO)
-            heroWordmark_.setBounds(0, 0, heroW, heroH);
+#if defined(MATILDA_RIVE_HERO) && !defined(MATILDA_RIVE_BACKEND_METAL)
+            heroWordmark_.setBounds(heroWordmarkBounds(static_cast<float>(heroW)));
 #endif
             shell_.setBounds(sx(kShellLeft, previewScale), sx(kShellTop, previewScale),
                              sx(kShellW, previewScale), sx(kShellH, previewScale));
@@ -68,14 +71,16 @@ private:
 #if defined(MATILDA_RIVE_HERO)
             if (auto* overlay = hero_.riveOverlayComponent())
                 overlay->toFront(false);
-            heroWordmark_.toFront(false);
 #endif
             shell_.toFront(false);
+#if defined(MATILDA_RIVE_HERO) && !defined(MATILDA_RIVE_BACKEND_METAL)
+            heroWordmark_.toFront(false);
+#endif
         }
 
     private:
         HeroCanvas& hero_;
-#if defined(MATILDA_RIVE_HERO)
+#if defined(MATILDA_RIVE_HERO) && !defined(MATILDA_RIVE_BACKEND_METAL)
         HeroWordmark heroWordmark_;
 #endif
         MatildaShellPanel& shell_;

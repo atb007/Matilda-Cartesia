@@ -17,6 +17,7 @@ public:
     bool loadFromMemory(const void* data, size_t numBytes);
     void setPlaying(bool playing);
     void setActiveLayerCount(int count);
+    void setPolyphony(bool enabled);
     void setDisplayRect(juce::Rectangle<int> rect);
     /** Cover+CenterLeft viewport inside the overlay (GPU backends only). Empty = use overlay size. */
     void setContentAlignRect(juce::Rectangle<int> rect);
@@ -38,6 +39,7 @@ public:
     bool loadFromMemory(const void*, size_t) { return false; }
     void setPlaying(bool) {}
     void setActiveLayerCount(int) {}
+    void setPolyphony(bool) {}
     void setDisplayRect(juce::Rectangle<int>) {}
     void setContentAlignRect(juce::Rectangle<int>) {}
     bool tick(float) { return false; }

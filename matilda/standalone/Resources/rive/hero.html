@@ -42,7 +42,7 @@
       };
 
       async function init() {
-        const response = await fetch("matilda-cartesia.riv");
+        const response = await fetch("matilda-cartesia-v3.riv");
         const buffer = await response.arrayBuffer();
         riveInstance = new rive.Rive({
           canvas: document.getElementById("rive-canvas"),

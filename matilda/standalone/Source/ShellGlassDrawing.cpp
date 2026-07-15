@@ -20,7 +20,7 @@ juce::Drawable* glassRadialDrawable() {
 void paintGlassBeddingRadial(juce::Graphics& g, juce::Rectangle<float> rect) {
     if (auto* radial = glassRadialDrawable()) {
         g.saveState();
-        g.setOpacity(0.2f);
+        g.setOpacity(0.28f);
         radial->drawWithin(g, rect, juce::RectanglePlacement::stretchToFit, 1.f);
         g.restoreState();
     }

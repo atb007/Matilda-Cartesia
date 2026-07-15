@@ -14,6 +14,7 @@
 | Movement dropdown | `4919:99373` | Presets list: forward, reverse, ping-pong, pendulum, random |
 | Quantise Scale | `4919:99226` | Min / Tonic / Max + scale picker |
 | External transport | `4919:98600` | playPause, Clock 1/16, Play mode Note |
+| Polyphony crown | `5171:102837` | `glowPolyphony` — bgGlow / union / frontGlow |
 
 ## Figma components → code
 
@@ -23,6 +24,8 @@
 | `Inactive Cell` | `Cell/Gem/GateOff` |
 | `image 74` (mini dot) | `LayerOverview/Dot` |
 | `All four activated` | `LayerSelector/CrystalsRow` |
+| `glowPolyphony` | `PolyphonyCrown` (standalone; glow-only paint) |
+| `PresetModule` (`5193:102814`) | `PresetBar` / `PresetLibrary` (standalone freeze Jul 15, 2026) |
 
 ## Export rules
 
@@ -30,5 +33,7 @@
 - Crystal layer icons: SVG ×4 accent colors
 - Hero frame + metallic borders: PNG `@2x` WebP optional
 - Prob ring: SVG arc template (`prob-ring.svg`)
+- Step scroll: `assets/ui/stepscroll/` (vine track + per-layer crystals)
+- Polyphony: optional SVG under `assets/ui/polyphony/` (runtime is path-drawn)
 
 Place exports under `matilda/assets/ui/`.

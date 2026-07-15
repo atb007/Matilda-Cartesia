@@ -4,14 +4,22 @@
 
 namespace matilda {
 
+struct LayerTickResult {
+    int layer = 0;
+    int stepIndex = -1;
+    bool fired = false;
+};
+
 class SequencerEngine {
 public:
-    static constexpr int kStepsPerLayerPass = 16;
+    static constexpr int kMaxStepsPerLayer = kGridSize * kGridSize;
 
     explicit SequencerEngine(PatchState& patch);
 
     void reset();
     void tick();
+    /** Clamp step index / random bag after activeStepCount changes. */
+    void onActiveStepCountChanged(int layer);
 
     [[nodiscard]] int playheadX() const;
     [[nodiscard]] int playheadY() const;
@@ -34,6 +42,9 @@ public:
     [[nodiscard]] int lastStepIndex() const { return lastStepIndex_; }
     [[nodiscard]] int currentStepIndex() const;
     [[nodiscard]] int lastPlayingLayer() const { return lastPlayingLayer_; }
+    [[nodiscard]] int layerActiveStepCount(int layer) const;
+    [[nodiscard]] int layerStepIndex(int layer) const;
+    [[nodiscard]] const std::vector<LayerTickResult>& lastTickResults() const { return lastTickResults_; }
     [[nodiscard]] int resolveMidiNote(const CellState& cell) const;
     /** Scale pitch + jitter for a fired step (uses engine RNG). */
     [[nodiscard]] int resolveFiredMidiNote(const CellState& cell);
@@ -46,12 +57,14 @@ private:
     bool lastFired_ = false;
     int lastStepIndex_ = -1;
     int lastPlayingLayer_ = 0;
+    std::vector<LayerTickResult> lastTickResults_;
     mutable juce::Random rng_{};
 
     [[nodiscard]] int findNextActiveLayer(int fromLayer) const;
     void reconcilePlayingLayer();
     void advancePath(LayerState& layer);
     void maybeSwitchLayer();
+    LayerTickResult tickLayer(int layerIdx);
     [[nodiscard]] int computeCandidateMidi(const CellState& cell) const;
     [[nodiscard]] bool rollTrigger(const CellState& cell) const;
     [[nodiscard]] static std::pair<int, int> indexToXY(int index);

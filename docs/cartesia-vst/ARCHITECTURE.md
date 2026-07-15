@@ -48,7 +48,7 @@ MatildaPluginFrame (0.52 × uiScaleFactor; default factor 0.9)
 | `shellLayout.ts` | Control frame + glass rect (1405×1766 vines, 1205×1407 glass) |
 | `rasterImageStyle.ts` | Bilinear-friendly PNG overlay CSS |
 
-**Hero portrait:** static masked PNG today. Architecture keeps the portrait region as a **swappable surface** for a future **Rive** runtime (hair/body animation + state inputs for idle/playing/collapsed). Do not flatten hero into a single baked asset in engine code.
+**Hero portrait:** macOS Metal / Windows D3D use native Rive (`matilda-cartesia-v3.riv`) in `HeroCanvas`; static PNG is the pre-frame / non-GPU fallback. Wordmark on Metal is a `CALayer` above `CAMetalLayer` (not a JUCE peer sibling). Contract: `matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md`.
 
 ---
 
@@ -136,15 +136,19 @@ Each layer maintains its own `PathState` (step index, ping-pong direction, rando
 |----|-------------|
 | Overview toggle click (top row) | `layers[i].active` |
 | Mini-grid array hit-box click | `selected_layer` |
+| Mini-grid right-click menu | layer cells / `active_step_count` / `active` via paste; undo stack in UI |
+| Presets bar | full patch load/save via `PresetLibrary`; dirty flag in UI |
 | Movement ▾ | `layers[selected_layer].movement` |
-| Mini grid dots | read `layers[i].step_index` → (x,y) |
+| Step scroll vine | `layers[selected_layer].active_step_count` |
+| Polyphony crown | `polyphony` |
+| Mini / main playhead | **last fired** step (`lastStepIndex` / `lastTickResults`) — not post-advance `stepIndex` |
 | Main grid | `layers[selected_layer].cells` |
 | Quantise panel (Min/Tonic/Max/Scale glass dropdowns) | `root`, `mode`, `min_octave`, `max_octave` — changing any of these re-resolves grid knob note labels from cell `degree` within the quantised min…max window (M9) |
 | Global Settings — play/pause | `transport` (engine) |
 | Global Settings — clock dropdown | `master_division` |
 | Global Settings — play mode dropdown | `play_mode` (`transport` \| `note`) |
 | Collapse chevron | UI-only layout state (not persisted in Patch) |
-| Hero Rive states (future) | `idle` · `playing` · `transport_sync` · … — drive Rive inputs from engine transport |
+| Hero Rive states | `idle` · `playing` · layer-count glows — see `RIVE_ANIMATION_RULEBOOK.md` |
 
 ---
 
@@ -156,11 +160,10 @@ Each layer maintains its own `PathState` (step index, ping-pong direction, rando
 | **1** | Python engine: movement modes + layer 1 MIDI |
 | **2** | JUCE shell: `cartesia-vst-ui` prototype (M1–M8b ✅) ported to JUCE + layer 1 playback |
 | **3** | Layers 2–4 sequential + edit-while-playing |
-| Phase | Deliverable |
-|-------|-------------|
 | **4** | External chrome wiring · play on transport | 🔄 GB standalone ✅; FL virtual-port ✅; beat-quantized start ✅; knob quantise ✅; FL wrapper on newer FL ⬜ |
-| **B** | XYZ clock divisions · polyphony · randomize modal |
-| **UI+** | Rive hero animation · state machine wired to transport/playback (deferred) |
+| **4b** | Standalone: polyphony · step count · clipboard · frost · crown · presets · playhead sync · Rive v3 | ✅ **frozen Jul 15, 2026** (`matilda/standalone/`) · source-ported to plugin Jul 16 |
+| **B** | XYZ clock divisions · randomize modal · Windows package validation for 4b plugin port |
+| **UI+** | Rive hero (v3) + Metal wordmark-above-layer ✅ frozen with 4b; bindings per rulebook |
 
 ---
 
@@ -183,4 +186,4 @@ New binary name: **Matilda** (avoid Cartesia trademark in shipping build).
 
 ---
 
-*Architecture v1 · UI prototype M8b complete Jun 2026 · host integration notes Jul 2026*
+*Architecture v1 · UI prototype M8b Jun 2026 · host integration Jul 2026 · standalone freeze Jul 15, 2026 · plugin source port Jul 16, 2026*

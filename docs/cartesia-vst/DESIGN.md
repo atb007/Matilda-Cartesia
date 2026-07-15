@@ -6,6 +6,7 @@
 |-------|------|
 | Main UI (`opt3`) | [4919-97886](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=4919-97886) |
 | Layer + grid behaviour | [4922-103830](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=4922-103830) |
+| Polyphony crown (`glowPolyphony`) | [5171-102837](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=5171-102837) |
 
 Product spec: [SPEC.md](./SPEC.md) · Build log: [MILESTONES.md](./MILESTONES.md)
 
@@ -20,14 +21,14 @@ Product spec: [SPEC.md](./SPEC.md) · Build log: [MILESTONES.md](./MILESTONES.md
 │  [Play/Pause]   Clock 1/16 ▾   Play mode Note ▾                 │
 └─────────────────────────────────────────────────────────────────┘
 ┌─ Left: Quantise Scale ──┬─ Right: Sequencer ─────────────────────┐
-│  Min — Tonic — Max      │  TOP: Layer overview (top cell)         │
+│  Min — Tonic — Max      │  TOP: Layer overview (mini-grid)        │
 │  [crystal art]          │    · 4× mini 4×4 path maps              │
-│  Lydian ◀ ▶             │    · crystals = ACTIVATE layer        │
-│                         │  MID: Crystal row (All four activated)│
-│                         │    · only active layers shown           │
-│                         │    · SELECT layer to edit               │
-│                         │  Movement: Forward ◀ ▶                │
-│                         │  BOT: 4×4 Cell Anatomy grid           │
+│  Lydian ◀ ▶             │    · top gems = ACTIVATE layer          │
+│                         │    · crown = polyphony (2+ layers)      │
+│                         │    · right-click layer = copy/paste     │
+│                         │  MID: Movement: Forward ◀ ▶             │
+│                         │  BOT: 4×4 Cell Anatomy grid             │
+│                         │       + vine step-count scroll          │
 └─────────────────────────┴───────────────────────────────────────┘
 ```
 
@@ -40,13 +41,14 @@ Product spec: [SPEC.md](./SPEC.md) · Build log: [MILESTONES.md](./MILESTONES.md
 | Element | Behaviour |
 |---------|-----------|
 | **Background** | Starfield + aurora/forest (`hero-bg-m8b.png`) — visible through shell glass |
-| **Portrait** | Elliptical SVG mask over `matilda-portrait-v2.png`; slides left on collapse |
-| **Wordmark** | “Matilda” + “Cartesia - v1.0” — slides with portrait |
+| **Portrait** | macOS Metal: live Rive (`matilda-cartesia-v3.riv`); static PNG fallback before first frame / non-Metal. Masked; slides left on collapse |
+| **Wordmark** | “Matilda” + `Cartesia - v{VERSION}` (Jacquard 24) — slides with portrait; on Metal, drawn **above** the Rive layer (see below) |
 | **Chevron** | **70×70** glass button — expanded `>>` at hero top-left; collapsed `<<` inside vines frame |
 | **Collapse** | Canvas **2376 → 1515** px width; shell re-centres; **380 ms** ease |
 | **Metal strips** | Removed (Figma tweak) |
+| **Shell glass (standalone)** | Frosted bedding: blurred wallpaper under translucent glass (`ShellChrome`); shell `opaque = false` |
 
-**Future — Rive hero:** Replace or augment static portrait with a Rive `.riv` (hair/body motion). State machine inputs should reflect UI/engine scenarios — e.g. idle breathing, playing pulse, transport-locked stillness. Keep mask bounds + collapse slide compatible; see `MILESTONES.md` §Future enhancements.
+**Rive hero (shipped — macOS Metal / Windows D3D):** Live portrait via native Rive runtime. Bindings (play + layer-count glows) in `matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md`. **Wordmark compositing (Metal):** rasterize labels into a `CALayer` on the same NSView as `CAMetalLayer`, stacked above Rive — peer `toFront()` cannot win over GPU `resizeViewToFit` re-attach.
 
 ---
 
@@ -54,20 +56,47 @@ Product spec: [SPEC.md](./SPEC.md) · Build log: [MILESTONES.md](./MILESTONES.md
 
 ### Activate (top-right overview)
 
-- Tap layer crystal → include/exclude from **sequential playback queue**.
+- Tap layer crystal → include/exclude from playback (sequential queue, or simultaneous set when polyphony is on).
 - Mini grid: full color + path preview when active; grey when inactive.
-- Default: **Layer 1 on**, others off.
+- Default: **Layer 1 on**, others off. Layer 1 cannot be deactivated.
 
-### Select (bottom crystal row)
+### Select (mini-grid body)
 
-- Crystals appear **only for activated layers** (populated in real time).
-- Tap → switch **main 4×4** and **movement dropdown** to that layer.
+- Tap an **active** layer’s cell array → switch **main 4×4**, **movement**, and **step scroll** to that layer.
 - Does not stop playback; user can edit layer 3 while layer 1 plays.
 
-### Playback
+### Polyphony crown (standalone)
 
-- **Sequential:** finish layer 1’s 16-step path → layer 2 → … → loop active layers.
-- **Playhead:** lit on **playing** layer’s mini grid; main grid playhead when `selected_layer == playing_layer`.
+- Sits in the housing diamond above the mini-grid ([Figma glowPolyphony](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=5171-102837)).
+- **Idle (poly off, ≥2 layers):** white frontGlow + soft bgGlow pulse only (no opaque union gem).
+- **On:** morphing colour bloom (bgGlow + frontGlow).
+- **≤1 layer:** crown fades out. Click toggles `patch.polyphony`.
+- Files: `PolyphonyCrown.cpp/h`, layout in `ReactShellLayout.h`.
+
+### Copy / paste / reset (standalone — mini-grid right-click) — frozen Jul 15, 2026
+
+- Compact glass menu at the click point: Copy notes · Copy notes & knobs · Paste notes · Paste notes & knobs · Reset · Undo.
+- Copy from **active** layers only; paste onto active **or** inactive (paste activates). Reset on **active** only.
+- Clipboard = visible `active_step_count` cells; paste overrides those steps + syncs step count.
+- **Reset:** all 16 cells **gate on**, degree 0 (lowest), knobs disarmed — not gated-off empties.
+- Floater: Copied / Pasted / Reset / Undo. Files: `LayerClipboard.h`, `LayerOverview.cpp`.
+
+### Presets bar (standalone) — frozen Jul 15, 2026
+
+- Above shell glass, left column: Asimovian “Presets” title + glass name dropdown + save ([Figma PresetModule](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=5193-102814)).
+- Dirty `*` on name after edits; Save = native dialog every time; dropdown max 10 visible rows (scroll).
+- Files: `PresetBar`, `PresetLibrary`, layout in `ReactShellLayout.h`.
+
+### Step count vine (standalone) — frozen Jul 15, 2026
+
+- Under the main 4×4: drag/click/wheel diamond on vine track (`StepScroll`). Per-layer `active_step_count` 1…16; snap at 4/8/12/16.
+- Shortens engine loop for that layer; out-of-range cells hidden on grid + mini-grid.
+
+### Playback — frozen Jul 15, 2026
+
+- **Sequential (poly off):** finish layer N’s path (`active_step_count` steps) → next active layer → loop.
+- **Polyphony on:** all active layers tick together; mini-grid shows all playheads; main 4×4 = selected layer only.
+- **Playhead:** lights the **cell that just sounded** (last fired step), not the next index after advance.
 
 ---
 
@@ -151,7 +180,7 @@ Attach full-frame mockups with chrome in handoff zip.
 | `motion/glow-pulse` | 800 ms — gate fire on playhead visit |
 | `motion/icon-arm` | 100 ms — ring appear on ▲/● latch |
 | `motion/collapse` | 380 ms — canvas width, hero slide, shell reposition |
-| `motion/rive-hero` | (future) Rive timeline / state blend — idle ↔ playing |
+| `motion/rive-hero` | Native Rive v3 — idle ↔ playing + layer glows (Metal/D3D) |
 
 ---
 
@@ -163,4 +192,4 @@ Attach full-frame mockups with chrome in handoff zip.
 
 ---
 
-*Design doc v1 · pairs with FIGMA-CHECKLIST.md · M8b Jun 2026*
+*Design doc v1 · pairs with FIGMA-CHECKLIST.md · M8b Jun 2026 · standalone freeze Jul 15, 2026*

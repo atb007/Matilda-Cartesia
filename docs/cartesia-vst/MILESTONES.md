@@ -159,7 +159,7 @@ Figma expanded [`5002:6446`](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod
 | `MatildaPluginFrame` — outer window, default preview scale **0.52** | ✅ |
 | Starfield + forest background (`hero-bg-m8b.png`) | ✅ |
 | Matilda portrait + elliptical SVG mask (`matilda-portrait-v2.png` + `matilda-mask-alpha.svg`) | ✅ |
-| Wordmark (“Matilda” / “Cartesia - v1.0”) — Jacquard 24 | ✅ |
+| Wordmark (“Matilda” / `Cartesia - v{VERSION}`) — Jacquard 24 | ✅ |
 | Film-strip metal bars | ❌ removed (Figma tweak) |
 | Glass chevron toggle (`CollapseToggle` · **70×70** px · Figma slot layout) | ✅ |
 | Expanded chevron — top-left hero MainFrame `(83, 17)` · shows `>>` | ✅ |
@@ -223,17 +223,17 @@ Wire transport, playhead, layer scheduler, quantise scale resolution, and preset
 
 Documented so M9+ work does not paint us into a static-hero corner.
 
-### Rive hero animation (deferred)
+### Rive hero animation — shipped (Jul 2026)
 
 | Piece | Notes |
 |-------|-------|
-| **Runtime** | [Rive](https://rive.app/) `.riv` in hero slot — replace or layer over static `matilda-portrait-v2.png` |
-| **Animation targets** | Hair flow, body sway/breath, subtle idle motion |
-| **State machine** | Rive state inputs driven by UI/engine scenarios — e.g. `idle`, `playing`, `transport_sync`, `collapsed` (hero hidden), layer accent |
-| **Integration point** | `HeroCanvas` — keep portrait region as a swappable `HeroPortrait` surface (raster today, Rive canvas later); collapse slide + mask bounds unchanged |
-| **JUCE path** | Rive C++ runtime or pre-rendered sprite fallback; same state enum as web prototype |
+| **Runtime** | Native Rive C++ — macOS **Metal** / Windows **D3D**; asset `matilda-cartesia-v3.riv` |
+| **Bindings** | `streakVisible` (transport) + layer-count glows — see `RIVE_ANIMATION_RULEBOOK.md` |
+| **Wordmark** | Metal: `CALayer` above `CAMetalLayer` on the same host (`setWordmarkOverlay`). Do not use peer NSView/`toFront` for GPU heroes |
+| **Fallback** | Static masked PNG until first GPU frame; CG backend paints Rive in `HeroCanvas::paint` |
+| **Integration** | `HeroCanvas` + `RiveHeroMetalView` / D3D view; collapse slide + mask bounds unchanged |
 
-No Rive work in M1–M8b. Do not hard-code portrait as a single flattened PNG in engine bindings.
+Further artboard/binding changes stay in the rulebook changelog.
 
 ---
 
@@ -271,10 +271,14 @@ Native port tracks React modules via `UiDevConfig.h` isolated dev views, then `F
 | M1 Gem cell | `CellAnatomyStates.tsx` | `GemCell.cpp` | ✅ integrated |
 | M2 4×4 grid | `Grid4x4.tsx` | `GemGrid.cpp` | ✅ integrated |
 | M3 Movement menu | `MovementMenu.tsx` | `MovementSelector.cpp` | ✅ **frozen** Jun 17, 2026 |
-| M5 Layer overview | `LayerMiniGrid.tsx` | `LayerOverview.cpp` | ✅ **frozen** Jun 17, 2026 |
+| M5 Layer overview | `LayerMiniGrid.tsx` | `LayerOverview.cpp` | ✅ **frozen** Jun 17, 2026 · clipboard ported to plugin Jul 16, 2026 |
 | M6 Quantise panel | `ScalePanel.tsx` | `QuantisePanel.cpp` | ✅ **frozen** Jun 18, 2026 |
 | M7 Global Settings | `TransportChrome.tsx` | `TransportBar.cpp` | ✅ **frozen** Jun 17, 2026 |
-| M8b Shell / hero | `MatildaPluginFrame.tsx` | `NativePluginFrame.cpp` | ✅ **frozen** Jun 18, 2026 |
+| M8b Shell / hero | `MatildaPluginFrame.tsx` | `NativePluginFrame.cpp` | ✅ **frozen** Jun 18, 2026 · Rive v3 + wordmark Jul 15, 2026 |
+| Step scroll | — | `StepScroll.cpp` | ✅ ported to plugin Jul 16, 2026 |
+| Polyphony crown | Figma `glowPolyphony` | `PolyphonyCrown.cpp` | ✅ ported to plugin Jul 16, 2026 |
+| Presets bar | Figma `PresetModule` | `PresetBar` / `PresetLibrary` | ✅ ported to plugin Jul 16, 2026 |
+| Post–v1.0.11 → Windows VST3 | — | — | ✅ source port Jul 16, 2026 · Windows CI/package validation pending |
 
 ### M3 Movement — frozen (Jun 17, 2026)
 
@@ -287,9 +291,46 @@ Native port tracks React modules via `UiDevConfig.h` isolated dev views, then `F
 
 - Figma geometry via `MiniGridLayout.h` · 4×16 draped cells + rope frame + top toggles
 - Playhead: row-major step → column-major mini index; on-gem + soft radial glow at gate-on steps
-- Top toggle: lit for **playing layer** while transport runs; **selected layer** when stopped
+- Top toggle: lit for **playing layer** while transport runs; **selected layer** when stopped; all active lit in poly mode
 - Gate-off cells: `minigrid-inactive.png` socket (syncs from main 4×4 grid)
 - Layer activate / select hit boxes wired to `PatchState`
+- **Jul 15, 2026 (standalone — frozen):** right-click context menu — copy notes / notes+knobs, paste (activates inactive), reset (gates **on**, degree 0), undo; click-anchored compact glass menu + floater; `LayerClipboard.h`
+
+### Standalone freeze — Jul 15, 2026
+
+**Scope:** `matilda/standalone/` only. Do not change behaviour in this set without a new milestone note. Port target: [Windows VST3 backlog](./SPEC.md#windows-vst3-port-backlog-postv1011). Spec: [SPEC.md](./SPEC.md) · Design: [DESIGN.md](./DESIGN.md) §Layer behaviour.
+
+| Piece | Status | Notes |
+|-------|--------|-------|
+| Per-layer `active_step_count` (1…16) | ✅ frozen | Engine path length; persist in patch JSON |
+| Vine step scroll under 4×4 | ✅ frozen | `StepScroll` · snap 4/8/12/16 · `assets/ui/stepscroll/` |
+| Hide out-of-range cells (grid + mini) | ✅ frozen | `GemGrid` / `LayerOverview` |
+| Frosted shell glass | ✅ frozen | Blurred wallpaper under translucent bedding |
+| Polyphony engine + MIDI | ✅ frozen | `PatchState::polyphony`; simultaneous ticks; per-layer notes |
+| Polyphony crown UI | ✅ frozen | Glow-only; idle pulse; morph on; fade if &lt;2 layers |
+| Mini-grid multi-playheads (poly) | ✅ frozen | `LayerOverview::setPolyPlayheads` from `lastTickResults` |
+| Layer copy / paste / reset / undo | ✅ frozen | Reset = gate on + degree 0; visible-step clipboard |
+| Presets bar + user library | ✅ frozen | `PresetBar` / `PresetLibrary`; dirty `*`; load keeps BPM/transport |
+| Rive hero v3 + Metal wordmark | ✅ frozen | `matilda-cartesia-v3.riv`; wordmark `CALayer` above GPU |
+| `faceStreakVis` ← polyphony ∧ ≥2 layers + transport | ✅ frozen | Rulebook; off when only one layer active |
+| Playhead UI ↔ note sync | ✅ frozen | Lights use **last fired** step (`lastStepIndex` / tick results), not post-advance `stepIndex` |
+| Crown / scroll / preset layout | ✅ frozen | `ReactShellLayout.h` |
+
+**Out of freeze / next:** random gen · plugin / Windows VST3 port of the table above · movement-mode follow-ups.
+
+### Plugin / Windows VST3 source port — Jul 16, 2026
+
+The standalone freeze table above is now merged into `matilda/plugin/` for the Windows VST3 path while preserving the plugin-only silent-instrument registration, DAW sync toggle, host transport behavior, and direct MIDI-out selector.
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Polyphony engine + MIDI | ✅ source port | Per-layer active notes + `lastTickResults`; mono note path preserved |
+| Polyphony crown + Rive `faceStreakVis` | ✅ source port | `faceStreakVis = polyphony ∧ ≥2 active layers ∧ transport` |
+| Per-layer step count + vine | ✅ source port | `active_step_count`, `StepScroll`, hidden out-of-range cells |
+| Layer clipboard | ✅ source port | Right-click copy/paste/reset/undo; reset gates on at degree 0 |
+| Presets | ✅ source port | User library + native Save dialog; load preserves BPM/transport state |
+| Frosted shell glass | ✅ source port | Shell non-opaque + frosted backdrop sample |
+| Build verification | ✅ macOS local | `cmake --build matilda/plugin/build --config Release -j8` builds VST3/AU; Windows artifact validation still pending |
 
 ### M7 Global Settings — frozen (Jun 17, 2026)
 
@@ -336,7 +377,7 @@ React reference: `ScalePanel.tsx` · Figma `4976:3937` · isolated dev view `Dev
 | Full-shell module layout — React `MatildaShell.tsx` positions | ✅ |
 | Collapse / expand — viewport clip + 380ms ease + chevron toggle | ✅ |
 | Collapse icon — Figma `5002:6419` PNGs · fixed Y (83px inset) | ✅ |
-| Hero wordmark — Jacquard 24 (`Matilda` / `Cartesia - v1.0`) | ✅ |
+| Hero wordmark — Jacquard 24 (`Matilda` / `Cartesia - v{VERSION}`); Metal = `CALayer` above Rive | ✅ Jul 15, 2026 freeze |
 | Glass bedding — CSS/Figma gradients (radial @ 20% + linear fade) | ✅ |
 
 ### M8 Shell chrome — superseded by M8b freeze above
@@ -522,5 +563,5 @@ Not decided — keep flexible until P1 DAW matrix is complete.
 
 ---
 
-*Milestones v1 · pairs with `SPEC.md` and `FIGMA-CHECKLIST.md` · M8b final Jun 11, 2026 · host + engine QOL Jun 18, 2026 · FL virtual-port integration Jul 2026*
+*Milestones v1 · pairs with `SPEC.md` and `FIGMA-CHECKLIST.md` · M8b final Jun 11, 2026 · host + engine QOL Jun 18, 2026 · FL virtual-port Jul 2026 · **standalone Jul 15, 2026 freeze** (polyphony · step scroll · clipboard · presets · Rive v3 · playhead sync)*
 

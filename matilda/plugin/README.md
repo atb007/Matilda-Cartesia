@@ -1,6 +1,6 @@
 # Matilda — JUCE plugin (VST3 / AU)
 
-MIDI arp / grid sequencer for macOS and Windows DAWs. Builds on the Cartesia engine (Patch v2, sequential layers, movement modes, trigger probability, jitter).
+MIDI arp / grid sequencer for macOS and Windows DAWs. Builds on the Cartesia engine (Patch v2, sequential layers, optional polyphony, movement modes, trigger probability, jitter, per-layer step count).
 
 > **Standalone app** is built from a separate codebase: [`../standalone/`](../standalone/README.md) (v1.0.9+). This dir builds **VST3 + AU only**.
 
@@ -14,9 +14,11 @@ MIDI arp / grid sequencer for macOS and Windows DAWs. Builds on the Cartesia eng
 | `Matilda-macOS-vst3.zip` | macOS DAWs — copy to `~/Library/Audio/Plug-Ins/VST3/` |
 | `Matilda-*-standalone.zip` | Standalone app — see [`../standalone/README.md`](../standalone/README.md) |
 
-Latest: **[v1.0.9](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.9)**
+Latest: **[v1.0.12](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.12)**
 
 See `releases/README.md` for CI workflow details.
+
+**Source status:** Jul 16, 2026 Windows VST3 port is merged in `matilda/plugin/` (polyphony crown/engine, step scroll, layer clipboard, presets, frosted shell, Rive `faceStreakVis`, playhead sync). Release artifacts are built by the tag-triggered Matilda Release workflow.
 
 ## Build locally
 
@@ -103,7 +105,7 @@ Matilda → generator inside Patcher, green MIDI cables to synth — same **MIDI
 
 Install: `Matilda.vst3` → `C:\Program Files\Common Files\VST3\` (Windows) or `~/Library/Audio/Plug-Ins/VST3/` (macOS)
 
-### Windows / VST3 UI (Jun 2026)
+### Windows / VST3 UI (Jul 2026 source port)
 
 | Topic | Detail |
 |-------|--------|
@@ -112,6 +114,7 @@ Install: `Matilda.vst3` → `C:\Program Files\Common Files\VST3\` (Windows) or `
 | **Host oversize** | If FL Studio / Fruity Wrapper leaves empty space right of the UI, starfield wallpaper fills it (`HeroBackdropDrawing`) |
 | **Chevron** | `collapse-toggle-expanded@2x.png` / `collapse-toggle-collapsed@2x.png` — re-export to `cartesia-vst-ui/public/assets/` then rebuild |
 | **Title filigree** | Module titles (Quantize Scale, Global Settings, etc.) live in fixed design-space shell — not stretched when host resizes |
+| **Jul 16 port** | Polyphony crown, step scroll, layer clipboard, presets, frosted shell, and last-fired playhead sync are in plugin source |
 | **Not in VST3** | Footer BPM label, sync toggle, debug status (Standalone sandbox only) |
 
 After replacing chevron PNGs: `cmake --build build --config Release` (re-embeds `MatildaAssets`).
@@ -134,7 +137,7 @@ Arp start is **beat-quantized** — first step waits for next downbeat (DAW play
 
 ## Presets
 
-Default patch is embedded from `matilda/presets/default.layer1.json` (Lydian layer 1 grid). Host save/restore uses the same JSON schema as the Python engine (`cartesia/model.py`).
+Default patch is embedded from `matilda/presets/default.layer1.json` (Lydian layer 1 grid). Host save/restore uses Patch JSON v2. The Jul 16 source port adds the standalone-style preset bar: user presets seed to `IdeasLab/Matilda/presets`, dirty `*` marks edited patches, and load preserves current BPM/transport state.
 
 ---
 

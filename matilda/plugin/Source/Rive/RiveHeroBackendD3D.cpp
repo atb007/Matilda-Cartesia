@@ -67,6 +67,10 @@ void RiveHeroBackendD3D::setActiveLayerCount(int count) {
     impl_->core.setActiveLayerCount(count);
 }
 
+void RiveHeroBackendD3D::setPolyphony(bool enabled) {
+    impl_->core.setPolyphony(enabled);
+}
+
 void RiveHeroBackendD3D::setDisplayRect(juce::Rectangle<int> rect) {
     if (view_ != nullptr)
         view_->setBounds(rect);

@@ -50,11 +50,15 @@ void GemGrid::setLayer(int layer) {
 }
 
 void GemGrid::refresh() {
+    const int activeCount = engine_.layerActiveStepCount(layer_);
     for (int y = 0; y < matilda::kGridSize; ++y)
-        for (int x = 0; x < matilda::kGridSize; ++x)
-            cells_[static_cast<size_t>(y)][static_cast<size_t>(x)]->bind(
-                &engine_.cell(layer_, x, y),
-                layer_, x, y);
+        for (int x = 0; x < matilda::kGridSize; ++x) {
+            const int step = y * matilda::kGridSize + x;
+            auto& cell = *cells_[static_cast<size_t>(y)][static_cast<size_t>(x)];
+            auto& slot = *slots_[static_cast<size_t>(y)][static_cast<size_t>(x)];
+            cell.bind(&engine_.cell(layer_, x, y), layer_, x, y);
+            slot.setVisible(!singleCellDev_ && step < activeCount);
+        }
     resized();
     repaint();
 }
@@ -119,13 +123,14 @@ void GemGrid::resized() {
         return;
     }
 
+    const int activeCount = engine_.layerActiveStepCount(layer_);
     for (int y = 0; y < matilda::kGridSize; ++y)
-        for (int x = 0; x < matilda::kGridSize; ++x)
-            slots_[static_cast<size_t>(y)][static_cast<size_t>(x)]->setVisible(true);
-
-    for (int y = 0; y < matilda::kGridSize; ++y)
-        for (int x = 0; x < matilda::kGridSize; ++x)
-            slots_[static_cast<size_t>(y)][static_cast<size_t>(x)]->setBounds(slotBounds(x, y));
+        for (int x = 0; x < matilda::kGridSize; ++x) {
+            const int step = y * matilda::kGridSize + x;
+            auto& slot = *slots_[static_cast<size_t>(y)][static_cast<size_t>(x)];
+            slot.setVisible(step < activeCount);
+            slot.setBounds(slotBounds(x, y));
+        }
 }
 
 void GemGrid::paint(juce::Graphics& g) { juce::ignoreUnused(g); }

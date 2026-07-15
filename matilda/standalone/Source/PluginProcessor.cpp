@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "Engine/PresetLibrary.h"
 
 MatildaAudioProcessor::MatildaAudioProcessor()
     : AudioProcessor(BusesProperties()
@@ -10,7 +11,9 @@ MatildaAudioProcessor::MatildaAudioProcessor()
 }
 
 void MatildaAudioProcessor::loadStartupPreset() {
-    matilda::PatchStore::loadDefaultPreset(patch_);
+    matilda::PresetLibrary::ensureSeeded();
+    if (!matilda::PresetLibrary::loadNamed(matilda::PresetLibrary::kInitName, patch_))
+        matilda::PatchStore::loadDefaultPreset(patch_);
     engine_.reset();
     engine_.requantizeAllCells();
 }
@@ -64,6 +67,7 @@ void MatildaAudioProcessor::setSequencerRunning(bool running) {
         panicRequested_.store(true);
     } else {
         activeNote_ = -1;
+        activeNotesPerLayer_.fill(-1);
         sequencerWasRunning_ = false;
         useExternalMidiClock_ = false;
         midiClockAccumulator_ = 0;
@@ -124,6 +128,7 @@ void MatildaAudioProcessor::beginSequencerOnBeat(juce::MidiBuffer& midi, int sam
     sampleClock_ = 0.0;
     midiClockAccumulator_ = 0;
     activeNote_ = -1;
+    activeNotesPerLayer_.fill(-1);
     engine_.reset();
     sequencerStepping_.store(true);
     sequencerWasRunning_ = true;
@@ -167,21 +172,42 @@ void MatildaAudioProcessor::panicNotes(juce::MidiBuffer& midi, int samplePos) {
         sendNoteOff(midi, activeNote_, samplePos);
         activeNote_ = -1;
     }
+    for (int& note : activeNotesPerLayer_) {
+        if (note >= 0) {
+            sendNoteOff(midi, note, samplePos);
+            note = -1;
+        }
+    }
 
     midi.addEvent(juce::MidiMessage::allNotesOff(kMidiChannel), samplePos);
+}
+
+void MatildaAudioProcessor::emitLayerNote(juce::MidiBuffer& midi, int layer, int step, int samplePos) {
+    layer = juce::jlimit(0, matilda::kLayerCount - 1, layer);
+    const int x = step % matilda::kGridSize;
+    const int y = step / matilda::kGridSize;
+    const auto& cell = engine_.cell(layer, x, y);
+
+    auto& slot = activeNotesPerLayer_[static_cast<size_t>(layer)];
+    if (slot >= 0)
+        sendNoteOff(midi, slot, samplePos);
+
+    slot = engine_.resolveFiredMidiNote(cell);
+    midi.addEvent(juce::MidiMessage::noteOn(kMidiChannel, slot, static_cast<juce::uint8>(cell.velocity)),
+                  samplePos);
 }
 
 void MatildaAudioProcessor::emitStepNote(juce::MidiBuffer& midi, int samplePos) {
     const int layer = engine_.lastPlayingLayer();
     const int step = engine_.lastStepIndex();
-    const int x = step % matilda::kGridSize;
-    const int y = step / matilda::kGridSize;
-    const auto& cell = engine_.cell(layer, x, y);
 
     // GridWalker-style mono legato: one note at a time, noteOff before each new noteOn.
     if (activeNote_ >= 0)
         sendNoteOff(midi, activeNote_, samplePos);
 
+    const int x = step % matilda::kGridSize;
+    const int y = step / matilda::kGridSize;
+    const auto& cell = engine_.cell(layer, x, y);
     activeNote_ = engine_.resolveFiredMidiNote(cell);
     midi.addEvent(juce::MidiMessage::noteOn(kMidiChannel, activeNote_,
                                             static_cast<juce::uint8>(cell.velocity)),
@@ -190,6 +216,15 @@ void MatildaAudioProcessor::emitStepNote(juce::MidiBuffer& midi, int samplePos) 
 
 void MatildaAudioProcessor::advanceSequencerStep(juce::MidiBuffer& midi, int samplePos) {
     engine_.tick();
+
+    if (patch_.polyphony) {
+        for (const auto& result : engine_.lastTickResults()) {
+            if (result.fired)
+                emitLayerNote(midi, result.layer, result.stepIndex, samplePos);
+        }
+        return;
+    }
+
     if (engine_.lastStepFired())
         emitStepNote(midi, samplePos);
 }

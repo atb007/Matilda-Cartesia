@@ -8,6 +8,6 @@ inline constexpr const char* kPlayBoolean = "streakVisible";
 inline constexpr const char* kBodyStreakBoolean = "bodyStreak";
 inline constexpr const char* kBodyGlowBoolean = "bodyGlow";
 inline constexpr const char* kFaceGlowVisBoolean = "faceGlowVis";
-inline constexpr const char* kFaceStreakVisBoolean = "faceStreakVIs";
+inline constexpr const char* kFaceStreakVisBoolean = "faceStreakVis";
 
 } // namespace matilda::rive

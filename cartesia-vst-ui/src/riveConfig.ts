@@ -1,5 +1,5 @@
-/** Rive hero — matilda-cartesia-v2.riv (Artboard + data bind). See matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md */
-export const RIVE_SRC = "/assets/matilda-cartesia-v2.riv";
+/** Rive hero — matilda-cartesia-v3.riv (Artboard + data bind). See matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md */
+export const RIVE_SRC = "/assets/matilda-cartesia-v3.riv";
 export const RIVE_ARTBOARD = "Artboard";
 export const RIVE_VIEW_MODEL = "HairStreaksTrimControl";
 /** Boolean data bind — true while transport is playing. */
@@ -7,7 +7,8 @@ export const RIVE_PLAY_BOOLEAN = "streakVisible";
 export const RIVE_BODY_STREAK_BOOLEAN = "bodyStreak";
 export const RIVE_BODY_GLOW_BOOLEAN = "bodyGlow";
 export const RIVE_FACE_GLOW_VIS_BOOLEAN = "faceGlowVis";
-export const RIVE_FACE_STREAK_VIS_BOOLEAN = "faceStreakVIs";
+/** Boolean — true while playing AND polyphony on AND ≥2 active layers. */
+export const RIVE_FACE_STREAK_VIS_BOOLEAN = "faceStreakVis";
 
 /** Design-px nudge inside mask — Rive artboard framing vs static PNG. */
 export const RIVE_PORTRAIT_OFFSET_X = 20;

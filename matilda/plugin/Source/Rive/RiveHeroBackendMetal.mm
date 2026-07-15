@@ -35,6 +35,10 @@ void RiveHeroBackendMetal::setActiveLayerCount(int count) {
     impl_->core.setActiveLayerCount(count);
 }
 
+void RiveHeroBackendMetal::setPolyphony(bool enabled) {
+    impl_->core.setPolyphony(enabled);
+}
+
 void RiveHeroBackendMetal::setDisplayRect(juce::Rectangle<int> rect) {
     if (view_ != nullptr)
         view_->setBounds(rect);

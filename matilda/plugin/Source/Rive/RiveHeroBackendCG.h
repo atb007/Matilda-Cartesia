@@ -13,6 +13,7 @@ public:
     bool loadFromMemory(const void* data, size_t numBytes) override;
     void setPlaying(bool playing) override;
     void setActiveLayerCount(int count) override;
+    void setPolyphony(bool enabled) override;
     void setDisplayRect(juce::Rectangle<int> rect) override;
     void setContentAlignRect(juce::Rectangle<int> rect) override {}
     bool tick(float deltaSeconds) override;
@@ -31,6 +32,7 @@ private:
     bool hasVisibleFrame_ = false;
     bool playing_ = false;
     int activeLayerCount_ = 1;
+    bool polyphony_ = false;
     int renderW_ = 0;
     int renderH_ = 0;
     bool sizeDirty_ = true;
