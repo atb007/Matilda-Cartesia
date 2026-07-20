@@ -312,7 +312,12 @@ void HeroCanvas::paint(juce::Graphics& g) {
 #endif
 
 #if defined(MATILDA_RIVE_HERO)
-#if defined(MATILDA_RIVE_BACKEND_GPU)
+#if defined(MATILDA_RIVE_BACKEND_D3D)
+    // Keep the static portrait until the swap chain has presented a real frame —
+    // the child HWND paints black (not the hero) if D3D rendering fails.
+    if ((!riveLoaded_ || !rive_.hasVisibleFrame()) && staticPortrait.isValid())
+        g.drawImage(staticPortrait, portraitRect);
+#elif defined(MATILDA_RIVE_BACKEND_GPU)
     if (!riveLoaded_ && staticPortrait.isValid())
         g.drawImage(staticPortrait, portraitRect);
 #else

@@ -44,10 +44,10 @@ Universal binary (Apple Silicon + Intel).
 ## Cut a new release (maintainers)
 
 ```bash
-git tag v1.0.10
-git push origin v1.0.10
+git tag v1.0.13
+git push origin v1.0.13
 ```
 
-Latest release: **v1.0.12** — Jul 2026 standalone freeze source-ported to VST3/AU: polyphony crown/engine, step scroll, layer clipboard, presets, frosted shell, Rive v3/`faceStreakVis`, and last-fired playhead sync.
+Latest release: **v1.0.13** — Windows Rive D3D swap-chain fix + filigree mirror fix (Quantise Max, Play Mode, Clock ornaments).
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.

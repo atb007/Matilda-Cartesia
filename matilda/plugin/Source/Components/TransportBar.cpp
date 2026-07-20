@@ -55,7 +55,7 @@ void drawSectionHeader(juce::Graphics& g, const juce::Image& ornLeft, const juce
     const float ornY = row.getY() + (row.getHeight() - ornH) * 0.5f + 2.f * scale;
 
     drawImage(g, ornLeft, {row.getX(), ornY, ornW, ornH});
-    drawImageFlippedHorizontal(g, ornRight, {row.getRight() - ornW, ornY, ornW, ornH});
+    drawImage(g, ornRight, {row.getRight() - ornW, ornY, ornW, ornH});
 
     g.setFont(matilda::fonts::supermercadoOne(kLabelFs * scale));
     g.setColour(juce::Colours::white.withAlpha(0.7f));
@@ -482,9 +482,11 @@ TransportBar::TransportBar(matilda::PatchState& patch, MatildaLookAndFeel& laf)
     sectionOrnLeftImg_ = rasterizePlainSvg(BinaryData::transportornamentclockleft_svg,
                                            BinaryData::transportornamentclockleft_svgSize,
                                            juce::roundToInt(kSectionOrnW * 2.f), 40);
-    sectionOrnRightImg_ = rasterizePlainSvg(BinaryData::transportornamentclockright_svg,
-                                            BinaryData::transportornamentclockright_svgSize,
-                                            juce::roundToInt(kSectionOrnW * 2.f), 40);
+    // Pre-flipped at load — paint-time negative-scale flips fail under Windows Direct2D.
+    sectionOrnRightImg_ = matilda::ui::filigree::flipImageHorizontally(
+        rasterizePlainSvg(BinaryData::transportornamentclockright_svg,
+                          BinaryData::transportornamentclockright_svgSize,
+                          juce::roundToInt(kSectionOrnW * 2.f), 40));
 
     playButton_ = std::make_unique<PlayButton>(*this);
     playModeRow_ = std::make_unique<SettingRow>(*this, MenuId::PlayMode);

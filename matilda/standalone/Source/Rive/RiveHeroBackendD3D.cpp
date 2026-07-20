@@ -1,6 +1,7 @@
 #include "RiveHeroBackendD3D.h"
 #include "RiveHeroConfig.h"
 #include "RiveHeroD3DCore.h"
+#include "RiveHeroD3DLog.h"
 #include "RiveHeroD3DView.h"
 
 #include "rive/renderer/d3d/d3d_utils.hpp"
@@ -33,6 +34,8 @@ void ensureHostWindowClassRegistered() {
     wc.lpfnWndProc = DefWindowProcW;
     wc.hInstance = GetModuleHandleW(nullptr);
     wc.lpszClassName = kHostWindowClassName;
+    // Black, not the default white — avoids a white flash before the first Rive frame.
+    wc.hbrBackground = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
     RegisterClassExW(&wc);
     registered = true;
 }
@@ -44,6 +47,8 @@ struct RiveHeroBackendD3D::Impl {
     Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
     uint32_t drawableWidth = 0;
     uint32_t drawableHeight = 0;
+    HRESULT lastSwapChainHr = S_OK;
+    bool renderFailureLogged = false;
 };
 
 RiveHeroBackendD3D::RiveHeroBackendD3D()
@@ -143,16 +148,25 @@ bool RiveHeroBackendD3D::renderSwapChain(void* hostHwnd, float deltaSeconds) {
         scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
         scd.BufferCount = 2;
         scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-        scd.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
+        // PREMULTIPLIED is rejected by CreateSwapChainForHwnd (composition-only);
+        // HWND swap chains must use IGNORE/UNSPECIFIED.
+        scd.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
         scd.Scaling = DXGI_SCALING_STRETCH;
 
-        if (!succeeded(factory->CreateSwapChainForHwnd(device,
-                                                       hwnd,
-                                                       &scd,
-                                                       nullptr,
-                                                       nullptr,
-                                                       impl_->swapChain.ReleaseAndGetAddressOf())))
+        const HRESULT swapHr = factory->CreateSwapChainForHwnd(device,
+                                                               hwnd,
+                                                               &scd,
+                                                               nullptr,
+                                                               nullptr,
+                                                               impl_->swapChain.ReleaseAndGetAddressOf());
+        if (!succeeded(swapHr)) {
+            if (swapHr != impl_->lastSwapChainHr) {
+                d3dLogHr("CreateSwapChainForHwnd failed", static_cast<long>(swapHr));
+                impl_->lastSwapChainHr = swapHr;
+            }
             return false;
+        }
+        impl_->lastSwapChainHr = S_OK;
 
         impl_->drawableWidth = drawableW;
         impl_->drawableHeight = drawableH;
@@ -165,8 +179,13 @@ bool RiveHeroBackendD3D::renderSwapChain(void* hostHwnd, float deltaSeconds) {
     if (!succeeded(impl_->swapChain->GetBuffer(0, IID_PPV_ARGS(&backbuffer))))
         return false;
 
-    if (!impl_->core.render(backbuffer.Get(), drawableW, drawableH, deltaSeconds))
+    if (!impl_->core.render(backbuffer.Get(), drawableW, drawableH, deltaSeconds)) {
+        if (!impl_->renderFailureLogged) {
+            d3dLog("Rive render() failed after swap chain creation");
+            impl_->renderFailureLogged = true;
+        }
         return false;
+    }
 
     impl_->swapChain->Present(0, 0);
     return true;
@@ -283,9 +302,11 @@ void RiveHeroD3DView::timerCallback() {
     if (backend_.renderSwapChain(hostHwnd_, 1.f / static_cast<float>(fps))) {
         const bool firstFrame = !hasRenderedFrame_;
         hasRenderedFrame_ = true;
-        if (firstFrame)
+        if (firstFrame) {
+            d3dLog("first D3D frame presented");
             if (auto* parent = getParentComponent())
                 parent->repaint();
+        }
     }
 }
 

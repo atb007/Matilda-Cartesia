@@ -1,6 +1,7 @@
 #include "RiveHeroD3DCore.h"
 #include "RiveHeroBindings.h"
 #include "RiveHeroConfig.h"
+#include "RiveHeroD3DLog.h"
 
 #include "rive/animation/linear_animation_instance.hpp"
 #include "rive/animation/state_machine_instance.hpp"
@@ -68,10 +69,15 @@ struct D3DRiveState {
 
         if (factory == nullptr) {
             Microsoft::WRL::ComPtr<IDXGIFactory1> factory1;
-            if (!succeeded(CreateDXGIFactory(IID_PPV_ARGS(&factory1))))
+            const HRESULT factoryHr = CreateDXGIFactory(IID_PPV_ARGS(&factory1));
+            if (!succeeded(factoryHr)) {
+                d3dLogHr("CreateDXGIFactory failed", static_cast<long>(factoryHr));
                 return false;
-            if (!succeeded(factory1.As(&factory)))
+            }
+            if (!succeeded(factory1.As(&factory))) {
+                d3dLog("IDXGIFactory1 -> IDXGIFactory2 cast failed (DXGI 1.2 unavailable)");
                 return false;
+            }
         }
 
         Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
@@ -86,23 +92,47 @@ struct D3DRiveState {
             break;
         }
 
-        const D3D_FEATURE_LEVEL featureLevels[] = {D3D_FEATURE_LEVEL_11_1};
-        const HRESULT hr = D3D11CreateDevice(adapter.Get(),
-                                             adapter != nullptr ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE,
-                                             nullptr,
-                                             0,
-                                             featureLevels,
-                                             static_cast<UINT>(std::size(featureLevels)),
-                                             D3D11_SDK_VERSION,
-                                             &device,
-                                             nullptr,
-                                             &context);
-        if (!succeeded(hr) || device == nullptr || context == nullptr)
+        const D3D_FEATURE_LEVEL featureLevels[] = {D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0};
+        D3D_FEATURE_LEVEL createdLevel{};
+        HRESULT hr = D3D11CreateDevice(adapter.Get(),
+                                       adapter != nullptr ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE,
+                                       nullptr,
+                                       0,
+                                       featureLevels,
+                                       static_cast<UINT>(std::size(featureLevels)),
+                                       D3D11_SDK_VERSION,
+                                       &device,
+                                       &createdLevel,
+                                       &context);
+        if (hr == E_INVALIDARG) {
+            // Pre-11.1 D3D runtimes reject arrays that mention 11_1 — retry with 11_0 only.
+            hr = D3D11CreateDevice(adapter.Get(),
+                                   adapter != nullptr ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE,
+                                   nullptr,
+                                   0,
+                                   &featureLevels[1],
+                                   1,
+                                   D3D11_SDK_VERSION,
+                                   &device,
+                                   &createdLevel,
+                                   &context);
+        }
+        if (!succeeded(hr) || device == nullptr || context == nullptr) {
+            d3dLogHr("D3D11CreateDevice failed", static_cast<long>(hr));
             return false;
+        }
+        {
+            char buf[96];
+            std::snprintf(buf, sizeof(buf), "D3D11 device created, feature level 0x%04X",
+                          static_cast<unsigned>(createdLevel));
+            d3dLog(buf);
+        }
 
         renderContext = ::rive::gpu::RenderContextD3DImpl::MakeContext(device, context, contextOptions);
-        if (renderContext == nullptr)
+        if (renderContext == nullptr) {
+            d3dLog("RenderContextD3DImpl::MakeContext returned null");
             return false;
+        }
 
         d3dImpl = renderContext->static_impl_cast<::rive::gpu::RenderContextD3DImpl>();
         return d3dImpl != nullptr;
@@ -182,25 +212,43 @@ struct D3DRiveState {
         targetWidth = 0;
         targetHeight = 0;
 
-        if (!initDevice() || data == nullptr || numBytes == 0)
+        {
+            char buf[96];
+            std::snprintf(buf, sizeof(buf), "loadBytes: %zu bytes", numBytes);
+            d3dLog(buf);
+        }
+
+        if (!initDevice() || data == nullptr || numBytes == 0) {
+            d3dLog("loadBytes: initDevice failed or empty data");
             return false;
+        }
 
         std::vector<uint8_t> bytes(numBytes);
         std::memcpy(bytes.data(), data, numBytes);
 
         ::rive::ImportResult result = ::rive::ImportResult::malformed;
         file = ::rive::File::import(bytes, renderContext.get(), &result);
-        if (file == nullptr)
+        if (file == nullptr) {
+            // 0 = success, 1 = unsupportedVersion, 2 = malformed
+            char buf[96];
+            std::snprintf(buf, sizeof(buf), "File::import failed, ImportResult=%d",
+                          static_cast<int>(result));
+            d3dLog(buf);
             return false;
+        }
 
         artboard = file->artboardNamed(kArtboard);
         if (artboard == nullptr)
             artboard = file->artboardDefault();
-        if (artboard == nullptr)
+        if (artboard == nullptr) {
+            d3dLog("loadBytes: no artboard found");
             return false;
+        }
 
-        if (!bindViewModel())
+        if (!bindViewModel()) {
+            d3dLog("loadBytes: bindViewModel failed");
             return false;
+        }
 
         scene = artboard->defaultStateMachine();
         if (scene == nullptr)
@@ -214,6 +262,8 @@ struct D3DRiveState {
         else
             artboard->advance(0.f);
 
+        d3dLog(scene != nullptr ? "loadBytes: ok (state machine bound)"
+                                : "loadBytes: ok (no scene — static artboard)");
         loaded = true;
         return true;
     }

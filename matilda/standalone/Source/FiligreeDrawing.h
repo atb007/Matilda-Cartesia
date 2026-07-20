@@ -190,6 +190,23 @@ inline void drawDrawableFlippedVertical(juce::Graphics& g, const juce::Drawable&
     g.restoreState();
 }
 
+/**
+ * Horizontal mirror baked at load time. Paint-time negative-scale transforms
+ * (drawImageFlippedHorizontal) silently fail to flip under the Windows Direct2D
+ * renderer, so right-side ornaments must be pre-flipped into the image instead.
+ */
+inline juce::Image flipImageHorizontally(const juce::Image& src) {
+    if (!src.isValid())
+        return {};
+
+    const int w = src.getWidth();
+    const int h = src.getHeight();
+    juce::Image dst(juce::Image::ARGB, w, h, true);
+    juce::Graphics g(dst);
+    g.drawImageTransformed(src, juce::AffineTransform::scale(-1.f, 1.f).translated(static_cast<float>(w), 0.f));
+    return dst;
+}
+
 /** Right section ornament — Figma scaleY(-1) rotate(180deg) ≡ horizontal mirror (scaleX(-1)). */
 inline void drawImageFlippedHorizontal(juce::Graphics& g, const juce::Image& img, juce::Rectangle<float> dest) {
     if (!img.isValid())

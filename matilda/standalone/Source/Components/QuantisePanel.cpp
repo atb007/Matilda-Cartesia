@@ -34,15 +34,6 @@ void drawImg(juce::Graphics& g, const juce::Image& img, juce::Rectangle<float> d
         g.drawImage(img, d, juce::RectanglePlacement::stretchToFit);
 }
 
-void drawFlipX(juce::Graphics& g, const juce::Image& img, juce::Rectangle<float> d) {
-    if (!img.isValid())
-        return;
-    g.saveState();
-    g.addTransform(juce::AffineTransform::scale(-1.f, 1.f, d.getCentreX(), d.getCentreY()));
-    g.drawImage(img, d, juce::RectanglePlacement::stretchToFit);
-    g.restoreState();
-}
-
 void drawNeonTitle(juce::Graphics& g, const juce::String& text, juce::Rectangle<float> area, float s) {
     const float fs = kTitleFs * s;
     auto font = matilda::fonts::asimovian(fs);
@@ -472,8 +463,10 @@ QuantisePanel::QuantisePanel(matilda::PatchState& patch, MatildaLookAndFeel& laf
                                                              BinaryData::scaletitlefiligreebottom_svgSize);
     minMaxOrnLeftImg_ = rasterizeSvg(BinaryData::scaleminmaxornamentleft_svg,
                                      BinaryData::scaleminmaxornamentleft_svgSize, 120, 40);
-    minMaxOrnRightImg_ = rasterizeSvg(BinaryData::scaleminmaxornamentright_svg,
-                                      BinaryData::scaleminmaxornamentright_svgSize, 120, 40);
+    // Pre-flipped at load — paint-time negative-scale flips fail under Windows Direct2D.
+    minMaxOrnRightImg_ = matilda::ui::filigree::flipImageHorizontally(
+        rasterizeSvg(BinaryData::scaleminmaxornamentright_svg,
+                     BinaryData::scaleminmaxornamentright_svgSize, 120, 40));
     connectorLeftImg_ =
         rasterizeSvg(BinaryData::scaleconnectorleft_svg, BinaryData::scaleconnectorleft_svgSize, 236, 16);
     connectorRightImg_ =
@@ -723,7 +716,7 @@ void QuantisePanel::paintMinMaxHeader(juce::Graphics& g) const {
     const float divY = rowY + rowH * 0.5f - kDividerH * 0.5f;
 
     drawImg(g, minMaxOrnLeftImg_, designRect(layout.labelX[0], ornY, kOrnamentW, kOrnamentH));
-    drawFlipX(g, minMaxOrnRightImg_, designRect(layout.labelX[6], ornY, kOrnamentW, kOrnamentH));
+    drawImg(g, minMaxOrnRightImg_, designRect(layout.labelX[6], ornY, kOrnamentW, kOrnamentH));
 
     drawDivider(g, designRect(layout.labelX[2], divY, kDividerW, kDividerH), s);
     drawDivider(g, designRect(layout.labelX[4], divY, kDividerW, kDividerH), s);
