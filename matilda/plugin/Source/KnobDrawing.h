@@ -145,9 +145,13 @@ inline void drawMiniKnobTooltip(juce::Graphics& g,
 
     const float tw = g.getCurrentFont().getStringWidthFloat(text);
     const float th = fontSize * 1.15f;
-    const float x = knobBounds.getRight() + knobBounds.getWidth() * 0.25f;
-    const float y = knobBounds.getCentreY() - th * 0.5f;
-    const juce::Rectangle<float> box(x, y, tw + padX * 2.f, th + padY * 2.f);
+    const float boxW = tw + padX * 2.f;
+    const float boxH = th + padY * 2.f;
+    // Above the knob (not to the right) so long labels like "Note Trigger"
+    // stay inside the cell instead of clipping at the right edge.
+    const float x = knobBounds.getX();
+    const float y = knobBounds.getY() - boxH - fontSize * 0.2f;
+    const juce::Rectangle<float> box(x, y, boxW, boxH);
 
     g.setColour(juce::Colour(0xeb0c0e12));
     g.fillRoundedRectangle(box, 4.f);

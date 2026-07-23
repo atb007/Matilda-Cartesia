@@ -44,10 +44,10 @@ Universal binary (Apple Silicon + Intel).
 ## Cut a new release (maintainers)
 
 ```bash
-git tag v1.0.13
-git push origin v1.0.13
+git tag v1.0.14
+git push origin v1.0.14
 ```
 
-Latest release: **v1.0.13** — Windows Rive D3D swap-chain fix + filigree mirror fix (Quantise Max, Play Mode, Clock ornaments).
+Latest release: **v1.0.14** — factory preset pack (musical + abstract), macOS preset library path fix, mini-knob tip / type polish.
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.

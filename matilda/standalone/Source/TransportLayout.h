@@ -17,7 +17,8 @@ inline constexpr float kTitleFs = 24.f;
 inline constexpr float kTitleFontBoost = kTitleFs / kTitleFigmaFs;
 inline constexpr float kTitleTrack = 0.755f * kTitleFontBoost;
 inline constexpr float kLabelFs = 24.f;
-inline constexpr float kValueFs = 20.f;
+/** Match GemCell note labels (≈11–12px screen @ default scale → ~24 design). */
+inline constexpr float kValueFs = 24.f;
 
 inline constexpr float kFiligreeW = 383.087f;
 inline constexpr float kFiligreeH = 26.287f;

@@ -14,7 +14,7 @@ MIDI arp / grid sequencer for macOS and Windows DAWs. Builds on the Cartesia eng
 | `Matilda-macOS-vst3.zip` | macOS DAWs — copy to `~/Library/Audio/Plug-Ins/VST3/` |
 | `Matilda-*-standalone.zip` | Standalone app — see [`../standalone/README.md`](../standalone/README.md) |
 
-Latest: **[v1.0.13](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.13)**
+Latest: **[v1.0.14](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0.14)**
 
 See `releases/README.md` for CI workflow details.
 

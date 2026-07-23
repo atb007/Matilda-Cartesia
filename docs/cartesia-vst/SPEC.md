@@ -271,7 +271,8 @@ Preset JSON: `matilda/presets/*.json`
 
 - **UI:** Figma `PresetModule` ([5193:102814](https://www.figma.com/design/jdsiHSEmMSTHUkDlgKSiod/AdMaker-CMS?node-id=5193-102814)) — name dropdown + save; dirty `*` suffix.
 - **Library:** `~/Library/Application Support/IdeasLab/Matilda/presets/` (macOS) / `%AppData%\IdeasLab\Matilda\presets\` (Windows); seed `Init.json` on first launch.
-- **Save:** native Save dialog every time (unlimited files). Dropdown shows max **10** rows (scroll for more).
+  - **Note:** this JUCE tree’s `userApplicationDataDirectory` is `~/Library` on macOS (not Application Support). `PresetLibrary` therefore uses an explicit Application Support path, and one-time-migrates any older files from `~/Library/IdeasLab/Matilda/presets/`.
+- **Save:** native Save dialog every time (unlimited files). Chosen basename is always written into the library folder (dropdown stays in sync even if the panel saves a copy elsewhere). Max **10** visible rows (scroll for more).
 - **Load:** full patch replace; **BPM + transport play/stop preserved**.
 
 ### Mini-grid RESET VALUES

@@ -3,18 +3,70 @@
 
 namespace matilda {
 
+namespace {
+
+#if JUCE_MAC
+/** Older builds used JUCE userApplicationDataDirectory which is ~/Library on this JUCE. */
+juce::File legacyPresetsDirectory() {
+    return juce::File::getSpecialLocation(juce::File::userHomeDirectory)
+        .getChildFile("Library")
+        .getChildFile("IdeasLab")
+        .getChildFile("Matilda")
+        .getChildFile("presets");
+}
+#endif
+
+void migrateLegacyPresetsIfNeeded(const juce::File& destDir) {
+#if JUCE_MAC
+    const auto legacyDir = legacyPresetsDirectory();
+    if (!legacyDir.isDirectory())
+        return;
+    if (legacyDir.getFullPathName() == destDir.getFullPathName())
+        return;
+
+    const auto marker = destDir.getParentDirectory().getChildFile(".migrated_from_library_ideaslab");
+    if (marker.existsAsFile())
+        return;
+
+    for (const auto& src :
+         legacyDir.findChildFiles(juce::File::findFiles, false, "*.json")) {
+        const auto dest = destDir.getChildFile(src.getFileName());
+        // Prefer the user's existing library file when both exist (except fill gaps).
+        if (!dest.existsAsFile())
+            (void) src.copyFileTo(dest);
+    }
+    (void) marker.replaceWithText("1\n");
+#else
+    juce::ignoreUnused(destDir);
+#endif
+}
+
+} // namespace
+
 juce::File PresetLibrary::presetsDirectory() {
-    auto dir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-                   .getChildFile("IdeasLab")
-                   .getChildFile("Matilda")
-                   .getChildFile("presets");
-    return dir;
+#if JUCE_MAC
+    // Explicit Application Support — JUCE's userApplicationDataDirectory is ~/Library here,
+    // which previously hid presets from the documented path.
+    return juce::File::getSpecialLocation(juce::File::userHomeDirectory)
+        .getChildFile("Library")
+        .getChildFile("Application Support")
+        .getChildFile("IdeasLab")
+        .getChildFile("Matilda")
+        .getChildFile("presets");
+#else
+    return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+        .getChildFile("IdeasLab")
+        .getChildFile("Matilda")
+        .getChildFile("presets");
+#endif
 }
 
 void PresetLibrary::ensureSeeded() {
     auto dir = presetsDirectory();
     if (!dir.exists())
         dir.createDirectory();
+
+    migrateLegacyPresetsIfNeeded(dir);
 
     const auto initFile = fileForName(kInitName);
     if (initFile.existsAsFile())

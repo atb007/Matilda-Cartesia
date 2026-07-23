@@ -478,7 +478,7 @@ TransportBar::TransportBar(matilda::PatchState& patch, MatildaLookAndFeel& laf)
     globalClickListener_ = std::make_unique<GlobalClickListener>(*this);
 
     addAndMakeVisible(*playButton_);
-    addAndMakeVisible(*playModeRow_);
+    // Play Mode dropdown removed from UI — patch.playMode still used by the engine.
     addAndMakeVisible(*clockRow_);
 
     syncFromPatch();
@@ -621,12 +621,8 @@ void TransportBar::paint(juce::Graphics& g) {
         drawDrawableFlippedVertical(g, *filigreeTop_, designRect(kFiligreeTopLeft, kFiligreeBotTop, kFiligreeW, kFiligreeH));
     drawNeonTitle(g, "Global Settings", designRect(0.f, kTitleCenterY - kTitleFs * 0.5f, kBaseW, kTitleFs), s);
 
-    const float playModeHeaderY = kColTop + kPlaySize + kColGap;
-    const float playModeHeaderH = kLabelFs;
-    drawSectionHeader(g, sectionOrnLeftImg_, sectionOrnRightImg_, "Play Mode",
-                      designRect(kColLeft, playModeHeaderY, kPlayModeW, playModeHeaderH), s);
-
-    const float clockHeaderY = playModeHeaderY + playModeHeaderH + kRowGap + 44.f;
+    // Clock sits under the play button (Play Mode row removed from UI).
+    const float clockHeaderY = kColTop + kPlaySize + kColGap;
     drawSectionHeader(g, sectionOrnLeftImg_, sectionOrnRightImg_, "Clock",
                       designRect(kColLeft + (kPlayModeW - kClockW) * 0.5f, clockHeaderY, kClockW, kLabelFs), s);
 }
@@ -638,11 +634,9 @@ void TransportBar::resized() {
                                .expanded(bleed)
                                .toNearestInt());
 
-    const float playModeRowY = kColTop + kPlaySize + kColGap + kLabelFs + kRowGap;
-    playModeRow_->setBounds(designRect(kColLeft, playModeRowY, kPlayModeW, kValueFs + kDropdownPadY * 2.f)
-                                .toNearestInt());
+    playModeRow_->setBounds({});
 
-    const float clockRowY = playModeRowY + kValueFs + kDropdownPadY * 2.f + kRowGap + kLabelFs + kRowGap;
+    const float clockRowY = kColTop + kPlaySize + kColGap + kLabelFs + kRowGap;
     clockRow_->setBounds(
         designRect(kColLeft + (kPlayModeW - kClockW) * 0.5f, clockRowY, kClockW, kValueFs + kDropdownPadY * 2.f)
             .toNearestInt());

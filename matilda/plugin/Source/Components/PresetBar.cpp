@@ -379,6 +379,8 @@ void PresetBar::loadPresetAt(int index) {
 
 void PresetBar::runSaveDialog() {
     matilda::PresetLibrary::ensureSeeded();
+    // Start in the library folder. macOS native panels often wander; we always
+    // register the chosen basename into presetsDirectory so the dropdown stays in sync.
     auto chooser = std::make_shared<juce::FileChooser>(
         "Save Matilda preset", matilda::PresetLibrary::fileForName(currentName_), "*.json");
     constexpr auto flags =
@@ -386,14 +388,21 @@ void PresetBar::runSaveDialog() {
         | juce::FileBrowserComponent::warnAboutOverwriting;
     chooser->launchAsync(flags, [this, chooser](const juce::FileChooser& fc) {
         juce::ignoreUnused(chooser);
-        auto file = fc.getResult();
-        if (file == juce::File())
+        auto chosen = fc.getResult();
+        if (chosen == juce::File())
             return;
-        if (file.getFileExtension().isEmpty())
-            file = file.withFileExtension(".json");
-        if (!matilda::PresetLibrary::saveToFile(file, patch_))
+        if (chosen.getFileExtension().isEmpty())
+            chosen = chosen.withFileExtension(".json");
+
+        const auto name = matilda::PresetLibrary::displayNameFromFile(chosen);
+        const auto libraryFile = matilda::PresetLibrary::fileForName(name);
+        if (!matilda::PresetLibrary::saveToFile(libraryFile, patch_))
             return;
-        currentName_ = matilda::PresetLibrary::displayNameFromFile(file);
+        // Optional export copy when the user picked a folder outside the library.
+        if (chosen.getFullPathName() != libraryFile.getFullPathName())
+            (void) matilda::PresetLibrary::saveToFile(chosen, patch_);
+
+        currentName_ = name;
         markClean();
         if (onSaved)
             onSaved();

@@ -1,0 +1,220 @@
+{
+  "title": "Static Field \u2014 one pitch, weather is probability",
+  "version": 2,
+  "root": "C",
+  "mode": "chromatic",
+  "quantize": true,
+  "min_octave": 3,
+  "max_octave": 4,
+  "master_division": 0.0625,
+  "play_mode": "note",
+  "play_on_transport": false,
+  "selected_layer": 0,
+  "polyphony": false,
+  "poly_voices": 1,
+  "layers": [
+    {
+      "active": true,
+      "movement": "forward",
+      "random_skip_prob": 0.0,
+      "active_step_count": 16,
+      "step_index": 0,
+      "step_dir": 1,
+      "cells": [
+        [
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 50,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          },
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 55,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          },
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 60,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          },
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 65,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          }
+        ],
+        [
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 70,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          },
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 75,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          },
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 80,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          },
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 50,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          }
+        ],
+        [
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 55,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          },
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 60,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          },
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 65,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          },
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 70,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          }
+        ],
+        [
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 75,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          },
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 80,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          },
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 50,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          },
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 55,
+            "octave_offset": 1,
+            "trigger_armed": true,
+            "trigger_prob": 0.35,
+            "jitter_armed": true,
+            "jitter_amount": 0.85
+          }
+        ]
+      ]
+    },
+    {
+      "active": false,
+      "movement": "forward",
+      "random_skip_prob": 0.0,
+      "active_step_count": 16,
+      "step_index": 0,
+      "step_dir": 1
+    },
+    {
+      "active": false,
+      "movement": "forward",
+      "random_skip_prob": 0.0,
+      "active_step_count": 16,
+      "step_index": 0,
+      "step_dir": 1
+    },
+    {
+      "active": false,
+      "movement": "forward",
+      "random_skip_prob": 0.0,
+      "active_step_count": 16,
+      "step_index": 0,
+      "step_dir": 1
+    }
+  ],
+  "seed": null
+}

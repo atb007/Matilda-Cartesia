@@ -18,7 +18,8 @@ inline constexpr float kExpandedW = kExpandedWBase * (1.f + kExpandedLeftExpandR
 inline constexpr float kCollapsedW = 1515.f;
 inline constexpr float kHeroPanelW = kExpandedW - kCollapsedW;
 inline constexpr float kShellW = 1405.f;
-inline constexpr float kShellRightGutter = 85.f;
+/** Collapsed viewport side pad — equal L/R (was 85 right / ~25 left). */
+inline constexpr float kShellRightGutter = (kCollapsedW - kShellW) * 0.5f;
 inline constexpr float kShellLeft = kExpandedW - kShellW - kShellRightGutter;
 inline constexpr float kShellTop = 50.f;
 inline constexpr float kPreviewScale = 0.52f; // 100% user scale (see UiScale.h)

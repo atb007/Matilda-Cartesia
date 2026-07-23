@@ -1,0 +1,390 @@
+{
+  "title": "Poly 5v8 \u2014 melodic techno lattice",
+  "version": 2,
+  "root": "F#",
+  "mode": "minor",
+  "quantize": true,
+  "min_octave": 2,
+  "max_octave": 6,
+  "master_division": 0.0625,
+  "play_mode": "note",
+  "play_on_transport": false,
+  "selected_layer": 0,
+  "polyphony": true,
+  "poly_voices": 4,
+  "layers": [
+    {
+      "active": true,
+      "movement": "forward",
+      "random_skip_prob": 0.0,
+      "active_step_count": 5,
+      "step_index": 0,
+      "step_dir": 1,
+      "cells": [
+        [
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 94,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 1,
+            "gate": true,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 3,
+            "gate": true,
+            "velocity": 82,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 4,
+            "gate": true,
+            "velocity": 74,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          }
+        ],
+        [
+          {
+            "degree": 6,
+            "gate": true,
+            "velocity": 88,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          }
+        ],
+        [
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          }
+        ],
+        [
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          }
+        ]
+      ]
+    },
+    {
+      "active": true,
+      "movement": "forward",
+      "random_skip_prob": 0.0,
+      "active_step_count": 8,
+      "step_index": 0,
+      "step_dir": 1,
+      "cells": [
+        [
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 68,
+            "octave_offset": 1,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 2,
+            "gate": false,
+            "velocity": 60,
+            "octave_offset": 1,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 4,
+            "gate": true,
+            "velocity": 78,
+            "octave_offset": 1,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 2,
+            "gate": true,
+            "velocity": 70,
+            "octave_offset": 1,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          }
+        ],
+        [
+          {
+            "degree": 0,
+            "gate": true,
+            "velocity": 86,
+            "octave_offset": 2,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 4,
+            "gate": false,
+            "velocity": 60,
+            "octave_offset": 1,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 2,
+            "gate": true,
+            "velocity": 74,
+            "octave_offset": 1,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 6,
+            "gate": true,
+            "velocity": 80,
+            "octave_offset": 1,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          }
+        ],
+        [
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          }
+        ],
+        [
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          },
+          {
+            "degree": 0,
+            "gate": false,
+            "velocity": 70,
+            "octave_offset": 0,
+            "trigger_armed": false,
+            "trigger_prob": 0.5,
+            "jitter_armed": false,
+            "jitter_amount": 0.5
+          }
+        ]
+      ]
+    },
+    {
+      "active": false,
+      "movement": "forward",
+      "random_skip_prob": 0.0,
+      "active_step_count": 16,
+      "step_index": 0,
+      "step_dir": 1
+    },
+    {
+      "active": false,
+      "movement": "forward",
+      "random_skip_prob": 0.0,
+      "active_step_count": 16,
+      "step_index": 0,
+      "step_dir": 1
+    }
+  ],
+  "seed": null
+}

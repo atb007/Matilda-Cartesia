@@ -49,11 +49,12 @@ inline constexpr float kTonicPillW = 75.f;
 inline constexpr float kTonicPillMinH = 37.f;
 inline constexpr float kTonicPillPadY = 7.f;
 inline constexpr float kTonicPillPadX = 18.f;
-inline constexpr float kNoteFs = 18.f;
+/** Match GemCell note labels (≈11–12px screen @ default scale → ~24 design). */
+inline constexpr float kNoteFs = 24.f;
 inline constexpr float kTonicFs = 24.f;
 inline constexpr float kMinMaxBoxW =
     (kMinMaxRowW - 2.f * kConnectorW - kTonicPillW - 4.f * kPickerGap) * 0.5f;
-inline constexpr float kMinMaxBoxH = 31.f;
+inline constexpr float kMinMaxBoxH = 34.f;
 inline constexpr float kBoxPadX = 8.f;
 inline constexpr float kBoxPadY = 4.f;
 inline constexpr float kDividerW = 39.f;
@@ -71,7 +72,7 @@ inline constexpr float kScaleBarLeft = 19.78f;
 inline constexpr float kScaleBarTop = 561.f;
 inline constexpr float kScaleBarW = 378.f;
 inline constexpr float kScaleBarH = 28.f;
-inline constexpr float kScaleBarFs = 20.f;
+inline constexpr float kScaleBarFs = 24.f;
 inline constexpr float kScaleBarTrack = 0.8f;
 inline constexpr float kArrowW = 27.5f;
 inline constexpr float kArrowH = 17.78f;
