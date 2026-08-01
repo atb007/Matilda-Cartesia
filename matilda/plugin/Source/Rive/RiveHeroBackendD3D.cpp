@@ -100,6 +100,10 @@ void RiveHeroBackendD3D::setDisplayRect(juce::Rectangle<int> rect) {
     hasVisibleFrame_ = false;
 }
 
+void RiveHeroBackendD3D::setContentAlignRect(juce::Rectangle<int> rect) {
+    juce::ignoreUnused(rect);
+}
+
 bool RiveHeroBackendD3D::tick(float deltaSeconds) {
     if (impl_ == nullptr || !impl_->core.isLoaded() || renderW_ <= 0 || renderH_ <= 0)
         return false;

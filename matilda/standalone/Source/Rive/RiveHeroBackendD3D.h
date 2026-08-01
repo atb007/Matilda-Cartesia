@@ -18,7 +18,7 @@ public:
     void setActiveLayerCount(int count) override;
     void setPolyphony(bool enabled) override;
     void setDisplayRect(juce::Rectangle<int> rect) override;
-    void setContentAlignRect(juce::Rectangle<int> rect) override {}
+    void setContentAlignRect(juce::Rectangle<int> rect) override;
     bool tick(float deltaSeconds) override;
 
     [[nodiscard]] bool isLoaded() const override;

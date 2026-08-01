@@ -3,6 +3,8 @@
 #include "RiveHeroD3DCore.h"
 #include "RiveHeroD3DLog.h"
 
+#include <JuceHeader.h>
+
 #include <vector>
 
 namespace matilda::rive {
@@ -96,6 +98,10 @@ void RiveHeroBackendD3D::setDisplayRect(juce::Rectangle<int> rect) {
     renderW_ = renderW;
     renderH_ = renderH;
     hasVisibleFrame_ = false;
+}
+
+void RiveHeroBackendD3D::setContentAlignRect(juce::Rectangle<int> rect) {
+    juce::ignoreUnused(rect);
 }
 
 bool RiveHeroBackendD3D::tick(float deltaSeconds) {
