@@ -44,10 +44,10 @@ Universal binary (Apple Silicon + Intel).
 ## Cut a new release (maintainers)
 
 ```bash
-git tag v1.0.14
-git push origin v1.0.14
+git tag v1.0.15
+git push origin v1.0.15
 ```
 
-Latest release: **v1.0.14** — factory preset pack (musical + abstract), macOS preset library path fix, mini-knob tip / type polish.
+Latest release: **v1.0.15** — Windows Rive hero via D3D offscreen→`juce::Image` (fixes static PNG in standalone/VST).
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.

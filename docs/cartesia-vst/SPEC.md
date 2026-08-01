@@ -287,7 +287,7 @@ Shipped / polished in **`matilda/standalone/`** and ported into **`matilda/plugi
 
 | # | Enhancement | Standalone status | Windows VST3 notes |
 |---|-------------|-------------------|--------------------|
-| 1 | **Rive hero v3** (`matilda-cartesia-v3.riv`) | ✅ source port | D3D path present; validate Windows artifact |
+| 1 | **Rive hero v3** (`matilda-cartesia-v3.riv`) | ✅ source port | Windows: D3D offscreen→`juce::Image` (no HWND swap chain) |
 | 2 | **Wordmark above GPU** (`CALayer` / peer-safe) | ✅ source port | Metal layer path done; D3D sibling path builds |
 | 3 | **`faceStreakVis` ← polyphony ∧ ≥2 layers + transport** | ✅ source port | Uses `setPolyphony` + layer count; off with a single active layer |
 | 4 | **Polyphony crown + engine** | ✅ source port | `PolyphonyCrown`, `PatchState::polyphony`, poly tick path |
@@ -303,7 +303,7 @@ Shipped / polished in **`matilda/standalone/`** and ported into **`matilda/plugi
 
 ### Shipped UI (hero)
 
-- **Rive hero** — macOS Metal / Windows D3D native runtime; play + layer-count view-model bindings. Static PNG until first GPU frame. See `matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md`.
+- **Rive hero** — macOS Metal overlay / Windows D3D offscreen→image; play + layer-count view-model bindings. Static PNG until first frame. See `matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md`.
 - **Wordmark above Rive (Metal)** — `CALayer` on the Metal host above `CAMetalLayer` (`RiveHeroMetalView::setWordmarkOverlay`). Version label: `Cartesia - v` + `JucePlugin_VersionString`.
 
 ---

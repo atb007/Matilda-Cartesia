@@ -53,6 +53,8 @@ struct D3DRiveState {
     ::rive::ViewModelInstanceBoolean* faceGlowVis = nullptr;
     ::rive::ViewModelInstanceBoolean* faceStreakVis = nullptr;
     ::rive::rcp<::rive::gpu::RenderTargetD3D> renderTarget;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> colorTexture;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> stagingTexture;
     bool loaded = false;
     bool playing = false;
     int activeLayerCount = 1;
@@ -62,6 +64,34 @@ struct D3DRiveState {
     uint32_t alignHeight = 0;
     uint32_t targetWidth = 0;
     uint32_t targetHeight = 0;
+
+    bool createDevice(IDXGIAdapter* adapter, D3D_DRIVER_TYPE driverType, D3D_FEATURE_LEVEL& createdLevel) {
+        const D3D_FEATURE_LEVEL featureLevels[] = {D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0};
+        HRESULT hr = D3D11CreateDevice(adapter,
+                                       driverType,
+                                       nullptr,
+                                       0,
+                                       featureLevels,
+                                       static_cast<UINT>(std::size(featureLevels)),
+                                       D3D11_SDK_VERSION,
+                                       &device,
+                                       &createdLevel,
+                                       &context);
+        if (hr == E_INVALIDARG) {
+            // Pre-11.1 D3D runtimes reject arrays that mention 11_1 — retry with 11_0 only.
+            hr = D3D11CreateDevice(adapter,
+                                   driverType,
+                                   nullptr,
+                                   0,
+                                   &featureLevels[1],
+                                   1,
+                                   D3D11_SDK_VERSION,
+                                   &device,
+                                   &createdLevel,
+                                   &context);
+        }
+        return succeeded(hr) && device != nullptr && context != nullptr;
+    }
 
     bool initDevice() {
         if (device != nullptr && context != nullptr && renderContext != nullptr)
@@ -92,35 +122,20 @@ struct D3DRiveState {
             break;
         }
 
-        const D3D_FEATURE_LEVEL featureLevels[] = {D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0};
         D3D_FEATURE_LEVEL createdLevel{};
-        HRESULT hr = D3D11CreateDevice(adapter.Get(),
-                                       adapter != nullptr ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE,
-                                       nullptr,
-                                       0,
-                                       featureLevels,
-                                       static_cast<UINT>(std::size(featureLevels)),
-                                       D3D11_SDK_VERSION,
-                                       &device,
-                                       &createdLevel,
-                                       &context);
-        if (hr == E_INVALIDARG) {
-            // Pre-11.1 D3D runtimes reject arrays that mention 11_1 — retry with 11_0 only.
-            hr = D3D11CreateDevice(adapter.Get(),
-                                   adapter != nullptr ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE,
-                                   nullptr,
-                                   0,
-                                   &featureLevels[1],
-                                   1,
-                                   D3D11_SDK_VERSION,
-                                   &device,
-                                   &createdLevel,
-                                   &context);
+        const D3D_DRIVER_TYPE hwType =
+            adapter != nullptr ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE;
+        if (!createDevice(adapter.Get(), hwType, createdLevel)) {
+            d3dLog("D3D11CreateDevice hardware failed — trying WARP");
+            device.Reset();
+            context.Reset();
+            if (!createDevice(nullptr, D3D_DRIVER_TYPE_WARP, createdLevel)) {
+                d3dLog("D3D11CreateDevice WARP failed");
+                return false;
+            }
+            d3dLog("D3D11 WARP device created");
         }
-        if (!succeeded(hr) || device == nullptr || context == nullptr) {
-            d3dLogHr("D3D11CreateDevice failed", static_cast<long>(hr));
-            return false;
-        }
+
         {
             char buf[96];
             std::snprintf(buf, sizeof(buf), "D3D11 device created, feature level 0x%04X",
@@ -209,6 +224,8 @@ struct D3DRiveState {
         faceGlowVis = nullptr;
         faceStreakVis = nullptr;
         renderTarget = nullptr;
+        colorTexture.Reset();
+        stagingTexture.Reset();
         targetWidth = 0;
         targetHeight = 0;
 
@@ -229,7 +246,6 @@ struct D3DRiveState {
         ::rive::ImportResult result = ::rive::ImportResult::malformed;
         file = ::rive::File::import(bytes, renderContext.get(), &result);
         if (file == nullptr) {
-            // 0 = success, 1 = unsupportedVersion, 2 = malformed
             char buf[96];
             std::snprintf(buf, sizeof(buf), "File::import failed, ImportResult=%d",
                           static_cast<int>(result));
@@ -268,26 +284,67 @@ struct D3DRiveState {
         return true;
     }
 
-    bool ensureRenderTarget(uint32_t width, uint32_t height) {
-        if (d3dImpl == nullptr || width == 0 || height == 0)
+    bool ensureOffscreenTargets(uint32_t width, uint32_t height) {
+        if (device == nullptr || d3dImpl == nullptr || width == 0 || height == 0)
             return false;
 
-        if (renderTarget == nullptr || targetWidth != width || targetHeight != height) {
-            renderTarget = d3dImpl->makeRenderTarget(width, height);
-            targetWidth = width;
-            targetHeight = height;
+        if (colorTexture != nullptr && stagingTexture != nullptr && targetWidth == width
+            && targetHeight == height && renderTarget != nullptr)
+            return true;
+
+        colorTexture.Reset();
+        stagingTexture.Reset();
+        renderTarget = nullptr;
+        targetWidth = 0;
+        targetHeight = 0;
+
+        D3D11_TEXTURE2D_DESC desc{};
+        desc.Width = width;
+        desc.Height = height;
+        desc.MipLevels = 1;
+        desc.ArraySize = 1;
+        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        desc.SampleDesc.Count = 1;
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_UNORDERED_ACCESS;
+
+        HRESULT hr = device->CreateTexture2D(&desc, nullptr, colorTexture.ReleaseAndGetAddressOf());
+        if (!succeeded(hr) || colorTexture == nullptr) {
+            d3dLogHr("CreateTexture2D color RT/UAV failed", static_cast<long>(hr));
+            return false;
         }
-        return renderTarget != nullptr;
+
+        desc.BindFlags = 0;
+        desc.Usage = D3D11_USAGE_STAGING;
+        desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+        hr = device->CreateTexture2D(&desc, nullptr, stagingTexture.ReleaseAndGetAddressOf());
+        if (!succeeded(hr) || stagingTexture == nullptr) {
+            d3dLogHr("CreateTexture2D staging failed", static_cast<long>(hr));
+            colorTexture.Reset();
+            return false;
+        }
+
+        renderTarget = d3dImpl->makeRenderTarget(width, height);
+        if (renderTarget == nullptr) {
+            d3dLog("makeRenderTarget returned null");
+            colorTexture.Reset();
+            stagingTexture.Reset();
+            return false;
+        }
+
+        targetWidth = width;
+        targetHeight = height;
+        return true;
     }
 
-    bool renderBackbuffer(ID3D11Texture2D* backbuffer, uint32_t width, uint32_t height, float deltaSeconds) {
-        if (!loaded || backbuffer == nullptr || d3dImpl == nullptr || artboard == nullptr)
+    bool renderAndReadback(uint32_t width, uint32_t height, float deltaSeconds, std::vector<uint8_t>& rgbaOut) {
+        if (!loaded || d3dImpl == nullptr || artboard == nullptr || context == nullptr)
             return false;
 
-        if (!ensureRenderTarget(width, height))
+        if (!ensureOffscreenTargets(width, height))
             return false;
 
-        renderTarget->setTargetTexture(backbuffer);
+        renderTarget->setTargetTexture(colorTexture);
 
         applyDataBindings();
         artboard->advance(0.f);
@@ -322,6 +379,24 @@ struct D3DRiveState {
         flushResources.renderTarget = renderTarget.get();
         renderContext->flush(flushResources);
         renderTarget->setTargetTexture(nullptr);
+
+        context->CopyResource(stagingTexture.Get(), colorTexture.Get());
+
+        D3D11_MAPPED_SUBRESOURCE mapped{};
+        const HRESULT mapHr = context->Map(stagingTexture.Get(), 0, D3D11_MAP_READ, 0, &mapped);
+        if (!succeeded(mapHr) || mapped.pData == nullptr) {
+            d3dLogHr("Map staging texture failed", static_cast<long>(mapHr));
+            return false;
+        }
+
+        const size_t tightPitch = static_cast<size_t>(width) * 4u;
+        rgbaOut.resize(tightPitch * static_cast<size_t>(height));
+        auto* dst = rgbaOut.data();
+        auto* src = static_cast<const uint8_t*>(mapped.pData);
+        for (uint32_t y = 0; y < height; ++y) {
+            std::memcpy(dst + y * tightPitch, src + y * mapped.RowPitch, tightPitch);
+        }
+        context->Unmap(stagingTexture.Get(), 0);
 
         hasFrame = true;
         return true;
@@ -364,28 +439,15 @@ void D3DRiveCore::setContentAlignSize(uint32_t width, uint32_t height) {
     }
 }
 
-bool D3DRiveCore::resizeRenderTarget(uint32_t width, uint32_t height) {
-    return impl_ != nullptr && impl_->state.ensureRenderTarget(width, height);
+bool D3DRiveCore::renderToPixels(uint32_t width,
+                                 uint32_t height,
+                                 float deltaSeconds,
+                                 std::vector<uint8_t>& rgbaOut) {
+    return impl_ != nullptr && impl_->state.renderAndReadback(width, height, deltaSeconds, rgbaOut);
 }
 
 bool D3DRiveCore::isLoaded() const { return impl_ != nullptr && impl_->state.loaded; }
 
 bool D3DRiveCore::hasRenderedFrame() const { return impl_ != nullptr && impl_->state.hasFrame; }
-
-ID3D11Device* D3DRiveCore::device() const {
-    return impl_ != nullptr ? impl_->state.device.Get() : nullptr;
-}
-
-IDXGIFactory2* D3DRiveCore::dxgiFactory() const {
-    return impl_ != nullptr ? impl_->state.factory.Get() : nullptr;
-}
-
-bool D3DRiveCore::render(ID3D11Texture2D* backbuffer,
-                         uint32_t width,
-                         uint32_t height,
-                         float deltaSeconds) {
-    return impl_ != nullptr
-           && impl_->state.renderBackbuffer(backbuffer, width, height, deltaSeconds);
-}
 
 } // namespace matilda::rive::d3d

@@ -8,8 +8,6 @@
 #include "../Rive/RiveHeroConfig.h"
 #if defined(MATILDA_RIVE_BACKEND_METAL)
 #include "../Rive/RiveHeroMetalView.h"
-#elif defined(MATILDA_RIVE_BACKEND_D3D)
-#include "../Rive/RiveHeroD3DView.h"
 #endif
 #include "BinaryData.h"
 #endif
@@ -42,9 +40,8 @@ void refreshGpuOverlay(juce::Component* overlay) {
 #if defined(MATILDA_RIVE_BACKEND_METAL)
     if (auto* metalView = dynamic_cast<matilda::rive::RiveHeroMetalView*>(overlay))
         metalView->refreshDisplay();
-#elif defined(MATILDA_RIVE_BACKEND_D3D)
-    if (auto* d3dView = dynamic_cast<matilda::rive::RiveHeroD3DView*>(overlay))
-        d3dView->refreshDisplay();
+#else
+    juce::ignoreUnused(overlay);
 #endif
 }
 
@@ -312,15 +309,12 @@ void HeroCanvas::paint(juce::Graphics& g) {
 #endif
 
 #if defined(MATILDA_RIVE_HERO)
-#if defined(MATILDA_RIVE_BACKEND_D3D)
-    // Keep the static portrait until the swap chain has presented a real frame —
-    // the child HWND paints black (not the hero) if D3D rendering fails.
-    if ((!riveLoaded_ || !rive_.hasVisibleFrame()) && staticPortrait.isValid())
-        g.drawImage(staticPortrait, portraitRect);
-#elif defined(MATILDA_RIVE_BACKEND_GPU)
+#if defined(MATILDA_RIVE_BACKEND_GPU)
+    // Metal overlay: static PNG only until the native layer is attached.
     if (!riveLoaded_ && staticPortrait.isValid())
         g.drawImage(staticPortrait, portraitRect);
 #else
+    // CG / Windows D3D offscreen: blit animated frames into the portrait rect.
     if (!shouldDrawCgRiveFrame() && staticPortrait.isValid())
         g.drawImage(staticPortrait, portraitRect);
     else if (shouldDrawCgRiveFrame())

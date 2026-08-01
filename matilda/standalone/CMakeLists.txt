@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 
 # Matilda Standalone-only codebase (forked from plugin v1.0.2, before DAW-coupling regressions).
 # Kept independent from matilda/plugin so the macOS standalone app stays known-good.
-project(MatildaStandalone VERSION 1.0.14 LANGUAGES C CXX)
+project(MatildaStandalone VERSION 1.0.15 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,7 +14,7 @@ if(APPLE)
     set_property(CACHE MATILDA_RIVE_BACKEND PROPERTY STRINGS metal cg)
 elseif(WIN32)
     option(MATILDA_RIVE_HERO "Enable native Rive hero portrait (Windows)" ON)
-    set(MATILDA_RIVE_BACKEND "d3d" CACHE STRING "Rive renderer backend: d3d (GPU)")
+    set(MATILDA_RIVE_BACKEND "d3d" CACHE STRING "Rive renderer backend: d3d (offscreen GPU + juce::Image blit)")
     set_property(CACHE MATILDA_RIVE_BACKEND PROPERTY STRINGS d3d)
 else()
     set(MATILDA_RIVE_HERO OFF CACHE BOOL "" FORCE)
@@ -232,7 +232,8 @@ if(MATILDA_RIVE_HERO)
     if(MATILDA_RIVE_BACKEND STREQUAL "metal")
         target_compile_definitions(Matilda PRIVATE MATILDA_RIVE_BACKEND_METAL=1 MATILDA_RIVE_BACKEND_GPU=1)
     elseif(MATILDA_RIVE_BACKEND STREQUAL "d3d")
-        target_compile_definitions(Matilda PRIVATE MATILDA_RIVE_BACKEND_D3D=1 MATILDA_RIVE_BACKEND_GPU=1)
+        # Image-blit path (not a native HWND overlay) — HeroCanvas owns the timer/paint.
+        target_compile_definitions(Matilda PRIVATE MATILDA_RIVE_BACKEND_D3D=1)
     endif()
 
     if(APPLE)

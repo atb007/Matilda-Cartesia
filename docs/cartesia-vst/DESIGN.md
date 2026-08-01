@@ -41,14 +41,14 @@ Product spec: [SPEC.md](./SPEC.md) · Build log: [MILESTONES.md](./MILESTONES.md
 | Element | Behaviour |
 |---------|-----------|
 | **Background** | Starfield + aurora/forest (`hero-bg-m8b.png`) — visible through shell glass |
-| **Portrait** | macOS Metal: live Rive (`matilda-cartesia-v3.riv`); static PNG fallback before first frame / non-Metal. Masked; slides left on collapse |
+| **Portrait** | macOS Metal overlay / Windows D3D offscreen→`juce::Image` Rive (`matilda-cartesia-v3.riv`); static PNG until first frame. Masked; slides left on collapse |
 | **Wordmark** | “Matilda” + `Cartesia - v{VERSION}` (Jacquard 24) — slides with portrait; on Metal, drawn **above** the Rive layer (see below) |
 | **Chevron** | **70×70** glass button — expanded `>>` at hero top-left; collapsed `<<` inside vines frame |
 | **Collapse** | Canvas **2376 → 1515** px width; shell re-centres; **380 ms** ease |
 | **Metal strips** | Removed (Figma tweak) |
 | **Shell glass (standalone)** | Frosted bedding: blurred wallpaper under translucent glass (`ShellChrome`); shell `opaque = false` |
 
-**Rive hero (shipped — macOS Metal / Windows D3D):** Live portrait via native Rive runtime. Bindings (play + layer-count glows) in `matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md`. **Wordmark compositing (Metal):** rasterize labels into a `CALayer` on the same NSView as `CAMetalLayer`, stacked above Rive — peer `toFront()` cannot win over GPU `resizeViewToFit` re-attach.
+**Rive hero (shipped — macOS Metal / Windows D3D):** Live portrait via native Rive runtime. macOS presents into a Metal layer; Windows renders D3D11 PLS offscreen and blits into `juce::Image` (no child HWND swap chain — that path stayed on the static PNG in hosts). Bindings (play + layer-count glows) in `matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md`. **Wordmark compositing (Metal):** rasterize labels into a `CALayer` on the same NSView as `CAMetalLayer`, stacked above Rive — peer `toFront()` cannot win over GPU `resizeViewToFit` re-attach.
 
 ---
 

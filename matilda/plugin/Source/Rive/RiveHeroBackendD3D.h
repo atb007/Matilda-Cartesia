@@ -4,9 +4,10 @@
 
 namespace matilda::rive {
 
-class RiveHeroD3DView;
-
-/** GPU D3D11 PLS backend — renders into a child JUCE HWND overlay. */
+/**
+ * Windows D3D11 PLS backend — renders offscreen and blits into a juce::Image.
+ * Avoids HWND child swap chains (unreliable in standalone + many VST hosts).
+ */
 class RiveHeroBackendD3D : public RiveHeroBackend {
 public:
     RiveHeroBackendD3D();
@@ -17,23 +18,22 @@ public:
     void setActiveLayerCount(int count) override;
     void setPolyphony(bool enabled) override;
     void setDisplayRect(juce::Rectangle<int> rect) override;
-    void setContentAlignRect(juce::Rectangle<int> rect) override;
+    void setContentAlignRect(juce::Rectangle<int> rect) override {}
     bool tick(float deltaSeconds) override;
 
     [[nodiscard]] bool isLoaded() const override;
     [[nodiscard]] bool hasVisibleOutput() const override;
-    [[nodiscard]] juce::Component* overlayComponent() override;
     [[nodiscard]] const juce::Image& frameImage() const override;
-
-    /** Called from RiveHeroD3DView each frame. */
-    bool renderSwapChain(void* hostHwnd, float deltaSeconds);
 
 private:
     struct Impl;
+    struct FrameStorage;
+
     std::unique_ptr<Impl> impl_;
-    std::unique_ptr<RiveHeroD3DView> view_;
-    int contentAlignW_ = 0;
-    int contentAlignH_ = 0;
+    std::unique_ptr<FrameStorage> frameStorage_;
+    bool hasVisibleFrame_ = false;
+    int renderW_ = 0;
+    int renderH_ = 0;
 };
 
 } // namespace matilda::rive

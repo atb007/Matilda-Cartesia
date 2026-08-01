@@ -48,7 +48,7 @@ MatildaPluginFrame (0.52 × uiScaleFactor; default factor 0.9)
 | `shellLayout.ts` | Control frame + glass rect (1405×1766 vines, 1205×1407 glass) |
 | `rasterImageStyle.ts` | Bilinear-friendly PNG overlay CSS |
 
-**Hero portrait:** macOS Metal / Windows D3D use native Rive (`matilda-cartesia-v3.riv`) in `HeroCanvas`; static PNG is the pre-frame / non-GPU fallback. Wordmark on Metal is a `CALayer` above `CAMetalLayer` (not a JUCE peer sibling). Contract: `matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md`.
+**Hero portrait:** macOS Metal overlay / Windows D3D offscreen→image use native Rive (`matilda-cartesia-v3.riv`) in `HeroCanvas`; static PNG is the pre-frame fallback. Wordmark on Metal is a `CALayer` above `CAMetalLayer` (not a JUCE peer sibling); on Windows it is a JUCE sibling above the painted frame. Contract: `matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md`.
 
 ---
 

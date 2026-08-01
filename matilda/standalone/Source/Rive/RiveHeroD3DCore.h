@@ -3,14 +3,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-
-struct ID3D11Device;
-struct ID3D11Texture2D;
-struct IDXGIFactory2;
+#include <vector>
 
 namespace matilda::rive::d3d {
 
-/** Rive PLS + D3D11 renderer — no JUCE headers. */
+/** Rive PLS + D3D11 renderer — offscreen texture + CPU readback (no HWND / swap chain). */
 class D3DRiveCore {
 public:
     D3DRiveCore();
@@ -21,14 +18,12 @@ public:
     void setActiveLayerCount(int count);
     void setPolyphony(bool enabled);
     void setContentAlignSize(uint32_t width, uint32_t height);
-    bool resizeRenderTarget(uint32_t width, uint32_t height);
+
+    /** Advance + render into an offscreen RT, then copy RGBA8 pixels (tight row pitch). */
+    bool renderToPixels(uint32_t width, uint32_t height, float deltaSeconds, std::vector<uint8_t>& rgbaOut);
 
     [[nodiscard]] bool isLoaded() const;
     [[nodiscard]] bool hasRenderedFrame() const;
-    [[nodiscard]] ID3D11Device* device() const;
-    [[nodiscard]] IDXGIFactory2* dxgiFactory() const;
-
-    bool render(ID3D11Texture2D* backbuffer, uint32_t width, uint32_t height, float deltaSeconds);
 
 private:
     struct Impl;
