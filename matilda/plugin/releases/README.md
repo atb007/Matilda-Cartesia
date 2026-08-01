@@ -44,10 +44,10 @@ Universal binary (Apple Silicon + Intel).
 ## Cut a new release (maintainers)
 
 ```bash
-git tag v1.0.16
-git push origin v1.0.16
+git tag v1.0.17
+git push origin v1.0.17
 ```
 
-Latest release: **v1.0.16** — fix Windows DXGI factory init so Rive D3D hero can start (v1.0.15 static PNG).
+Latest release: **v1.0.17** — Windows Rive right-edge framing (mask extend / Metal parity).
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.

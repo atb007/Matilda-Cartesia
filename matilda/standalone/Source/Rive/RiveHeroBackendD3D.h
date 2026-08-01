@@ -32,6 +32,10 @@ private:
     std::unique_ptr<Impl> impl_;
     std::unique_ptr<FrameStorage> frameStorage_;
     bool hasVisibleFrame_ = false;
+    int displayW_ = 0;
+    int displayH_ = 0;
+    int contentAlignW_ = 0;
+    int contentAlignH_ = 0;
     int renderW_ = 0;
     int renderH_ = 0;
 };

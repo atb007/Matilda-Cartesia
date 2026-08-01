@@ -180,7 +180,10 @@ void HeroCanvas::updatePortraitLayout() {
                                                  portraitHeightScale, portraitContentScale);
     portraitLocalRect_ = portraitRect.toNearestInt();
 
-#if defined(MATILDA_RIVE_BACKEND_GPU)
+#if defined(MATILDA_RIVE_BACKEND_GPU) || defined(MATILDA_RIVE_BACKEND_D3D)
+    // Metal drawable / Windows offscreen image: extend to mask right so hair and
+    // streaks aren't clipped at the portrait content box (Cover+CenterLeft align
+    // still uses portraitLocalRect_ via setContentAlignRect).
     const float maskRight = maskX + maskW;
     const float rightExtend = juce::jmax(0.f, maskRight - portraitRect.getRight());
     portraitOverlayRect_ = portraitLocalRect_;
@@ -314,11 +317,19 @@ void HeroCanvas::paint(juce::Graphics& g) {
     if (!riveLoaded_ && staticPortrait.isValid())
         g.drawImage(staticPortrait, portraitRect);
 #else
-    // CG / Windows D3D offscreen: blit animated frames into the portrait rect.
+    // CG / Windows D3D offscreen: static PNG in the content box; live Rive uses
+    // the (possibly mask-extended) overlay rect so Windows matches Metal spill.
     if (!shouldDrawCgRiveFrame() && staticPortrait.isValid())
         g.drawImage(staticPortrait, portraitRect);
-    else if (shouldDrawCgRiveFrame())
+    else if (shouldDrawCgRiveFrame()) {
+#if defined(MATILDA_RIVE_BACKEND_D3D)
+        const auto drawRect = portraitOverlayRect_.isEmpty() ? portraitRect
+                                                             : portraitOverlayRect_.toFloat();
+        g.drawImage(rive_.frameImage(), drawRect);
+#else
         g.drawImage(rive_.frameImage(), portraitRect);
+#endif
+    }
 #endif
 #else
     if (staticPortrait.isValid())

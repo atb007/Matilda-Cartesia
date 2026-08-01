@@ -88,27 +88,42 @@ void RiveHeroBackendD3D::setDisplayRect(juce::Rectangle<int> rect) {
     if (rect.isEmpty())
         return;
 
+    const int displayW = juce::jmax(1, rect.getWidth());
+    const int displayH = juce::jmax(1, rect.getHeight());
     const int renderW =
-        juce::jmin(kMaxRenderW, juce::jmax(1, juce::roundToInt(static_cast<float>(rect.getWidth()) * kRenderScale)));
+        juce::jmin(kMaxRenderW, juce::jmax(1, juce::roundToInt(static_cast<float>(displayW) * kRenderScale)));
     const int renderH =
-        juce::jmin(kMaxRenderH, juce::jmax(1, juce::roundToInt(static_cast<float>(rect.getHeight()) * kRenderScale)));
-    if (renderW == renderW_ && renderH == renderH_)
+        juce::jmin(kMaxRenderH, juce::jmax(1, juce::roundToInt(static_cast<float>(displayH) * kRenderScale)));
+    if (displayW == displayW_ && displayH == displayH_ && renderW == renderW_ && renderH == renderH_)
         return;
 
+    displayW_ = displayW;
+    displayH_ = displayH;
     renderW_ = renderW;
     renderH_ = renderH;
     hasVisibleFrame_ = false;
 }
 
 void RiveHeroBackendD3D::setContentAlignRect(juce::Rectangle<int> rect) {
-    juce::ignoreUnused(rect);
+    // Metal parity: Cover+CenterLeft uses the portrait content box while the
+    // drawable extends further right into the hero mask (hair/streak spill).
+    contentAlignW_ = rect.isEmpty() ? 0 : juce::jmax(1, rect.getWidth());
+    contentAlignH_ = rect.isEmpty() ? 0 : juce::jmax(1, rect.getHeight());
 }
 
 bool RiveHeroBackendD3D::tick(float deltaSeconds) {
     if (impl_ == nullptr || !impl_->core.isLoaded() || renderW_ <= 0 || renderH_ <= 0)
         return false;
 
-    impl_->core.setContentAlignSize(static_cast<uint32_t>(renderW_), static_cast<uint32_t>(renderH_));
+    uint32_t alignW = static_cast<uint32_t>(renderW_);
+    uint32_t alignH = static_cast<uint32_t>(renderH_);
+    if (contentAlignW_ > 0 && contentAlignH_ > 0 && displayW_ > 0 && displayH_ > 0) {
+        const float scaleX = static_cast<float>(renderW_) / static_cast<float>(displayW_);
+        const float scaleY = static_cast<float>(renderH_) / static_cast<float>(displayH_);
+        alignW = static_cast<uint32_t>(juce::jmax(1, juce::roundToInt(static_cast<float>(contentAlignW_) * scaleX)));
+        alignH = static_cast<uint32_t>(juce::jmax(1, juce::roundToInt(static_cast<float>(contentAlignH_) * scaleY)));
+    }
+    impl_->core.setContentAlignSize(alignW, alignH);
 
     if (!impl_->core.renderToPixels(static_cast<uint32_t>(renderW_),
                                     static_cast<uint32_t>(renderH_),
