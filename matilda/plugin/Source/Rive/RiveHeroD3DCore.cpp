@@ -38,7 +38,7 @@ namespace {
 bool succeeded(HRESULT hr) { return SUCCEEDED(hr); }
 
 struct D3DRiveState {
-    Microsoft::WRL::ComPtr<IDXGIFactory2> factory;
+    Microsoft::WRL::ComPtr<IDXGIFactory1> factory;
     Microsoft::WRL::ComPtr<ID3D11Device> device;
     Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
     std::unique_ptr<::rive::gpu::RenderContext> renderContext;
@@ -97,16 +97,26 @@ struct D3DRiveState {
         if (device != nullptr && context != nullptr && renderContext != nullptr)
             return true;
 
+        // CreateDXGIFactory() only supports IDXGIFactory (not Factory1) — requesting
+        // IDXGIFactory1 from it returns E_NOINTERFACE (0x80004002) and left Windows
+        // stuck on the static portrait. Prefer CreateDXGIFactory1; fall back to
+        // CreateDXGIFactory + QI; if both fail, still try a default hardware device.
         if (factory == nullptr) {
-            Microsoft::WRL::ComPtr<IDXGIFactory1> factory1;
-            const HRESULT factoryHr = CreateDXGIFactory(IID_PPV_ARGS(&factory1));
-            if (!succeeded(factoryHr)) {
-                d3dLogHr("CreateDXGIFactory failed", static_cast<long>(factoryHr));
-                return false;
-            }
-            if (!succeeded(factory1.As(&factory))) {
-                d3dLog("IDXGIFactory1 -> IDXGIFactory2 cast failed (DXGI 1.2 unavailable)");
-                return false;
+            HRESULT factoryHr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
+            if (!succeeded(factoryHr) || factory == nullptr) {
+                d3dLogHr("CreateDXGIFactory1 failed", static_cast<long>(factoryHr));
+                Microsoft::WRL::ComPtr<IDXGIFactory> factory0;
+                factoryHr = CreateDXGIFactory(IID_PPV_ARGS(&factory0));
+                if (succeeded(factoryHr) && factory0 != nullptr) {
+                    if (!succeeded(factory0.As(&factory)) || factory == nullptr)
+                        d3dLog("IDXGIFactory -> IDXGIFactory1 cast failed");
+                    else
+                        d3dLog("DXGI factory via CreateDXGIFactory + QI");
+                } else {
+                    d3dLogHr("CreateDXGIFactory failed", static_cast<long>(factoryHr));
+                }
+            } else {
+                d3dLog("DXGI factory via CreateDXGIFactory1");
             }
         }
 
@@ -114,12 +124,16 @@ struct D3DRiveState {
         DXGI_ADAPTER_DESC adapterDesc{};
         ::rive::gpu::D3DContextOptions contextOptions;
 
-        for (UINT i = 0; factory->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i) {
-            if (!succeeded(adapter->GetDesc(&adapterDesc)))
-                continue;
-            contextOptions.isIntel = adapterDesc.VendorId == 0x163C || adapterDesc.VendorId == 0x8086
-                                     || adapterDesc.VendorId == 0x8087;
-            break;
+        if (factory != nullptr) {
+            for (UINT i = 0; factory->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i) {
+                if (!succeeded(adapter->GetDesc(&adapterDesc)))
+                    continue;
+                contextOptions.isIntel = adapterDesc.VendorId == 0x163C || adapterDesc.VendorId == 0x8086
+                                         || adapterDesc.VendorId == 0x8087;
+                break;
+            }
+        } else {
+            d3dLog("no DXGI factory — creating default D3D11 hardware device");
         }
 
         D3D_FEATURE_LEVEL createdLevel{};
