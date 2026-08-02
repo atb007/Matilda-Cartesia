@@ -283,12 +283,12 @@ Preset JSON: `matilda/presets/*.json`
 
 ## Windows VST3 port status (post–v1.0.11)
 
-Shipped / polished in **`matilda/standalone/`** and ported into **`matilda/plugin/`** on Jul 16, 2026. Local macOS VST3/AU build passes; final Windows VST3 package still needs Windows/CI validation.
+Shipped / polished in **`matilda/standalone/`** and ported into **`matilda/plugin/`** on Jul 16, 2026. **Windows Rive hero validated Aug 1–2, 2026** on standalone (**v1.0.15–v1.0.17**); same D3D path ships in Windows VST3.
 
 | # | Enhancement | Standalone status | Windows VST3 notes |
 |---|-------------|-------------------|--------------------|
-| 1 | **Rive hero v3** (`matilda-cartesia-v3.riv`) | ✅ source port | Windows: D3D offscreen→`juce::Image` (no HWND swap chain) |
-| 2 | **Wordmark above GPU** (`CALayer` / peer-safe) | ✅ source port | Metal layer path done; D3D sibling path builds |
+| 1 | **Rive hero v3** (`matilda-cartesia-v3.riv`) | ✅ **validated v1.0.17** | D3D11 PLS offscreen→`juce::Image` (no HWND swap chain); mask-right framing |
+| 2 | **Wordmark above GPU** (`CALayer` / peer-safe) | ✅ validated | Metal: `CALayer` on host; Windows: JUCE sibling above painted frame |
 | 3 | **`faceStreakVis` ← polyphony ∧ ≥2 layers + transport** | ✅ source port | Uses `setPolyphony` + layer count; off with a single active layer |
 | 4 | **Polyphony crown + engine** | ✅ source port | `PolyphonyCrown`, `PatchState::polyphony`, poly tick path |
 | 5 | **Per-layer step scroll** | ✅ source port | `StepScroll` + `active_step_count` |
@@ -303,8 +303,8 @@ Shipped / polished in **`matilda/standalone/`** and ported into **`matilda/plugi
 
 ### Shipped UI (hero)
 
-- **Rive hero** — macOS Metal overlay / Windows D3D offscreen→image; play + layer-count view-model bindings. Static PNG until first frame. See `matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md`.
-- **Wordmark above Rive (Metal)** — `CALayer` on the Metal host above `CAMetalLayer` (`RiveHeroMetalView::setWordmarkOverlay`). Version label: `Cartesia - v` + `JucePlugin_VersionString`.
+- **Rive hero** — macOS Metal overlay / Windows D3D offscreen→image (validated **v1.0.17**); play + layer-count view-model bindings. Static PNG until first visible frame. Windows drawable extends to hero-mask right (Metal framing parity). See `matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md` and [MILESTONES — Windows Rive validated](./MILESTONES.md#-windows-rive-hero-validated--aug-12-2026).
+- **Wordmark above Rive (Metal)** — `CALayer` on the Metal host above `CAMetalLayer` (`RiveHeroMetalView::setWordmarkOverlay`). Version label: `Cartesia - v` + `JucePlugin_VersionString`. Windows wordmark is a JUCE sibling.
 
 ---
 

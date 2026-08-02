@@ -18,7 +18,7 @@ Latest: **[v1.0.17](https://github.com/atb007/Matilda-Cartesia/releases/tag/v1.0
 
 See `releases/README.md` for CI workflow details.
 
-**Source status:** Jul 16, 2026 Windows VST3 port is merged in `matilda/plugin/` (polyphony crown/engine, step scroll, layer clipboard, presets, frosted shell, Rive `faceStreakVis`, playhead sync). Release artifacts are built by the tag-triggered Matilda Release workflow.
+**Source status:** Jul 16, 2026 Windows VST3 port is merged in `matilda/plugin/` (polyphony crown/engine, step scroll, layer clipboard, presets, frosted shell, Rive `faceStreakVis`, playhead sync). **Windows Rive hero validated v1.0.17** (D3D offscreen→image). Release artifacts are built by the tag-triggered Matilda Release workflow. Version bumps: [releases/VERSIONING.md](releases/VERSIONING.md).
 
 ## Build locally
 

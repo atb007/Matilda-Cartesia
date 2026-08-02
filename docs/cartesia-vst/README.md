@@ -11,8 +11,8 @@
 | **M9** Engine / JUCE link | ✅ Layers + quantise + transport in JUCE |
 | **FL Studio integration** | ✅ Virtual-port routing validated (Jul 2026) — see [MILESTONES.md](./MILESTONES.md#integration-milestones-jul-2026) |
 | **Standalone Jul 2026** | ✅ **Frozen Jul 15, 2026** — polyphony · step scroll · clipboard · presets · frost · Rive v3 · playhead sync |
-| **Rive hero animation** | ✅ v3 Metal/D3D + wordmark above GPU — [RIVE_ANIMATION_RULEBOOK.md](../../matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md) |
-| **Plugin / Windows VST3 port** | ✅ Source port complete Jul 16, 2026 · Windows package validation pending — [SPEC status](./SPEC.md#windows-vst3-port-status-postv1011) |
+| **Rive hero animation** | ✅ v3 Metal + Windows D3D offscreen **validated v1.0.17** — [rulebook](../../matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md) · [milestone](./MILESTONES.md#-windows-rive-hero-validated--aug-12-2026) |
+| **Plugin / Windows VST3 port** | ✅ Source port Jul 16, 2026 · Rive hero Windows-validated Aug 2026 — [SPEC status](./SPEC.md#windows-vst3-port-status-postv1011) |
 
 ## Documents
 
@@ -25,6 +25,7 @@
 | [FIGMA-CHECKLIST.md](./FIGMA-CHECKLIST.md) | Figma component handoff + shipped node map |
 | [PRD-SANDBOX.md](./PRD-SANDBOX.md) | Legacy GridWalker sandbox PRD (historical) |
 | [Standalone README](../../matilda/standalone/README.md) | Build + DAW wiring + Jul 2026 feature table |
+| [VERSIONING.md](../../matilda/plugin/releases/VERSIONING.md) | When to bump MAJOR / MINOR / PATCH for Matilda releases |
 
 ## Figma
 

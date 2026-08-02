@@ -12,16 +12,18 @@ Product UI codename from Figma: **Matilda**.
 | [MILESTONES.md](../docs/cartesia-vst/MILESTONES.md) | UI milestones + **host/DAW progress log** |
 | [ARCHITECTURE.md](../docs/cartesia-vst/ARCHITECTURE.md) | Repo layout, phases, module map |
 | [FIGMA-CHECKLIST.md](../docs/cartesia-vst/FIGMA-CHECKLIST.md) | Component handoff checklist |
-| [RIVE_ANIMATION_RULEBOOK.md](standalone/docs/RIVE_ANIMATION_RULEBOOK.md) | Rive v3 bindings + Metal wordmark compositing |
+| [RIVE_ANIMATION_RULEBOOK.md](standalone/docs/RIVE_ANIMATION_RULEBOOK.md) | Rive v3 bindings + Metal/Windows presentation |
+| [releases/VERSIONING.md](plugin/releases/VERSIONING.md) | When to bump MAJOR / MINOR / PATCH |
 
 ### Current focus (Jul 2026)
 
 - **Done:** UI shell (M1–M8b), VST3/AU + Standalone builds, beat-quantized start, scale-quantised gem knobs
 - **Done:** **FL Studio + virtual MIDI ports** — Standalone two-port wiring (clock + notes) and VST3 direct MIDI-out (v1.0.8+) validated on **FL Studio 20.0.1**
 - **Frozen Jul 15, 2026:** polyphony crown + engine · step-count vine · frosted glass · mini-grid clipboard (reset = gate on) · presets bar · Rive v3 + Metal wordmark · `faceStreakVis` ← polyphony ∧ ≥2 layers · playhead UI = last fired step — see [MILESTONES freeze](../docs/cartesia-vst/MILESTONES.md#standalone-freeze--jul-15-2026)
-- **Ported Jul 16, 2026:** the frozen set is merged into `matilda/plugin/` for Windows VST3 source; local macOS VST3/AU build passes, Windows package validation pending.
+- **Ported Jul 16, 2026:** the frozen set is merged into `matilda/plugin/` for Windows VST3.
+- **Windows Rive hero validated Aug 2026 (v1.0.17):** D3D offscreen→image + framing parity — [milestone](../docs/cartesia-vst/MILESTONES.md#-windows-rive-hero-validated--aug-12-2026)
 - **GarageBand:** Standalone + IAC + manual BPM (no host tempo sync)
-- **Next:** Windows/CI package validation for the port · random gen
+- **Next:** random gen · remaining Windows VST3 host soak
 - Full matrix: [MILESTONES.md](../docs/cartesia-vst/MILESTONES.md)
 
 ## Figma

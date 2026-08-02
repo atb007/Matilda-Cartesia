@@ -86,7 +86,26 @@ Portrait box matches React `MatildaRivePortrait` / static PNG anchor (bottom-lef
 
 ---
 
+## Platform presentation
+
+| Platform | Path | Notes |
+|----------|------|-------|
+| macOS | Metal PLS → `CAMetalLayer` overlay | Wordmark = `CALayer` above Metal (`setWordmarkOverlay`) |
+| Windows | D3D11 PLS **offscreen** → CPU → `juce::Image` in `HeroCanvas::paint` | Validated **v1.0.15–v1.0.17** (Aug 2026). No HWND swap chain. Drawable width extends to hero-mask right; Cover+CenterLeft aligns to portrait content box |
+| macOS opt-in | CG CPU → `juce::Image` | `MATILDA_RIVE_BACKEND=cg` |
+
+Diagnostics (Windows): `%TEMP%\MatildaRiveD3D.log`.
+
+---
+
 ## Version changelog
+
+### Platform — Windows validated 2026-08-02 (product v1.0.17)
+
+- **v1.0.15:** offscreen D3D → `juce::Image` (HWND swap chain abandoned).
+- **v1.0.16:** `CreateDXGIFactory1` (fix `E_NOINTERFACE` from `CreateDXGIFactory`+`IDXGIFactory1`).
+- **v1.0.17:** mask-right framing parity with Metal (no hard vertical clip on hair/dress).
+- Milestone: [docs/cartesia-vst/MILESTONES.md — Windows Rive hero validated](../../../docs/cartesia-vst/MILESTONES.md#-windows-rive-hero-validated--aug-12-2026).
 
 ### v3 — 2026-07-15 (frozen with standalone Jul 15, 2026)
 

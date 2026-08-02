@@ -223,17 +223,32 @@ Wire transport, playhead, layer scheduler, quantise scale resolution, and preset
 
 Documented so M9+ work does not paint us into a static-hero corner.
 
-### Rive hero animation — shipped (Jul 2026)
+### Rive hero animation — shipped (Jul 2026 · Windows validated Aug 2026)
 
 | Piece | Notes |
 |-------|-------|
-| **Runtime** | Native Rive C++ — macOS **Metal** / Windows **D3D**; asset `matilda-cartesia-v3.riv` |
+| **Runtime** | Native Rive C++ — macOS **Metal** overlay / Windows **D3D11 PLS offscreen → `juce::Image`**; asset `matilda-cartesia-v3.riv` |
 | **Bindings** | `streakVisible` (transport) + layer-count glows — see `RIVE_ANIMATION_RULEBOOK.md` |
-| **Wordmark** | Metal: `CALayer` above `CAMetalLayer` on the same host (`setWordmarkOverlay`). Do not use peer NSView/`toFront` for GPU heroes |
-| **Fallback** | Static masked PNG until first GPU frame; CG backend paints Rive in `HeroCanvas::paint` |
-| **Integration** | `HeroCanvas` + `RiveHeroMetalView` / D3D view; collapse slide + mask bounds unchanged |
+| **Wordmark** | Metal: `CALayer` above `CAMetalLayer` on the same host (`setWordmarkOverlay`). Windows: JUCE sibling above painted frame. Do not use peer NSView/`toFront` for Metal GPU heroes |
+| **Fallback** | Static masked PNG until first visible frame |
+| **Integration** | `HeroCanvas` + `RiveHeroMetalView` (macOS) / `RiveHeroBackendD3D` image blit (Windows); collapse slide + mask bounds unchanged |
+| **Windows framing** | Drawable extends to hero-mask right (Metal parity); Cover+CenterLeft aligns to portrait content box |
 
 Further artboard/binding changes stay in the rulebook changelog.
+
+### ✅ Windows Rive hero validated — Aug 1–2, 2026
+
+**Milestone:** live animated hero on **Windows standalone** (user-validated) with framing parity to macOS Metal. Same D3D offscreen path is in the Windows VST3 binary.
+
+| Release | What landed |
+|---------|-------------|
+| **v1.0.15** | Drop HWND swap-chain presentation → D3D11 PLS offscreen + CPU readback → `juce::Image` paint |
+| **v1.0.16** | Fix DXGI factory init (`CreateDXGIFactory1`; prior `CreateDXGIFactory`+`IDXGIFactory1` → `E_NOINTERFACE` / static PNG) |
+| **v1.0.17** | Mask-right drawable extend + content-align (fixes hard vertical clip on hair/dress) |
+
+**Diagnostics:** `%TEMP%\MatildaRiveD3D.log` — expect `DXGI factory via CreateDXGIFactory1` → `loadBytes: ok` → `first D3D offscreen frame blitted to juce::Image`.
+
+**Do not regress to HWND child swap chains for Windows Rive** without a new milestone — that path stayed on the static PNG in real standalone/VST hosts.
 
 ---
 
@@ -278,7 +293,7 @@ Native port tracks React modules via `UiDevConfig.h` isolated dev views, then `F
 | Step scroll | — | `StepScroll.cpp` | ✅ ported to plugin Jul 16, 2026 |
 | Polyphony crown | Figma `glowPolyphony` | `PolyphonyCrown.cpp` | ✅ ported to plugin Jul 16, 2026 |
 | Presets bar | Figma `PresetModule` | `PresetBar` / `PresetLibrary` | ✅ ported to plugin Jul 16, 2026 |
-| Post–v1.0.11 → Windows VST3 | — | — | ✅ source port Jul 16, 2026 · Windows CI/package validation pending |
+| Post–v1.0.11 → Windows VST3 | — | — | ✅ source port Jul 16, 2026 · Rive hero Windows-validated **v1.0.17** (Aug 2026) |
 
 ### M3 Movement — frozen (Jun 17, 2026)
 
@@ -312,11 +327,12 @@ Native port tracks React modules via `UiDevConfig.h` isolated dev views, then `F
 | Layer copy / paste / reset / undo | ✅ frozen | Reset = gate on + degree 0; visible-step clipboard |
 | Presets bar + user library | ✅ frozen | `PresetBar` / `PresetLibrary`; dirty `*`; load keeps BPM/transport |
 | Rive hero v3 + Metal wordmark | ✅ frozen | `matilda-cartesia-v3.riv`; wordmark `CALayer` above GPU |
+| Windows Rive hero (D3D offscreen) | ✅ validated Aug 2026 | **v1.0.15–v1.0.17** — see [Windows Rive hero validated](#-windows-rive-hero-validated--aug-12-2026) |
 | `faceStreakVis` ← polyphony ∧ ≥2 layers + transport | ✅ frozen | Rulebook; off when only one layer active |
 | Playhead UI ↔ note sync | ✅ frozen | Lights use **last fired** step (`lastStepIndex` / tick results), not post-advance `stepIndex` |
 | Crown / scroll / preset layout | ✅ frozen | `ReactShellLayout.h` |
 
-**Out of freeze / next:** random gen · plugin / Windows VST3 port of the table above · movement-mode follow-ups.
+**Out of freeze / next:** random gen · movement-mode follow-ups · remaining Windows VST3 host soak (non-Rive).
 
 ### Plugin / Windows VST3 source port — Jul 16, 2026
 
@@ -330,7 +346,7 @@ The standalone freeze table above is now merged into `matilda/plugin/` for the W
 | Layer clipboard | ✅ source port | Right-click copy/paste/reset/undo; reset gates on at degree 0 |
 | Presets | ✅ source port | User library + native Save dialog; load preserves BPM/transport state |
 | Frosted shell glass | ✅ source port | Shell non-opaque + frosted backdrop sample |
-| Build verification | ✅ macOS local | `cmake --build matilda/plugin/build --config Release -j8` builds VST3/AU; Windows artifact validation still pending |
+| Build verification | ✅ macOS + Windows CI | Release zips via tag workflow; Windows Rive hero validated on standalone **v1.0.17** |
 
 ### M7 Global Settings — frozen (Jun 17, 2026)
 

@@ -162,8 +162,8 @@ Each layer maintains its own `PathState` (step index, ping-pong direction, rando
 | **3** | Layers 2–4 sequential + edit-while-playing |
 | **4** | External chrome wiring · play on transport | 🔄 GB standalone ✅; FL virtual-port ✅; beat-quantized start ✅; knob quantise ✅; FL wrapper on newer FL ⬜ |
 | **4b** | Standalone: polyphony · step count · clipboard · frost · crown · presets · playhead sync · Rive v3 | ✅ **frozen Jul 15, 2026** (`matilda/standalone/`) · source-ported to plugin Jul 16 |
-| **B** | XYZ clock divisions · randomize modal · Windows package validation for 4b plugin port |
-| **UI+** | Rive hero (v3) + Metal wordmark-above-layer ✅ frozen with 4b; bindings per rulebook |
+| **B** | XYZ clock divisions · randomize modal · remaining Windows VST3 host soak |
+| **UI+** | Rive hero (v3) Metal + Windows D3D offscreen ✅ frozen 4b / **Windows validated v1.0.17**; bindings per rulebook |
 
 ---
 

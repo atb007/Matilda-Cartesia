@@ -48,7 +48,7 @@ Product spec: [SPEC.md](./SPEC.md) · Build log: [MILESTONES.md](./MILESTONES.md
 | **Metal strips** | Removed (Figma tweak) |
 | **Shell glass (standalone)** | Frosted bedding: blurred wallpaper under translucent glass (`ShellChrome`); shell `opaque = false` |
 
-**Rive hero (shipped — macOS Metal / Windows D3D):** Live portrait via native Rive runtime. macOS presents into a Metal layer; Windows renders D3D11 PLS offscreen and blits into `juce::Image` (no child HWND swap chain — that path stayed on the static PNG in hosts). Bindings (play + layer-count glows) in `matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md`. **Wordmark compositing (Metal):** rasterize labels into a `CALayer` on the same NSView as `CAMetalLayer`, stacked above Rive — peer `toFront()` cannot win over GPU `resizeViewToFit` re-attach.
+**Rive hero (shipped — macOS Metal / Windows D3D validated v1.0.17):** Live portrait via native Rive runtime. macOS presents into a Metal layer; Windows renders D3D11 PLS offscreen and blits into `juce::Image` (no child HWND swap chain). Windows drawable extends to the hero-mask right edge so hair/streaks match Metal framing. Bindings (play + layer-count glows) in `matilda/standalone/docs/RIVE_ANIMATION_RULEBOOK.md`. **Wordmark compositing (Metal):** rasterize labels into a `CALayer` on the same NSView as `CAMetalLayer`, stacked above Rive — peer `toFront()` cannot win over GPU `resizeViewToFit` re-attach. **Windows wordmark:** JUCE sibling above the painted frame.
 
 ---
 

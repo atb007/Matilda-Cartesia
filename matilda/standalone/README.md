@@ -1,6 +1,6 @@
 # Matilda — Standalone app (macOS / Windows)
 
-> **Standalone-only codebase** (`matilda/standalone/`). Forked from the plugin tree at **v1.0.2** for a stable audio/MIDI engine, then forward-ported with UI QOL through **v1.0.11**, plus the **Jul 15, 2026 freeze** below. The frozen feature set was source-ported to `matilda/plugin/` on Jul 16, 2026; Windows package validation is still pending.
+> **Standalone-only codebase** (`matilda/standalone/`). Forked from the plugin tree at **v1.0.2** for a stable audio/MIDI engine, then forward-ported with UI QOL through **v1.0.11**, plus the **Jul 15, 2026 freeze** below. The frozen feature set was source-ported to `matilda/plugin/` on Jul 16, 2026. **Windows Rive hero validated v1.0.17** (Aug 2026).
 >
 > - **This dir** builds **Standalone only** (`Matilda.app` / `Matilda.exe`).
 > - **`matilda/plugin/`** builds **VST3 + AU only**.
@@ -44,7 +44,7 @@ cmake --build build --config Release -j4
 | **Frosted glass** | Blurred wallpaper under shell bedding | `ShellChrome` |
 | **Layer clipboard** | Mini-grid right-click: copy/paste (± knobs), reset (gates **on**, degree 0), undo + floater | `LayerClipboard.h`, `LayerOverview` |
 | **Playhead sync** | Mini + main lights = **last fired** step (matches MIDI); 1→N then next layer from 1; resume from cell 1 | `PluginEditor` timer · `lastStepIndex` |
-| **Rive hero + wordmark** | v3 `.riv` on Metal; Matilda/Cartesia labels as `CALayer` above GPU; `faceStreakVis` ← poly ∧ ≥2 layers | `RiveHeroMetalView`, rulebook |
+| **Rive hero + wordmark** | v3 `.riv` — Metal (macOS) / D3D offscreen→image (Windows, **validated v1.0.17**); Metal wordmark `CALayer`; Windows JUCE sibling; `faceStreakVis` ← poly ∧ ≥2 layers | `RiveHeroMetalView` / `RiveHeroBackendD3D`, rulebook |
 | **Presets** | Dropdown + save; dirty `*`; user App Support folder; seed Init; load keeps BPM/transport | `PresetBar`, `PresetLibrary` |
 
 **Windows VST3 port status (post–v1.0.11):** see [SPEC.md — Windows VST3 port status](../../docs/cartesia-vst/SPEC.md#windows-vst3-port-status-postv1011).
@@ -133,7 +133,7 @@ BPM follows incoming MIDI clock (v1.0.9+: sample-accurate). Steps can follow MID
 | Frosted shell glass | ✅ frozen Jul 15, 2026 | ✅ source port Jul 16, 2026 |
 | Presets bar + user library | ✅ frozen Jul 15, 2026 | ✅ source port Jul 16, 2026 |
 | Playhead UI = last fired step | ✅ frozen Jul 15, 2026 | ✅ source port Jul 16, 2026 |
-| Rive v3 + Metal wordmark / `faceStreakVis` | ✅ frozen Jul 15, 2026 | ✅ source port Jul 16, 2026 |
+| Rive v3 + Metal wordmark / `faceStreakVis` | ✅ frozen Jul 15, 2026 · Windows validated **v1.0.17** | ✅ source port Jul 16, 2026 · same D3D path in VST3 |
 
 Do **not** port the plugin's opaque-host transport fallback or VST MIDI-out UI back into this tree without review — keep standalone audio behaviour stable.
 

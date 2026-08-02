@@ -43,11 +43,18 @@ Universal binary (Apple Silicon + Intel).
 
 ## Cut a new release (maintainers)
 
+**When to bump MAJOR / MINOR / PATCH:** see [VERSIONING.md](./VERSIONING.md).
+
 ```bash
-git tag v1.0.17
-git push origin v1.0.17
+# 1) Bump matilda/plugin/VERSION + standalone CMake project VERSION
+# 2) Add releases/vX.Y.Z-notes.md + update Latest lines
+# 3) Commit, then:
+git tag -a vX.Y.Z -m "vX.Y.Z — short why"
+git push origin HEAD
+git push origin vX.Y.Z
 ```
 
-Latest release: **v1.0.17** — Windows Rive right-edge framing (mask extend / Metal parity).
+Latest release: **v1.0.17** — Windows Rive right-edge framing (mask extend / Metal parity).  
+**Milestone:** Windows Rive hero validated (v1.0.15–v1.0.17) — see docs `MILESTONES.md`.
 
 Or: Actions → **Matilda Release** → **Run workflow** → enter tag name.
